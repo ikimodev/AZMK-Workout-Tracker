@@ -123,7 +123,16 @@ const playTimerBeep = () => {
 export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('pulse_lang');
-    return (saved as Language) || 'en'; // Default English as requested
+    if (saved === 'en' || saved === 'ar') return saved;
+    
+    // Auto-detect device / browser system language automatically!
+    if (typeof navigator !== 'undefined') {
+      const browserLang = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
+      if (browserLang.startsWith('ar')) {
+        return 'ar';
+      }
+    }
+    return 'en';
   });
 
   const setLanguage = (lang: Language) => {
