@@ -23,6 +23,7 @@ import {
 } from '../data/mockUserData';
 import { getExerciseSummary } from '../services/progressiveOverload';
 import { queryAICoach } from '../services/aiCoachEngine';
+import { askCoachAzzamRealAI } from '../services/geminiService';
 import confetti from 'canvas-confetti';
 import { TRANSLATIONS, Language } from '../i18n/translations';
 
@@ -828,16 +829,30 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
     }
 
     try {
-      await new Promise(r => setTimeout(r, 650));
+      let aiText = '';
       
-      const aiReply = await queryAICoach(text, {
-        history,
-        prs,
-        userName: user.name,
-        userGoal: user.primaryGoal,
-        experience: user.experience,
-        isArabic: language === 'ar'
-      });
+      // Try Real Gemini AI LLM first
+      try {
+        aiText = await askCoachAzzamRealAI(text, user, history, prs, language);
+      } catch (llmErr) {
+        // Fallback to local intelligent rule engine
+        const fallbackReply = await queryAICoach(text, {
+          history,
+          prs,
+          userName: user.name,
+          userGoal: user.primaryGoal,
+          experience: user.experience,
+          isArabic: language === 'ar'
+        });
+        aiText = fallbackReply.text;
+      }
+
+      const aiReply: AIChatMessage = {
+        id: `ai_reply_${Date.now()}`,
+        sender: 'assistant',
+        text: aiText,
+        timestamp: new Date().toISOString()
+      };
 
       setAiMessages(prev => [...prev, aiReply]);
     } catch (e) {

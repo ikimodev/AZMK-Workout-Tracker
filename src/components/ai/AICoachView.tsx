@@ -12,9 +12,11 @@ import {
   Zap,
   Play,
   Lock,
-  Crown
+  Crown,
+  Key
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { getGeminiApiKey, setGeminiApiKey } from '../../services/geminiService';
 
 interface AICoachViewProps {
   onNavigate: (tab: string) => void;
@@ -32,6 +34,8 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
   } = useWorkout();
 
   const [inputQuery, setInputQuery] = useState('');
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(getGeminiApiKey());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isFree = user.tier === 'free';
@@ -43,8 +47,8 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
     "ليش وزني ثابت في البنش برس؟",
     "كيف تطوري هذا الشهر؟",
     "وش أتمرن في التمرين القادم؟",
-    "ايش أكثر عضلات اتمرنها؟",
-    "عندي ألم في الكتف أثناء التمرين"
+    "هل تمرين الظهر كافي للنمو؟",
+    "عندي ألم في الكتف أثناء البنش برس"
   ];
 
   const sampleQueriesEn = [
@@ -73,6 +77,12 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
     sendChatMessage(query);
   };
 
+  const handleSaveApiKey = () => {
+    setGeminiApiKey(apiKeyInput);
+    setShowKeyInput(false);
+    alert(language === 'ar' ? 'تم حفظ مفتاح Gemini API وتفعيل النموذج الحقيقي!' : 'Gemini API Key saved and activated!');
+  };
+
   return (
     <div className="space-y-4 max-w-4xl mx-auto pb-12 animate-fade-in flex flex-col h-[calc(100vh-140px)]">
       
@@ -89,19 +99,29 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
               </h1>
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 text-[10px] font-bold">
                 <Zap className="w-2.5 h-2.5 fill-accent-emerald" />
-                <span>{t('toolsConnected')}</span>
+                <span>{getGeminiApiKey() ? 'Gemini 1.5 Live' : 'AI Assistant'}</span>
               </div>
             </div>
             <p className="text-xs text-slate-400">
               {language === 'ar' 
-                ? 'تحليل مباشر ومبني على بيانات تمارينك وأوزانك المسجلة.' 
+                ? 'تحليل مباشر ومبني على بيانات تمارينك وأوزانك المسجلة عبر الذكاء الاصطناعي.' 
                 : 'Context-grounded analysis of your real completed workout sessions.'}
             </p>
           </div>
         </div>
 
-        {/* Free vs Pro Quota Badge */}
+        {/* Free vs Pro Quota Badge & Key Button */}
         <div className="flex items-center gap-2">
+          
+          <button
+            onClick={() => setShowKeyInput(!showKeyInput)}
+            className="p-2 rounded-xl bg-background-elevated hover:bg-background-hover border border-border text-slate-300 hover:text-white transition-all text-xs flex items-center gap-1"
+            title="Configure Gemini API Key"
+          >
+            <Key className="w-3.5 h-3.5 text-accent-cyan" />
+            <span className="hidden sm:inline font-mono text-[11px]">{getGeminiApiKey() ? 'AI Key ✅' : 'Set Key'}</span>
+          </button>
+
           {isFree ? (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-background-elevated border border-border text-xs">
               <span className="text-slate-400 font-medium">
@@ -126,8 +146,43 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
         </div>
       </div>
 
+      {/* API Key Drawer */}
+      {showKeyInput && (
+        <div className="p-4 rounded-2xl bg-background-card border border-accent-cyan/40 space-y-3 animate-slide-up shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <Key className="w-4 h-4 text-accent-cyan" />
+              <span>{language === 'ar' ? 'تفعيل نموذج Google Gemini 1.5 Flash الحقيقي' : 'Activate Real Gemini 1.5 Flash LLM'}</span>
+            </div>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] text-accent-cyan underline hover:text-cyan-300"
+            >
+              {language === 'ar' ? 'احصل على مفتاح مجاني من Google ↗' : 'Get free key from Google AI Studio ↗'}
+            </a>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={e => setApiKeyInput(e.target.value)}
+              placeholder="AIzaSy..."
+              className="flex-1 px-3 py-2 bg-background-elevated border border-border rounded-xl text-white font-mono text-xs focus:outline-none focus:border-accent-cyan"
+            />
+            <button
+              onClick={handleSaveApiKey}
+              className="px-4 py-2 bg-accent-cyan hover:bg-cyan-400 text-black font-bold text-xs rounded-xl"
+            >
+              {language === 'ar' ? 'حفظ وتفعيل' : 'Save'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Quick Prompts Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 shrink-0">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 shrink-0 no-scrollbar">
         {sampleQueries.map((query, idx) => (
           <button
             key={idx}
@@ -140,69 +195,48 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
         ))}
       </div>
 
-      {/* Chat Messages Log */}
-      <div className="flex-1 bg-background-card/80 border border-border rounded-3xl p-4 sm:p-6 overflow-y-auto space-y-4 shadow-inner">
+      {/* Chat Messages List */}
+      <div className="flex-1 overflow-y-auto bg-background-card border border-border rounded-3xl p-4 sm:p-6 space-y-4 shadow-card">
         {aiMessages.map(msg => (
           <div
             key={msg.id}
-            className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} space-y-2`}
+            className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
           >
-            <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
-              <span className="font-bold text-white">
+            <div className="flex items-center gap-2 mb-1 px-1">
+              <span className="text-[11px] font-mono text-slate-400">
                 {msg.sender === 'user' ? (user.name || 'You') : (language === 'ar' ? 'كابتن عزام' : 'Coach Azzam')}
               </span>
-              <span>•</span>
-              <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-[10px] text-slate-600">
+                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
 
-            {/* Tool Calls Logs View if present */}
-            {msg.toolCalls && msg.toolCalls.length > 0 && (
-              <div className="w-full max-w-2xl bg-black/60 border border-slate-800 rounded-2xl p-3 space-y-2 font-mono text-[11px]">
-                <div className="flex items-center gap-2 text-accent-indigo font-bold text-xs uppercase tracking-wider">
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>{language === 'ar' ? 'استعلام الأدوات وقاعدة البيانات' : 'Executed Tools & Analytics'}</span>
-                </div>
-                {msg.toolCalls.map(tc => (
-                  <div key={tc.id} className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                    <div className="flex items-center justify-between text-accent-cyan">
-                      <span className="font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-accent-emerald" />
-                        <code>{tc.toolName}()</code>
-                      </span>
-                      <span className="text-[10px] text-slate-400">{tc.timestamp}</span>
-                    </div>
-                    <p className="text-slate-300 text-[10px] font-sans">{tc.resultSummary}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Message Bubble */}
             <div
-              className={`max-w-2xl p-4 sm:p-5 rounded-3xl text-sm leading-relaxed ${
+              className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-3xl text-sm leading-relaxed ${
                 msg.sender === 'user'
-                  ? 'bg-accent-indigo text-white rounded-tr-sm font-medium shadow-glow-sm'
-                  : 'bg-background-elevated border border-border text-slate-100 rounded-tl-sm prose prose-invert max-w-none'
+                  ? 'bg-accent-indigo text-white rounded-tr-none shadow-glow-indigo'
+                  : 'bg-background-elevated border border-border text-slate-200 rounded-tl-none rtl:rounded-tr-none rtl:rounded-tl-3xl shadow-sm'
               }`}
             >
-              <div className="whitespace-pre-line">{msg.text}</div>
+              <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm">
+                {msg.text}
+              </div>
 
-              {/* Action Buttons if recommended */}
+              {/* Action Buttons if AI suggested actions */}
               {msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-border/80 flex flex-wrap gap-2 not-prose">
-                  {msg.suggestedActions.map((act, i) => (
+                <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap gap-2">
+                  {msg.suggestedActions.map((act, idx) => (
                     <button
-                      key={i}
+                      key={idx}
                       onClick={() => {
                         if (act.actionType === 'start_workout') {
                           startTodaysAutocompleteWorkout();
-                        } else if (act.actionType === 'apply_progression') {
-                          startTodaysAutocompleteWorkout();
-                        } else {
-                          onNavigate('progress');
+                          onNavigate('active_workout');
+                        } else if (act.actionType === 'view_analytics') {
+                          onNavigate('premium');
                         }
                       }}
-                      className="px-3.5 py-2 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                      className="px-3 py-1.5 rounded-xl bg-accent-emerald text-black font-extrabold text-xs flex items-center gap-1.5 shadow-sm active:scale-95"
                     >
                       <Play className="w-3 h-3 fill-black" />
                       <span>{act.label}</span>
@@ -214,61 +248,40 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           </div>
         ))}
 
+        {/* Loading Indicator */}
         {isAILoading && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-background-elevated border border-border max-w-xs animate-pulse">
-            <Bot className="w-5 h-5 text-accent-indigo animate-spin" />
-            <span className="text-xs font-mono text-slate-300">
-              {language === 'ar' ? 'كابتن عزام يقوم بفحص سجلات التمارين...' : 'Coach Azzam analyzing workout data...'}
-            </span>
+          <div className="flex items-center gap-2 p-3 bg-background-elevated rounded-2xl w-fit text-xs text-slate-400 animate-pulse border border-border">
+            <Sparkles className="w-4 h-4 text-accent-indigo animate-spin" />
+            <span>{language === 'ar' ? 'كابتن عزام يحلل بياناتك ويفكر...' : 'Coach Azzam is analyzing your data...'}</span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Bar or Upgrade Wall */}
-      {isLimitReached ? (
-        <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <Lock className="w-5 h-5 text-rose-400 shrink-0" />
-            <div>
-              <p className="text-xs font-bold text-white">
-                {language === 'ar' ? 'استنفدت رصيد الأسئلة المجانية لليوم (5/5)' : 'Daily Free AI Quota Reached (5/5)'}
-              </p>
-              <p className="text-[11px] text-slate-300">
-                {language === 'ar' ? 'قم بالترقية إلى Pro للدردشة غير المحدودة مع كابتن عزام.' : 'Upgrade to Pro for unlimited coaching queries.'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => onNavigate('premium')}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black text-xs shrink-0 shadow-sm"
-          >
-            {t('upgradeToPro')}
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleSend} className="flex items-center gap-2 shrink-0">
-          <input
-            type="text"
-            value={inputQuery}
-            onChange={e => setInputQuery(e.target.value)}
-            placeholder={
-              language === 'ar'
-                ? 'اسأل كابتن عزام (مثال: ليش وزني ثابت في البنش، أو وش أتمرن اليوم؟)...'
-                : 'Ask Coach Azzam about your strength, plateaus, or next workout...'
-            }
-            className="flex-1 px-5 py-3.5 bg-background-card border border-border focus:border-accent-indigo rounded-2xl text-white text-sm font-medium focus:outline-none transition-all shadow-inner"
-          />
-          <button
-            type="submit"
-            disabled={!inputQuery.trim() || isAILoading}
-            className="p-3.5 rounded-2xl bg-accent-indigo hover:bg-indigo-500 disabled:opacity-50 text-white font-bold transition-all shadow-glow-indigo shrink-0"
-          >
-            <Send className="w-5 h-5 rtl:rotate-180" />
-          </button>
-        </form>
-      )}
+      {/* Input Box */}
+      <form onSubmit={handleSend} className="shrink-0 flex items-center gap-2 pt-1 pb-safe">
+        <input
+          type="text"
+          value={inputQuery}
+          onChange={e => setInputQuery(e.target.value)}
+          disabled={isLimitReached || isAILoading}
+          placeholder={
+            isLimitReached 
+              ? (language === 'ar' ? 'وصلت للحد اليومي (5/5) — قم بالترقية إلى Pro للدردشة بلا حدود' : 'Daily limit reached — Upgrade to Pro')
+              : (language === 'ar' ? 'اسأل كابتن عزام عن أوزانك، تمارينك، استشفائك...' : 'Ask Coach Azzam about your lifts, overload, form...')
+          }
+          className="flex-1 px-4 py-3.5 rounded-2xl bg-background-card border border-border text-white text-sm font-medium focus:outline-none focus:border-accent-indigo transition-all placeholder:text-slate-500 disabled:opacity-50"
+        />
+
+        <button
+          type="submit"
+          disabled={!inputQuery.trim() || isAILoading || isLimitReached}
+          className="p-3.5 rounded-2xl bg-gradient-to-r from-accent-indigo to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold flex items-center justify-center shadow-glow-indigo transition-all disabled:opacity-40 active:scale-95"
+        >
+          <Send className="w-5 h-5 rtl:rotate-180" />
+        </button>
+      </form>
 
     </div>
   );
