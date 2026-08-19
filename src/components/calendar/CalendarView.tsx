@@ -267,7 +267,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
                     setSelectedDayActivities(selectedDayActivities === dateStr ? null : dateStr);
                   }
                 }}
-                className={`min-h-[90px] sm:min-h-[110px] p-2 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
+                className={`min-h-[75px] sm:min-h-[110px] p-1 sm:p-2 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
                   isToday 
                     ? 'bg-background-elevated border-accent-emerald shadow-glow-sm' 
                     : 'bg-background-elevated/40 border-border/70 hover:border-slate-600'
@@ -275,24 +275,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
               >
                 {/* Day Number Header */}
                 <div className="flex items-center justify-between">
-                  <span className={`font-mono text-xs font-bold ${isToday ? 'text-accent-emerald' : 'text-slate-300'}`}>
+                  <span className={`font-mono text-[10px] sm:text-xs font-bold ${isToday ? 'text-accent-emerald' : 'text-slate-300'}`}>
                     {dayNum}
                   </span>
                   {isToday && (
-                    <span className="w-2 h-2 rounded-full bg-accent-emerald animate-ping" />
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-accent-emerald animate-ping" />
                   )}
                 </div>
 
                 {/* Day Content Badges */}
-                <div className="space-y-1 my-1 flex-1 flex flex-col justify-center">
+                <div className="space-y-0.5 sm:space-y-1 my-0.5 sm:my-1 flex-1 flex flex-col justify-center overflow-hidden">
                   
                   {/* Completed Lifting Sessions */}
                   {dayWorkouts.map(w => (
                     <div
                       key={w.id}
-                      className="px-1.5 py-0.5 rounded-lg bg-emerald-950/70 border border-accent-emerald/40 text-[10px] font-semibold text-emerald-300 truncate flex items-center gap-1"
+                      className="px-1 py-0.2 sm:py-0.5 rounded sm:rounded-lg bg-emerald-950/70 border border-accent-emerald/40 text-[8px] sm:text-[10px] font-semibold text-emerald-300 truncate flex items-center gap-0.5 sm:gap-1"
                     >
-                      <Check className="w-2.5 h-2.5 shrink-0 text-accent-emerald" />
+                      <Check className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0 text-accent-emerald" />
                       <span className="truncate">{w.name.split(':')[0]}</span>
                     </div>
                   ))}
@@ -301,9 +301,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
                   {dayActs.map(a => (
                     <div
                       key={a.id}
-                      className="px-1.5 py-0.5 rounded-lg bg-cyan-950/70 border border-accent-cyan/40 text-[10px] font-semibold text-cyan-300 truncate flex items-center gap-1"
+                      className="px-1 py-0.2 sm:py-0.5 rounded sm:rounded-lg bg-cyan-950/70 border border-accent-cyan/40 text-[8px] sm:text-[10px] font-semibold text-cyan-300 truncate flex items-center gap-0.5 sm:gap-1"
                     >
-                      <Zap className="w-2.5 h-2.5 shrink-0 text-accent-cyan" />
+                      <Zap className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0 text-accent-cyan" />
                       <span className="truncate">{a.name} ({a.durationMinutes}m)</span>
                     </div>
                   ))}
@@ -311,11 +311,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
                   {/* Scheduled Future Workout if none completed yet */}
                   {dayWorkouts.length === 0 && dayActs.length === 0 && (
                     isScheduledLifting ? (
-                      <div className="px-1.5 py-0.5 rounded-lg bg-accent-indigo/10 border border-accent-indigo/30 text-[10px] font-medium text-indigo-300 truncate">
+                      <div className="px-1 py-0.2 sm:py-0.5 rounded sm:rounded-lg bg-accent-indigo/10 border border-accent-indigo/30 text-[8px] sm:text-[10px] font-medium text-indigo-300 truncate">
                         {plannedWorkoutTemplate?.name.split(':')[0] || 'Lifting'}
                       </div>
                     ) : (
-                      <div className="text-[10px] text-slate-500 text-center py-1">
+                      <div className="text-[8px] sm:text-[10px] text-slate-500 text-center py-0.5">
                         {language === 'ar' ? 'راحة 🧘' : 'Rest 🧘'}
                       </div>
                     )
@@ -323,8 +323,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
 
                 </div>
 
-                {/* Quick Add Button on Hover */}
-                <div className="flex items-center justify-end">
+                {/* Quick Add Button */}
+                <div className="hidden sm:flex items-center justify-end">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

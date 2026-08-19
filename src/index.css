@@ -5,22 +5,32 @@
 @layer base {
   * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
   
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+
   body {
     background-color: #0B0F17;
     color: #F1F5F9;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+    overscroll-behavior-y: none;
   }
   
   /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   ::-webkit-scrollbar-track {
-    background: #0B0F17;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
     background: #1E293B;
@@ -31,10 +41,29 @@
   }
 }
 
+/* Utilities for Native Mobile Feel */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
 /* Glassmorphism and Custom card styles */
 .glass-panel {
   background: rgba(21, 28, 44, 0.85);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
@@ -58,16 +87,7 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Custom pulse animations */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(16, 185, 129, 0.45);
-  }
-}
-
-.pulse-active {
-  animation: pulse-glow 2s infinite;
+/* Mobile Touch Active Feedback */
+button:active, a:active {
+  opacity: 0.85;
 }
