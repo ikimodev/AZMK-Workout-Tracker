@@ -288,6 +288,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                           <input
                             type="number"
                             step="0.5"
+                            inputMode="decimal"
                             value={set.weight || ''}
                             onChange={(e) => updateSet(exIdx, setIdx, { weight: parseFloat(e.target.value) || 0 })}
                             className={`w-full py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
@@ -303,6 +304,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                         <div className="relative w-full max-w-[70px]">
                           <input
                             type="number"
+                            inputMode="numeric"
                             value={set.reps || ''}
                             onChange={(e) => updateSet(exIdx, setIdx, { reps: parseInt(e.target.value, 10) || 0 })}
                             className={`w-full py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
@@ -365,11 +367,16 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                         )}
                       </div>
 
-                      {/* Complete Checkmark Button */}
+                      {/* Complete Checkmark Button with Haptic Vibration */}
                       <div className="col-span-1 flex items-center justify-center">
                         <button
                           type="button"
-                          onClick={() => toggleSetCompleted(exIdx, setIdx)}
+                          onClick={() => {
+                            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                              navigator.vibrate(35);
+                            }
+                            toggleSetCompleted(exIdx, setIdx);
+                          }}
                           className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
                             set.isCompleted
                               ? 'bg-accent-emerald text-black shadow-glow-sm active:scale-90'

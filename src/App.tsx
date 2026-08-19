@@ -23,6 +23,7 @@ import { AIWorkoutImportModal } from './components/ai/AIWorkoutImportModal';
 import { AIProgramGeneratorModal } from './components/ai/AIProgramGeneratorModal';
 
 import { InitialSetupScreen } from './components/common/InitialSetupScreen';
+import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
 
 const AppContent: React.FC = () => {
   const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession } = useWorkout();
@@ -180,6 +181,9 @@ const AppContent: React.FC = () => {
         onClose={() => setIsOnboardingOpen(false)}
         onProgramGenerated={() => handleNavigate('programs')}
       />
+
+      {/* Mobile PWA Install Prompt Banner */}
+      <PWAInstallPrompt />
 
     </div>
   );

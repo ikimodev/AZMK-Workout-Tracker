@@ -1,0 +1,36 @@
+{
+  "name": "AZMK — Train with purpose | عزمك",
+  "short_name": "AZMK عزمك",
+  "description": "تطبيق عزمك لمتابعة التمارين بالذكاء الاصطناعي وزيادة الأوزان التدريجية",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#0B0F17",
+  "theme_color": "#0B0F17",
+  "orientation": "portrait",
+  "categories": ["fitness", "health", "sports", "lifestyle"],
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ابدأ التمرين (Start Workout)",
+      "short_name": "تمرين",
+      "description": "بدء تمرين اليوم فوراً",
+      "url": "/?action=start_workout",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "المدرب الذكي عزام (Coach Azzam)",
+      "short_name": "عزام",
+      "description": "استشارة المدرب الذكي",
+      "url": "/?action=ai_coach",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}
