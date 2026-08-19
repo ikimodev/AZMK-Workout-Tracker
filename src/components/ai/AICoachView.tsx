@@ -12,11 +12,9 @@ import {
   Zap,
   Play,
   Lock,
-  Crown,
-  Key
+  Crown
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
-import { getGeminiApiKey, setGeminiApiKey } from '../../services/geminiService';
 
 interface AICoachViewProps {
   onNavigate: (tab: string) => void;
@@ -34,8 +32,6 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
   } = useWorkout();
 
   const [inputQuery, setInputQuery] = useState('');
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(getGeminiApiKey());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isFree = user.tier === 'free';
@@ -77,12 +73,6 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
     sendChatMessage(query);
   };
 
-  const handleSaveApiKey = () => {
-    setGeminiApiKey(apiKeyInput);
-    setShowKeyInput(false);
-    alert(language === 'ar' ? 'تم حفظ مفتاح Gemini API وتفعيل النموذج الحقيقي!' : 'Gemini API Key saved and activated!');
-  };
-
   return (
     <div className="space-y-4 max-w-4xl mx-auto pb-12 animate-fade-in flex flex-col h-[calc(100vh-140px)]">
       
@@ -99,29 +89,19 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
               </h1>
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 text-[10px] font-bold">
                 <Zap className="w-2.5 h-2.5 fill-accent-emerald" />
-                <span>{getGeminiApiKey() ? 'Gemini 1.5 Live' : 'AI Assistant'}</span>
+                <span>Gemini 1.5 Live</span>
               </div>
             </div>
             <p className="text-xs text-slate-400">
               {language === 'ar' 
-                ? 'تحليل مباشر ومبني على بيانات تمارينك وأوزانك المسجلة عبر الذكاء الاصطناعي.' 
+                ? 'تحليل مباشر ومحادثة ذكية مبنية على بيانات تمارينك وأوزانك المسجلة.' 
                 : 'Context-grounded analysis of your real completed workout sessions.'}
             </p>
           </div>
         </div>
 
-        {/* Free vs Pro Quota Badge & Key Button */}
+        {/* Free vs Pro Quota Badge */}
         <div className="flex items-center gap-2">
-          
-          <button
-            onClick={() => setShowKeyInput(!showKeyInput)}
-            className="p-2 rounded-xl bg-background-elevated hover:bg-background-hover border border-border text-slate-300 hover:text-white transition-all text-xs flex items-center gap-1"
-            title="Configure Gemini API Key"
-          >
-            <Key className="w-3.5 h-3.5 text-accent-cyan" />
-            <span className="hidden sm:inline font-mono text-[11px]">{getGeminiApiKey() ? 'AI Key ✅' : 'Set Key'}</span>
-          </button>
-
           {isFree ? (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-background-elevated border border-border text-xs">
               <span className="text-slate-400 font-medium">
@@ -145,41 +125,6 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           )}
         </div>
       </div>
-
-      {/* API Key Drawer */}
-      {showKeyInput && (
-        <div className="p-4 rounded-2xl bg-background-card border border-accent-cyan/40 space-y-3 animate-slide-up shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-white">
-              <Key className="w-4 h-4 text-accent-cyan" />
-              <span>{language === 'ar' ? 'تفعيل نموذج Google Gemini 1.5 Flash الحقيقي' : 'Activate Real Gemini 1.5 Flash LLM'}</span>
-            </div>
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-accent-cyan underline hover:text-cyan-300"
-            >
-              {language === 'ar' ? 'احصل على مفتاح مجاني من Google ↗' : 'Get free key from Google AI Studio ↗'}
-            </a>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              value={apiKeyInput}
-              onChange={e => setApiKeyInput(e.target.value)}
-              placeholder="AIzaSy..."
-              className="flex-1 px-3 py-2 bg-background-elevated border border-border rounded-xl text-white font-mono text-xs focus:outline-none focus:border-accent-cyan"
-            />
-            <button
-              onClick={handleSaveApiKey}
-              className="px-4 py-2 bg-accent-cyan hover:bg-cyan-400 text-black font-bold text-xs rounded-xl"
-            >
-              {language === 'ar' ? 'حفظ وتفعيل' : 'Save'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Quick Prompts Chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 shrink-0 no-scrollbar">

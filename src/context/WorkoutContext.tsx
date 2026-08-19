@@ -831,9 +831,9 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
     try {
       let aiText = '';
       
-      // Try Real Gemini AI LLM first
+      // Try Real Gemini AI LLM first with multi-turn conversation memory
       try {
-        aiText = await askCoachAzzamRealAI(text, user, history, prs, language);
+        aiText = await askCoachAzzamRealAI(text, user, history, prs, aiMessages, language);
       } catch (llmErr) {
         // Fallback to local intelligent rule engine
         const fallbackReply = await queryAICoach(text, {

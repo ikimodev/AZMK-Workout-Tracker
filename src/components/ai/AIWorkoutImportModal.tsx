@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Sparkles, X, Play, Save, CheckCircle2, ArrowRight, Dumbbell, Calendar, Key, Info } from 'lucide-react';
+import { Sparkles, X, Play, Save, CheckCircle2, ArrowRight, Dumbbell, Calendar } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { 
   parseWorkoutTextWithGemini, 
-  ParsedMultiDaySplit, 
-  getGeminiApiKey, 
-  setGeminiApiKey 
+  ParsedMultiDaySplit
 } from '../../services/geminiService';
 import { Program, WorkoutExercise } from '../../types';
 
@@ -23,19 +21,19 @@ export const AIWorkoutImportModal: React.FC<AIWorkoutImportModalProps> = ({
   const { user, startWorkout, saveGeneratedProgram, language, t } = useWorkout();
 
   const [rawText, setRawText] = useState(
-`Day 1: Push
+`Day 1: Push (صدر وتراي)
 Barbell Bench Press 4x8 80kg
 Incline Dumbbell Press 3x10 30kg
 Dumbbell Lateral Raises 3x15 12kg
 Tricep Rope Pushdown 3x12 25kg
 
-Day 2: Pull
+Day 2: Pull (ظهر وباي)
 Barbell Deadlift 4x5 120kg
 Lat Pulldown 3x10 60kg
 Barbell Row 3x8 70kg
 Barbell Bicep Curl 3x10 30kg
 
-Day 3: Legs
+Day 3: Legs (أرجل)
 Barbell Back Squat 4x6 100kg
 Romanian Deadlift 3x8 80kg
 Leg Press 3x10 160kg
@@ -45,8 +43,6 @@ Lying Leg Curls 3x12 40kg`
   const [isParsing, setIsParsing] = useState(false);
   const [parsedSplit, setParsedSplit] = useState<ParsedMultiDaySplit | null>(null);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(getGeminiApiKey());
 
   if (!isOpen) return null;
 
@@ -143,12 +139,6 @@ Lying Leg Curls 3x12 40kg`
     onClose();
   };
 
-  const handleSaveApiKey = () => {
-    setGeminiApiKey(apiKeyInput);
-    setShowKeyInput(false);
-    alert(language === 'ar' ? 'تم حفظ مفتاح Gemini API بنجاح!' : 'Gemini API Key saved successfully!');
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in pb-safe pt-safe">
       <div className="bg-background-card border border-accent-cyan/40 rounded-3xl max-w-2xl w-full p-5 sm:p-7 relative shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
@@ -162,68 +152,21 @@ Lying Leg Curls 3x12 40kg`
         </button>
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 pr-8 rtl:pr-0 rtl:pl-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-accent-cyan/20 border border-accent-cyan/40 flex items-center justify-center text-accent-cyan shadow-glow-sm">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-accent-cyan">
-                  GEMINI 1.5 FLASH • REAL AI
-                </span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">
-                {language === 'ar' ? 'استيراد وتحليل جدول التمارين الذكي' : 'AI Split & Workout Importer'}
-              </h2>
-            </div>
+        <div className="flex items-center gap-3 mb-4 pr-8 rtl:pr-0 rtl:pl-8">
+          <div className="w-10 h-10 rounded-2xl bg-accent-cyan/20 border border-accent-cyan/40 flex items-center justify-center text-accent-cyan shadow-glow-sm">
+            <Sparkles className="w-5 h-5" />
           </div>
-
-          {/* Gemini API Key config button */}
-          <button
-            onClick={() => setShowKeyInput(!showKeyInput)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-background-elevated hover:bg-background-hover border border-border text-[11px] font-bold text-slate-300 transition-all"
-            title="Configure Google Gemini API Key"
-          >
-            <Key className="w-3.5 h-3.5 text-accent-cyan" />
-            <span>{getGeminiApiKey() ? (language === 'ar' ? 'مفتاح AI مفعل ✅' : 'AI Key Active ✅') : (language === 'ar' ? 'إدخال مفتاح AI' : 'API Key')}</span>
-          </button>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-accent-cyan">
+                GEMINI 1.5 FLASH • REAL AI
+              </span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-white">
+              {language === 'ar' ? 'استيراد وتحليل جدول التمارين الذكي' : 'AI Split & Workout Importer'}
+            </h2>
+          </div>
         </div>
-
-        {/* API Key Drawer */}
-        {showKeyInput && (
-          <div className="mb-4 p-4 rounded-2xl bg-background-elevated border border-accent-cyan/40 space-y-3 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-white">
-                <Key className="w-4 h-4 text-accent-cyan" />
-                <span>{language === 'ar' ? 'مفتاح Google Gemini API' : 'Google Gemini API Key'}</span>
-              </div>
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] text-accent-cyan underline hover:text-cyan-300"
-              >
-                {language === 'ar' ? 'احصل على مفتاح مجاني من Google ↗' : 'Get free key from Google AI Studio ↗'}
-              </a>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={apiKeyInput}
-                onChange={e => setApiKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="flex-1 px-3 py-2 bg-background-card border border-border rounded-xl text-white font-mono text-xs focus:outline-none focus:border-accent-cyan"
-              />
-              <button
-                onClick={handleSaveApiKey}
-                className="px-4 py-2 bg-accent-cyan hover:bg-cyan-400 text-black font-bold text-xs rounded-xl"
-              >
-                {language === 'ar' ? 'حفظ' : 'Save'}
-              </button>
-            </div>
-          </div>
-        )}
 
         <p className="text-xs text-slate-300 mb-4 leading-relaxed">
           {language === 'ar'
