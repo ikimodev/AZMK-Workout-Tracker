@@ -22,7 +22,7 @@ export const getGeminiApiKey = (): string => {
   }
 };
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
 /**
  * Base raw call to Gemini REST endpoint with multi-turn conversation support
