@@ -63,6 +63,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   useEffect(() => {
     if (isAuthenticated) {
       fetchRealData();
+      // Auto-poll cloud registry every 15 seconds for live visitor updates
+      const interval = setInterval(() => {
+        getAdminAnalyticsSummary().then(data => setSummary(data)).catch(() => {});
+      }, 15000);
+      return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
 

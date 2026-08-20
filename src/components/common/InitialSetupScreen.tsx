@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, Zap, Dumbbell, ShieldCheck, Check, Globe, ArrowLe
 import { useWorkout } from '../../context/WorkoutContext';
 import { generateAIProgram } from '../../services/aiProgramGenerator';
 import { FitnessGoal } from '../../types';
+import { trackUserSession } from '../../services/analyticsService';
 
 interface InitialSetupScreenProps {
   onComplete: () => void;
@@ -87,6 +88,9 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     });
 
     saveGeneratedProgram(generated);
+    try {
+      trackUserSession(finalName);
+    } catch (e) {}
     setIsGenerating(false);
     onComplete();
   };

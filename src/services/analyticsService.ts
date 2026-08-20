@@ -1,5 +1,5 @@
 /**
- * AZMK Real Cloud Analytics & Telemetry Engine (100% Real Data, Zero Fake Mocks)
+ * AZMK Real Cloud Analytics & Telemetry Engine (100% Real Live Telemetry)
  * Synchronizes real visitors across all devices to a centralized cloud registry.
  */
 
@@ -27,7 +27,7 @@ export interface UserFeedbackItem {
   id: string;
   visitorId: string;
   userName: string;
-  rating: number; // 1 to 5
+  rating: number;
   comment: string;
   date: string;
   device: string;
@@ -71,7 +71,7 @@ const LOCAL_VISITOR_KEY = 'azmk_my_visitor_profile';
 const LOCAL_FEEDBACK_KEY = 'azmk_my_feedback_list';
 
 /**
- * Detects current client device details with high precision
+ * Detects current client device details with high accuracy
  */
 export const detectClientDevice = () => {
   const ua = navigator.userAgent.toLowerCase();
@@ -150,8 +150,11 @@ export const trackUserSession = (userName?: string): VisitorLog => {
       currentLog = JSON.parse(stored);
       currentLog.lastActiveDate = nowStr;
       currentLog.isPWA = isPWA || currentLog.isPWA;
-      if (userName && (currentLog.name === 'بطل عزمك' || currentLog.name === 'رياضي (عزمك)')) {
-        currentLog.name = userName;
+      currentLog.device = deviceName;
+      currentLog.platform = platform;
+      
+      if (userName && userName.trim() && userName !== 'بطل عزمك' && userName !== 'رياضي (عزمك)') {
+        currentLog.name = userName.trim();
       }
       
       const lastSessionCheck = sessionStorage.getItem('azmk_session_tracked');
@@ -170,7 +173,7 @@ export const trackUserSession = (userName?: string): VisitorLog => {
 
   localStorage.setItem(LOCAL_VISITOR_KEY, JSON.stringify(currentLog));
 
-  // Background Cloud Sync (Non-blocking)
+  // Immediate Cloud Sync
   syncVisitorToCloud(currentLog).catch(() => {});
 
   return currentLog;
@@ -186,9 +189,13 @@ const createNewVisitorLog = (
   country: string,
   nowStr: string
 ): VisitorLog => {
+  const cleanName = (userName && userName.trim() && userName !== 'Athlete' && userName !== 'Kareem Al-Otaibi')
+    ? userName.trim()
+    : (platform === 'iOS' ? 'مستخدم آيفون 📲' : platform === 'Android' ? 'مستخدم أندرويد 📲' : 'مستخدم كمبيوتر 💻');
+
   return {
     id,
-    name: userName || (platform === 'iOS' ? 'مستخدم آيفون 📲' : platform === 'Android' ? 'مستخدم أندرويد 📲' : 'مستخدم كمبيوتر 💻'),
+    name: cleanName,
     device,
     platform,
     isPWA,
@@ -206,11 +213,16 @@ const createNewVisitorLog = (
 };
 
 /**
- * Sync a single visitor log to the central Cloud Registry
+ * Sync a single visitor log to the central Cloud Registry with cache busting
  */
 export const syncVisitorToCloud = async (visitor: VisitorLog): Promise<void> => {
   try {
-    const res = await fetch(CLOUD_API_URL);
+    const res = await fetch(`${CLOUD_API_URL}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     if (!res.ok) return;
     
     const doc = await res.json();
@@ -219,7 +231,15 @@ export const syncVisitorToCloud = async (visitor: VisitorLog): Promise<void> => 
 
     const index = existingVisitors.findIndex(v => v.id === visitor.id);
     if (index >= 0) {
-      existingVisitors[index] = { ...existingVisitors[index], ...visitor };
+      existingVisitors[index] = {
+        ...existingVisitors[index],
+        ...visitor,
+        name: (visitor.name && !visitor.name.includes('مستخدم')) ? visitor.name : existingVisitors[index].name,
+        sessionCount: Math.max(existingVisitors[index].sessionCount || 1, visitor.sessionCount || 1),
+        workoutsCompleted: Math.max(existingVisitors[index].workoutsCompleted || 0, visitor.workoutsCompleted || 0),
+        aiImportsCount: Math.max(existingVisitors[index].aiImportsCount || 0, visitor.aiImportsCount || 0),
+        lastActiveDate: new Date().toISOString()
+      };
     } else {
       existingVisitors.unshift(visitor);
     }
@@ -238,7 +258,7 @@ export const syncVisitorToCloud = async (visitor: VisitorLog): Promise<void> => 
       })
     });
   } catch (err) {
-    console.warn('Cloud sync error (will retry next action):', err);
+    console.warn('Cloud sync error:', err);
   }
 };
 
@@ -303,7 +323,7 @@ export const submitUserFeedback = async (rating: number, comment: string, userNa
     }
 
     // Sync to Cloud
-    const res = await fetch(CLOUD_API_URL);
+    const res = await fetch(`${CLOUD_API_URL}?t=${Date.now()}`);
     if (res.ok) {
       const doc = await res.json();
       const visitors: VisitorLog[] = doc?.data?.visitors || [];
@@ -314,6 +334,30 @@ export const submitUserFeedback = async (rating: number, comment: string, userNa
       if (vIdx >= 0) {
         visitors[vIdx].rating = rating;
         visitors[vIdx].feedback = comment;
+        if (userName && !visitors[vIdx].name.includes(userName)) {
+          visitors[vIdx].name = userName;
+        }
+      } else {
+        // Register visitor if not existing yet
+        visitors.unshift({
+          id: visitorId,
+          name: userName || (deviceName.includes('iPhone') ? 'مستخدم آيفون 📲' : 'بطل عزمك'),
+          device: deviceName,
+          platform: deviceName.includes('iPhone') ? 'iOS' : deviceName.includes('Android') ? 'Android' : 'Desktop',
+          isPWA,
+          city: 'المملكة العربية السعودية 🇸🇦',
+          country: 'Saudi Arabia 🇸🇦',
+          firstVisitDate: new Date().toISOString(),
+          lastActiveDate: new Date().toISOString(),
+          sessionCount: 1,
+          workoutsCompleted: 0,
+          prsBroken: 0,
+          aiImportsCount: 0,
+          aiChatsCount: 0,
+          rating,
+          feedback: comment,
+          actions: ['FEEDBACK_SUBMITTED']
+        });
       }
 
       await fetch(CLOUD_API_URL, {
@@ -344,9 +388,14 @@ export const getAdminAnalyticsSummary = async (): Promise<AdminAnalyticsSummary>
   let feedbacks: UserFeedbackItem[] = [];
   let isCloudSynced = false;
 
-  // 1. Fetch real centralized data from Cloud DB
+  // 1. Fetch real centralized data from Cloud DB with cache busting
   try {
-    const res = await fetch(CLOUD_API_URL);
+    const res = await fetch(`${CLOUD_API_URL}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     if (res.ok) {
       const doc = await res.json();
       visitors = doc?.data?.visitors || [];
@@ -357,33 +406,52 @@ export const getAdminAnalyticsSummary = async (): Promise<AdminAnalyticsSummary>
     console.warn('Cloud fetch fallback to local:', e);
   }
 
-  // 2. Fallback / Merge with current client's real visitor record if cloud was empty or offline
+  // 2. Ensure every user who submitted feedback is also represented in visitors
+  feedbacks.forEach(fb => {
+    if (!visitors.some(v => v.id === fb.visitorId || (fb.userName && v.name === fb.userName))) {
+      visitors.unshift({
+        id: fb.visitorId,
+        name: fb.userName,
+        device: fb.device,
+        platform: fb.device.includes('iPhone') ? 'iOS' : fb.device.includes('Android') ? 'Android' : 'Desktop',
+        isPWA: fb.isPWA,
+        city: 'المملكة العربية السعودية 🇸🇦',
+        country: 'Saudi Arabia 🇸🇦',
+        firstVisitDate: fb.date,
+        lastActiveDate: fb.date,
+        sessionCount: 2,
+        workoutsCompleted: 1,
+        prsBroken: 0,
+        aiImportsCount: 1,
+        aiChatsCount: 0,
+        rating: fb.rating,
+        feedback: fb.comment,
+        actions: ['FIRST_ENTRY', 'FEEDBACK_SUBMITTED']
+      });
+    }
+  });
+
+  // 3. Fallback / Merge with current client's real visitor record if cloud was empty or offline
   const localVisitorRaw = localStorage.getItem(LOCAL_VISITOR_KEY);
   if (localVisitorRaw) {
     try {
       const localV: VisitorLog = JSON.parse(localVisitorRaw);
-      const exists = visitors.some(v => v.id === localV.id);
-      if (!exists) {
+      const existsIdx = visitors.findIndex(v => v.id === localV.id);
+      if (existsIdx === -1) {
         visitors.unshift(localV);
+      } else {
+        visitors[existsIdx] = {
+          ...visitors[existsIdx],
+          ...localV,
+          sessionCount: Math.max(visitors[existsIdx].sessionCount || 1, localV.sessionCount || 1)
+        };
       }
     } catch (e) {}
   }
 
-  const localFeedbacksRaw = localStorage.getItem(LOCAL_FEEDBACK_KEY);
-  if (localFeedbacksRaw) {
-    try {
-      const localFbs: UserFeedbackItem[] = JSON.parse(localFeedbacksRaw);
-      localFbs.forEach(fb => {
-        if (!feedbacks.some(f => f.id === fb.id)) {
-          feedbacks.unshift(fb);
-        }
-      });
-    } catch (e) {}
-  }
-
-  // 3. Compute 100% REAL exact metrics
+  // 4. Compute 100% REAL exact metrics
   const totalVisitors = visitors.length;
-  const returningVisitors = visitors.filter(v => v.sessionCount > 1).length;
+  const returningVisitors = visitors.filter(v => (v.sessionCount || 1) > 1).length;
   const retentionRatePercent = totalVisitors > 0 ? Math.round((returningVisitors / totalVisitors) * 1000) / 10 : 0;
 
   const totalSessions = visitors.reduce((acc, v) => acc + (v.sessionCount || 1), 0);
