@@ -19,11 +19,14 @@ import { PricingView } from './components/monetization/PricingView';
 import { ReferralView } from './components/referrals/ReferralView';
 import { ProfileView } from './components/profile/ProfileView';
 import { CalendarView } from './components/calendar/CalendarView';
+import { AdminDashboardView } from './components/admin/AdminDashboardView';
 import { AIWorkoutImportModal } from './components/ai/AIWorkoutImportModal';
 import { AIProgramGeneratorModal } from './components/ai/AIProgramGeneratorModal';
 
 import { InitialSetupScreen } from './components/common/InitialSetupScreen';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
+import { FeedbackModal } from './components/common/FeedbackModal';
+import { trackUserSession } from './services/analyticsService';
 
 const AppContent: React.FC = () => {
   const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession } = useWorkout();
@@ -33,6 +36,11 @@ const AppContent: React.FC = () => {
   const [isAIImportOpen, setIsAIImportOpen] = useState(false);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [isInstallPromptOpen, setIsInstallPromptOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  React.useEffect(() => {
+    trackUserSession(user.name);
+  }, [user.name]);
 
   // If user hasn't completed setup (first time or factory reset), show setup screen
   if (!user.hasCompletedOnboarding) {
@@ -143,6 +151,12 @@ const AppContent: React.FC = () => {
               onOpenOnboarding={() => setIsOnboardingOpen(true)} 
             />
           )}
+
+          {activeTab === 'admin' && (
+            <AdminDashboardView 
+              onNavigate={handleNavigate} 
+            />
+          )}
         </main>
 
       </div>
@@ -157,6 +171,16 @@ const AppContent: React.FC = () => {
 
       {/* Floating Rest Timer */}
       <RestTimerFloat />
+
+      {/* Floating Feedback Trigger Button (Bottom Right) */}
+      <button
+        onClick={() => setIsFeedbackOpen(true)}
+        className="fixed bottom-20 lg:bottom-6 right-4 rtl:right-auto rtl:left-4 z-30 px-3.5 py-2 rounded-full bg-background-card/90 hover:bg-background-elevated border border-accent-emerald/40 text-accent-emerald text-xs font-bold shadow-glow-sm backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 hover:border-accent-emerald"
+        title="شاركنا رأيك في تطبيق عزمك"
+      >
+        <span className="text-sm">⭐</span>
+        <span className="hidden sm:inline">تقييم ورأي</span>
+      </button>
 
       {/* PR Celebration Modal */}
       <PRCelebrationModal />
@@ -190,6 +214,12 @@ const AppContent: React.FC = () => {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onProgramGenerated={() => handleNavigate('programs')}
+      />
+
+      {/* User Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
       />
 
       {/* Mobile PWA Install Prompt Banner & Gateway */}

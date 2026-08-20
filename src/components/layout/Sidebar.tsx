@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   LayoutDashboard, 
   Dumbbell, 
@@ -9,10 +8,11 @@ import {
   Trophy, 
   User, 
   Sparkles, 
-  Users,
-  Play,
-  Lock,
-  Plus
+  Users, 
+  Play, 
+  Lock, 
+  Plus,
+  BarChart3
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 
@@ -43,6 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'referrals', label: t('referrals'), icon: Users },
     { id: 'premium', label: t('pricing'), icon: Sparkles },
     { id: 'profile', label: t('profile'), icon: User },
+    { id: 'admin', label: language === 'ar' ? 'لوحة الإدارة 📊' : 'Admin & Analytics 📊', icon: BarChart3 },
   ];
 
   return (

@@ -243,16 +243,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onOpenOnbo
           </button>
 
           <button
-            onClick={() => {
-              if (confirm(language === 'ar' ? 'هل تريد تحميل الحساب التجريبي المحمل مسبقاً بـ 22 تمريناً؟' : 'Load Kareem\'s preloaded demo account with 22 completed workouts and PRs?')) {
-                loadPrepopulatedDemoAccount();
-                alert(language === 'ar' ? 'تم تحميل الحساب التجريبي بنجاح!' : 'Preloaded demo account loaded successfully!');
-              }
-            }}
-            className="px-4 py-2.5 rounded-xl bg-background-elevated hover:bg-background-hover text-slate-300 text-xs font-bold border border-border flex items-center gap-2 transition-all active:scale-95"
+            onClick={() => onNavigate('admin')}
+            className="px-4 py-2.5 rounded-xl bg-accent-emerald/20 hover:bg-accent-emerald/30 text-accent-emerald text-xs font-bold border border-accent-emerald/50 flex items-center gap-2 transition-all active:scale-95 shadow-glow-sm"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{t('loadDemoAccount')}</span>
+            <span>📊</span>
+            <span>{language === 'ar' ? 'لوحة تحليلات الإدارة (Admin)' : 'Admin & Analytics'}</span>
           </button>
         </div>
       </div>
