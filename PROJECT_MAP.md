@@ -42,12 +42,11 @@
 - `aiWorkoutParser.ts`: Natural language workout parser.
 
 ### C. UI & Presentation Layer (`src/components/`)
-- `layout/`: `Navbar.tsx` (compact top bar), `BottomNav.tsx` (5-tab mobile bar + slide-up more drawer), `Sidebar.tsx` (desktop navigation & tool gating).
-- `dashboard/`: `DashboardView.tsx` (5 mathematical metrics, daily schedule card, rest day advice).
-- `workout/`: `ActiveWorkoutLogger.tsx`, `WorkoutHistoryView.tsx`, `ExerciseReplaceModal.tsx`.
-- `calendar/`: `CalendarView.tsx` (interactive calendar grid + cardio activity stopwatch logger).
-- `ai/`: `AICoachView.tsx` (Coach Azzam chat + quota tracking), `AIProgramGeneratorModal.tsx`, `AIWorkoutImportModal.tsx`.
-- `common/`: `InitialSetupScreen.tsx`, `PWAInstallPrompt.tsx`, `PRCelebrationModal.tsx`, `WorkoutSummaryModal.tsx`, `RestTimerFloat.tsx`.
+- `ActiveWorkoutLogger.tsx`: Comprehensive active workout UI with rest timer, PR trigger, set duplicate/delete, add/replace exercise modal, notes, autocomplete next workout.
+- `CalendarView.tsx`: Interactive monthly schedule & activity calendar with Day Editor modal (switch Workout Day / Rest Day, select routine, log/delete cardio & sports, start day workout).
+- `DashboardView.tsx`: Real-time strength delta, active workout status, next workout autocomplete button, AI Quick Tools bar for mobile/desktop, interactive calendar preview.
+- `AICoachView.tsx`: Coach Azzam conversational UI with Gemini 3.6 Flash live reasoning.
+- `AIWorkoutImportModal.tsx`: Real Gemini multi-day split parser with Start Today vs Tomorrow option and day tabs.
 
 ---
 

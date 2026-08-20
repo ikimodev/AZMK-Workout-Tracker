@@ -18,7 +18,8 @@ export const AIWorkoutImportModal: React.FC<AIWorkoutImportModalProps> = ({
   onClose, 
   onWorkoutStarted 
 }) => {
-  const { user, startWorkout, saveGeneratedProgram, language, t } = useWorkout();
+  const { user, updateUserProfile, startWorkout, saveGeneratedProgram, language, t } = useWorkout();
+  const [startDayPref, setStartDayPref] = useState<'today' | 'tomorrow'>('today');
 
   const [rawText, setRawText] = useState(
 `Day 1: Push (صدر وتراي)
@@ -135,7 +136,14 @@ Lying Leg Curls 3x12 40kg`
     };
 
     saveGeneratedProgram(newProg);
-    alert(language === 'ar' ? 'تم حفظ وتفعيل الجدول بنجاح في خططك التدريبية!' : 'Split Program successfully saved and activated!');
+    updateUserProfile({
+      startDayOption: startDayPref,
+      programStartDate: new Date().toISOString().split('T')[0]
+    });
+    alert(language === 'ar' 
+      ? `تم حفظ وتفعيل جدول الـ ${parsedSplit.days.length} أيام بنجاح! يبدأ الجدول (${startDayPref === 'today' ? 'اليوم' : 'غداً'}).` 
+      : `Split Program successfully saved and activated! Starting (${startDayPref}).`
+    );
     onClose();
   };
 
@@ -305,6 +313,40 @@ Day 3: Legs (أرجل)
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Start Day Preference if Saving Full Split */}
+            {parsedSplit.isMultiDaySplit && (
+              <div className="p-3.5 rounded-2xl bg-background-elevated border border-border space-y-2">
+                <label className="block text-xs font-bold text-slate-300 font-mono">
+                  {language === 'ar' ? 'متى تريد بدء هذا الجدول؟' : 'When would you like to start this routine?'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStartDayPref('today')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                      startDayPref === 'today'
+                        ? 'bg-accent-emerald text-black border-accent-emerald shadow-sm'
+                        : 'bg-background-card text-slate-300 border-border hover:border-slate-600'
+                    }`}
+                  >
+                    {language === 'ar' ? '🟢 ابدأ اليوم (Day 1 اليوم)' : '🟢 Start Today'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStartDayPref('tomorrow')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                      startDayPref === 'tomorrow'
+                        ? 'bg-accent-cyan text-black border-accent-cyan shadow-sm'
+                        : 'bg-background-card text-slate-300 border-border hover:border-slate-600'
+                    }`}
+                  >
+                    {language === 'ar' ? '🔵 ابدأ غداً (اليوم راحة وتجهيز)' : '🔵 Start Tomorrow'}
+                  </button>
+                </div>
               </div>
             )}
 

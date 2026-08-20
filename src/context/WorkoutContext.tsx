@@ -92,6 +92,7 @@ interface WorkoutContextType {
   loggedActivities: LoggedActivity[];
   addLoggedActivity: (activity: Omit<LoggedActivity, 'id'>) => void;
   deleteLoggedActivity: (id: string) => void;
+  setCalendarDayCustomization: (dateStr: string, customization: { type: 'workout' | 'rest'; workoutIndex?: number; customName?: string } | null) => void;
   getTodaysScheduleState: () => TodayScheduleState;
 
   // Helpers
@@ -361,10 +362,27 @@ Try asking me:
     setLoggedActivities(prev => prev.filter(a => a.id !== id));
   };
 
+  const setCalendarDayCustomization = (
+    dateStr: string, 
+    customization: { type: 'workout' | 'rest'; workoutIndex?: number; customName?: string } | null
+  ) => {
+    setUser(prev => {
+      const updated = { ...(prev.calendarCustomizations || {}) };
+      if (!customization) {
+        delete updated[dateStr];
+      } else {
+        updated[dateStr] = customization;
+      }
+      const newUser = { ...prev, calendarCustomizations: updated };
+      localStorage.setItem('pulse_user', JSON.stringify(newUser));
+      return newUser;
+    });
+  };
+
   /**
    * Intelligent Schedule State:
    * Determines if today is a scheduled Lifting Day or Rest Day,
-   * and automatically advances Day 1 -> Day 2 -> Day 3 -> Day 4 based on completed sessions.
+   * respects user's startDayOption (Today vs Tomorrow) and custom calendar overrides.
    */
   const getTodaysScheduleState = (): TodayScheduleState => {
     const today = new Date();
@@ -385,12 +403,6 @@ Try asking me:
     const nextWorkoutIndex = weekWorkouts.length > 0 ? (completedCount % weekWorkouts.length) : 0;
     const nextWorkoutTemplate = weekWorkouts[nextWorkoutIndex] || null;
 
-    // Scheduled workout days mapping based on daysPerWeek:
-    // 2 days: Mon (Day 1), Thu (Day 2) -> Tue, Wed, Fri, Sat, Sun are Rest Days
-    // 3 days: Mon (Day 1), Wed (Day 2), Fri (Day 3) -> Tue, Thu, Sat, Sun are Rest Days
-    // 4 days: Mon (Day 1), Tue (Day 2), Thu (Day 3), Fri (Day 4) -> Wed, Sat, Sun are Rest Days
-    // 5 days: Mon, Tue, Wed, Fri, Sat are workout days -> Thu, Sun are Rest Days
-    // 6 days: Mon-Sat are workout days -> Sun is Rest Day
     let scheduledWorkoutDays: number[] = [1, 2, 4, 5];
     if (daysCount === 2) scheduledWorkoutDays = [1, 4];
     else if (daysCount === 3) scheduledWorkoutDays = [1, 3, 5];
@@ -398,7 +410,17 @@ Try asking me:
     else if (daysCount === 5) scheduledWorkoutDays = [1, 2, 3, 5, 6];
     else if (daysCount === 6) scheduledWorkoutDays = [1, 2, 3, 4, 5, 6];
 
-    const isRestDayToday = !scheduledWorkoutDays.includes(dayOfWeekNumber) || completedToday;
+    // Check manual day override or tomorrow start
+    const customForToday = user.calendarCustomizations?.[todayStr];
+    let isRestDayToday = false;
+
+    if (customForToday) {
+      isRestDayToday = customForToday.type === 'rest';
+    } else if (user.startDayOption === 'tomorrow' && user.programStartDate === todayStr && completedCount === 0) {
+      isRestDayToday = true;
+    } else {
+      isRestDayToday = !scheduledWorkoutDays.includes(dayOfWeekNumber) || completedToday;
+    }
 
     return {
       isRestDay: isRestDayToday,
@@ -1001,6 +1023,7 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
         loggedActivities,
         addLoggedActivity,
         deleteLoggedActivity,
+        setCalendarDayCustomization,
         getTodaysScheduleState,
         language,
         setLanguage,

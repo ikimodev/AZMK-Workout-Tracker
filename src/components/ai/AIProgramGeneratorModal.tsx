@@ -15,7 +15,7 @@ export const AIProgramGeneratorModal: React.FC<AIProgramGeneratorModalProps> = (
   onClose, 
   onProgramGenerated 
 }) => {
-  const { saveGeneratedProgram, user } = useWorkout();
+  const { saveGeneratedProgram, updateUserProfile, user, language } = useWorkout();
 
   const [goal, setGoal] = useState<FitnessGoal>(user.primaryGoal || 'Muscle Gain');
   const [secondaryGoal, setSecondaryGoal] = useState<FitnessGoal>(user.secondaryGoal || 'Strength');
@@ -23,6 +23,7 @@ export const AIProgramGeneratorModal: React.FC<AIProgramGeneratorModalProps> = (
   const [days, setDays] = useState(user.daysPerWeek || 4);
   const [duration, setDuration] = useState(user.preferredDurationMinutes || 60);
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
+  const [startDayPref, setStartDayPref] = useState<'today' | 'tomorrow'>('today');
   const [restrictions, setRestrictions] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -52,6 +53,10 @@ export const AIProgramGeneratorModal: React.FC<AIProgramGeneratorModalProps> = (
     });
 
     saveGeneratedProgram(program);
+    updateUserProfile({
+      startDayOption: startDayPref,
+      programStartDate: new Date().toISOString().split('T')[0]
+    });
     setIsGenerating(false);
     onProgramGenerated();
     onClose();
@@ -219,8 +224,40 @@ export const AIProgramGeneratorModal: React.FC<AIProgramGeneratorModalProps> = (
             />
           </div>
 
+          {/* Start Day Preference: Today vs Tomorrow */}
+          <div className="p-3.5 rounded-2xl bg-background-elevated border border-border space-y-2">
+            <label className="block text-xs font-bold text-slate-300 font-mono">
+              {language === 'ar' ? 'متى تريد بدء خطتك التدريبية؟' : 'When would you like to start your routine?'}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setStartDayPref('today')}
+                className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all ${
+                  startDayPref === 'today'
+                    ? 'bg-accent-emerald text-black border-accent-emerald shadow-sm font-extrabold'
+                    : 'bg-background-card text-slate-300 border-border hover:border-slate-600'
+                }`}
+              >
+                {language === 'ar' ? '🟢 ابدأ اليوم (Day 1 اليوم)' : '🟢 Start Today'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStartDayPref('tomorrow')}
+                className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all ${
+                  startDayPref === 'tomorrow'
+                    ? 'bg-accent-cyan text-black border-accent-cyan shadow-sm font-extrabold'
+                    : 'bg-background-card text-slate-300 border-border hover:border-slate-600'
+                }`}
+              >
+                {language === 'ar' ? '🔵 ابدأ غداً (اليوم راحة)' : '🔵 Start Tomorrow'}
+              </button>
+            </div>
+          </div>
+
           {/* Submit Button */}
-          <div className="pt-3">
+          <div className="pt-2">
             <button
               onClick={handleGenerate}
               disabled={isGenerating}

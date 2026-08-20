@@ -19,6 +19,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [days, setDays] = useState(4);
   const [duration, setDuration] = useState(60);
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
+  const [startDayOption, setStartDayOption] = useState<'today' | 'tomorrow'>('today');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const goalOptionsAr: { id: FitnessGoal; title: string; desc: string }[] = [
@@ -71,7 +72,9 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       preferredDurationMinutes: duration,
       tier: 'free',
       streakDays: 1,
-      hasCompletedOnboarding: true
+      hasCompletedOnboarding: true,
+      startDayOption,
+      programStartDate: new Date().toISOString().split('T')[0]
     });
 
     const generated = generateAIProgram({
@@ -342,6 +345,44 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               </div>
             </div>
 
+            {/* Start Day Preference: Today vs Tomorrow */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                {language === 'ar' ? 'متى تود أن تبدأ جدولك التدريبي؟' : 'When would you like to start your routine?'}
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setStartDayOption('today')}
+                  className={`p-3 rounded-2xl border text-center transition-all active:scale-[0.98] ${
+                    startDayOption === 'today'
+                      ? 'bg-accent-emerald text-black border-accent-emerald font-extrabold shadow-glow-sm'
+                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
+                  }`}
+                >
+                  <p className="font-bold text-xs">{language === 'ar' ? '🟢 ابدأ اليوم (Day 1 اليوم)' : '🟢 Start Today (Day 1 Today)'}</p>
+                  <p className={`text-[10px] mt-0.5 ${startDayOption === 'today' ? 'text-black/80 font-medium' : 'text-slate-400'}`}>
+                    {language === 'ar' ? 'أول تمرين يبدأ فوراً اليوم' : 'First workout starts today'}
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStartDayOption('tomorrow')}
+                  className={`p-3 rounded-2xl border text-center transition-all active:scale-[0.98] ${
+                    startDayOption === 'tomorrow'
+                      ? 'bg-accent-cyan text-black border-accent-cyan font-extrabold shadow-glow-sm'
+                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
+                  }`}
+                >
+                  <p className="font-bold text-xs">{language === 'ar' ? '🔵 ابدأ غداً (اليوم راحة وتجهيز)' : '🔵 Start Tomorrow (Prep Today)'}</p>
+                  <p className={`text-[10px] mt-0.5 ${startDayOption === 'tomorrow' ? 'text-black/80 font-medium' : 'text-slate-400'}`}>
+                    {language === 'ar' ? 'اليوم راحة وتجهيز، Day 1 يبدأ غداً' : 'Today is rest, Day 1 starts tomorrow'}
+                  </p>
+                </button>
+              </div>
+            </div>
+
             {/* AI Confirmation Highlight Box */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-accent-indigo/20 to-accent-emerald/20 border border-accent-indigo/40 flex items-start gap-3">
               <Zap className="w-5 h-5 text-accent-emerald shrink-0 mt-0.5" />
@@ -350,8 +391,8 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                   {language === 'ar' ? 'خطة 4 أسابيع مجانية بالذكاء الاصطناعي:' : 'Free 4-Week Periodized Routine:'}
                 </strong>
                 {language === 'ar'
-                  ? `سيقوم نظام عزمك الذكي بتجميع جدول مخصص لـ ${days} أيام أسبوعياً مع زيادة تدريجية للأوزان يركز على ${primaryGoal} مع تركيز مساند على ${secondaryGoal}.`
-                  : `AZMK AI will assemble your personalized ${days}-day protocol optimized for ${primaryGoal} with secondary emphasis on ${secondaryGoal}.`}
+                  ? `سيقوم نظام عزمك الذكي بتجميع جدول مخصص لـ ${days} أيام أسبوعياً يبدأ (${startDayOption === 'today' ? 'اليوم' : 'غداً'}) مع زيادة تدريجية للأوزان يركز على ${primaryGoal} مع تركيز مساند على ${secondaryGoal}.`
+                  : `AZMK AI will assemble your personalized ${days}-day protocol starting (${startDayOption === 'today' ? 'today' : 'tomorrow'}) optimized for ${primaryGoal} with secondary emphasis on ${secondaryGoal}.`}
               </div>
             </div>
 

@@ -104,6 +104,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* AI SMART TOOLS BAR (MOBILE & DESKTOP QUICK ACCESS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button
+          onClick={onOpenAIImport}
+          className="p-4 rounded-3xl bg-background-card hover:bg-background-elevated border border-accent-cyan/40 flex items-center justify-between gap-3 shadow-card active:scale-[0.99] transition-all text-left rtl:text-right group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-accent-cyan/15 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan group-hover:scale-105 transition-transform">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-white">{language === 'ar' ? 'استيراد جدول بالذكاء الاصطناعي' : 'Import Text Workout (Gemini AI)'}</span>
+                <span className="px-1.5 py-0.2 rounded bg-accent-cyan/10 text-accent-cyan text-[9px] font-mono font-bold">REAL AI</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {language === 'ar' ? 'الصق جدولك (سواء يوم أو عدة أيام) وسيقوم الـ AI بتوزيعه بدقة' : 'Paste workout text and Gemini AI will distribute days'}
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-accent-cyan rtl:rotate-180 transition-colors shrink-0" />
+        </button>
+
+        <button
+          onClick={onOpenAIGenerator}
+          className="p-4 rounded-3xl bg-background-card hover:bg-background-elevated border border-accent-indigo/40 flex items-center justify-between gap-3 shadow-card active:scale-[0.99] transition-all text-left rtl:text-right group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-accent-indigo/15 border border-accent-indigo/30 flex items-center justify-center text-accent-indigo group-hover:scale-105 transition-transform">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-white">{language === 'ar' ? 'توليد خطة تدريب 4 أسابيع' : 'Generate 4-Week Routine'}</span>
+                <span className="px-1.5 py-0.2 rounded bg-accent-indigo/10 text-accent-indigo text-[9px] font-mono font-bold">AI SPLIT</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {language === 'ar' ? 'خطة متكاملة مع أوزان وجولات وزيادة تدريجية' : 'Full periodized routine with progressive overload'}
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-accent-indigo rtl:rotate-180 transition-colors shrink-0" />
+        </button>
+      </div>
+
       {/* 5 CORE ESSENTIAL METRICS (DYNAMIC MATHEMATICALLY CALCULATED) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
         

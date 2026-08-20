@@ -21,6 +21,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const [days, setDays] = useState(user.daysPerWeek);
   const [duration, setDuration] = useState(user.preferredDurationMinutes);
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
+  const [startDayOption, setStartDayOption] = useState<'today' | 'tomorrow'>('today');
 
   if (!isOpen) return null;
 
@@ -65,7 +66,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       secondaryGoal,
       experience,
       daysPerWeek: days,
-      preferredDurationMinutes: duration
+      preferredDurationMinutes: duration,
+      startDayOption,
+      programStartDate: new Date().toISOString().split('T')[0]
     });
 
     const generated = generateAIProgram({
@@ -321,12 +324,44 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
             </div>
 
+            {/* Start Day Preference: Today vs Tomorrow */}
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5 font-mono">
+                {language === 'ar' ? 'متى تريد بدء جدولك التدريبي؟' : 'When would you like to start?'}
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStartDayOption('today')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                    startDayOption === 'today'
+                      ? 'bg-accent-emerald text-black border-accent-emerald font-extrabold shadow-sm'
+                      : 'bg-background-elevated border-border text-slate-300'
+                  }`}
+                >
+                  {language === 'ar' ? '🟢 ابدأ اليوم (اليوم Day 1)' : '🟢 Start Today'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStartDayOption('tomorrow')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                    startDayOption === 'tomorrow'
+                      ? 'bg-accent-cyan text-black border-accent-cyan font-extrabold shadow-sm'
+                      : 'bg-background-elevated border-border text-slate-300'
+                  }`}
+                >
+                  {language === 'ar' ? '🔵 ابدأ غداً (اليوم راحة)' : '🔵 Start Tomorrow'}
+                </button>
+              </div>
+            </div>
+
             <div className="p-3 rounded-xl bg-accent-indigo/10 border border-accent-indigo/30 flex items-start gap-2.5 text-xs text-slate-300">
               <Sparkles className="w-4 h-4 text-accent-indigo shrink-0 mt-0.5" />
               <span>
                 {language === 'ar'
-                  ? `سيقوم الذكاء الاصطناعي بتوليد خطة تدريبية لـ 4 أسابيع بـ ${days} أيام أسبوعياً مخصصة لهدفك (${primaryGoal} + ${secondaryGoal}).`
-                  : `AI will generate an optimized 4-week protocol with ${days} training days per week for ${primaryGoal} + ${secondaryGoal}.`}
+                  ? `سيقوم الذكاء الاصطناعي بتوليد خطة تدريبية لـ 4 أسابيع بـ ${days} أيام أسبوعياً تبدأ (${startDayOption === 'today' ? 'اليوم' : 'غداً'}) مخصصة لهدفك (${primaryGoal} + ${secondaryGoal}).`
+                  : `AI will generate an optimized 4-week protocol with ${days} training days per week starting (${startDayOption === 'today' ? 'today' : 'tomorrow'}) for ${primaryGoal} + ${secondaryGoal}.`}
               </span>
             </div>
 

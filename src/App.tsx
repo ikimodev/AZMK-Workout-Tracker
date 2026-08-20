@@ -143,6 +143,8 @@ const AppContent: React.FC = () => {
       <BottomNav
         activeTab={activeTab}
         onNavigate={handleNavigate}
+        onOpenAIImport={() => setIsAIImportOpen(true)}
+        onOpenAIGenerator={() => setIsAIGeneratorOpen(true)}
       />
 
       {/* Floating Rest Timer */}

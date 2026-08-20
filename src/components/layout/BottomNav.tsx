@@ -24,9 +24,16 @@ import { useWorkout } from '../../context/WorkoutContext';
 interface BottomNavProps {
   activeTab: string;
   onNavigate: (tab: string) => void;
+  onOpenAIImport?: () => void;
+  onOpenAIGenerator?: () => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onNavigate }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ 
+  activeTab, 
+  onNavigate, 
+  onOpenAIImport, 
+  onOpenAIGenerator 
+}) => {
   const { 
     user, 
     activeWorkout, 
@@ -178,6 +185,37 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onNavigate }) =
                 className="p-1.5 rounded-full bg-background-elevated text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* AI Tools Mobile Section */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setIsMoreMenuOpen(false);
+                  if (onOpenAIImport) onOpenAIImport();
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-r from-accent-cyan/20 to-cyan-600/20 border border-accent-cyan/40 flex items-center gap-2.5 text-left rtl:text-right active:scale-95 transition-all"
+              >
+                <Sparkles className="w-5 h-5 text-accent-cyan shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-white">{language === 'ar' ? 'استيراد بالـ AI' : 'AI Text Import'}</p>
+                  <p className="text-[10px] text-slate-400">{language === 'ar' ? 'لصق أو كتابة تمرين' : 'Paste text workout'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsMoreMenuOpen(false);
+                  if (onOpenAIGenerator) onOpenAIGenerator();
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-r from-accent-indigo/20 to-indigo-600/20 border border-accent-indigo/40 flex items-center gap-2.5 text-left rtl:text-right active:scale-95 transition-all"
+              >
+                <Bot className="w-5 h-5 text-accent-indigo shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-white">{language === 'ar' ? 'توليد خطة AI' : 'Generate AI Plan'}</p>
+                  <p className="text-[10px] text-slate-400">{language === 'ar' ? 'خطة 4 أسابيع' : '4-Week routine'}</p>
+                </div>
               </button>
             </div>
 

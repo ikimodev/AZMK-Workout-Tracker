@@ -160,6 +160,9 @@ export interface UserProfile {
   joinedDate: string;
   hasCompletedOnboarding?: boolean;
   aiQuestionsUsedToday?: number;
+  startDayOption?: 'today' | 'tomorrow';
+  programStartDate?: string;
+  calendarCustomizations?: Record<string, { type: 'workout' | 'rest'; workoutIndex?: number; customName?: string }>;
 }
 
 export interface ReferralStats {
