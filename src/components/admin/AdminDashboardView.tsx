@@ -40,11 +40,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   });
   const [passcode, setPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
-  const [summary, setSummary] = useState<AdminAnalyticsSummary>(() => getAdminAnalyticsSummary());
+  const [summary, setSummary] = useState<AdminAnalyticsSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState<'All' | 'iOS' | 'Android' | 'Desktop' | 'PWA'>('All');
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'visitors' | 'feedbacks'>('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchRealData = async () => {
+    try {
+      setIsRefreshing(true);
+      const data = await getAdminAnalyticsSummary();
+      setSummary(data);
+    } catch (e) {
+      console.error('Error fetching analytics:', e);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchRealData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,14 +83,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   };
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setSummary(getAdminAnalyticsSummary());
-      setIsRefreshing(false);
-    }, 400);
+    fetchRealData();
   };
 
   const handleExportCSV = () => {
+    if (!summary) return;
     const rows = [
       ['Visitor ID', 'Name', 'Device', 'Platform', 'Is PWA', 'City', 'Country', 'Sessions', 'Workouts', 'PRs', 'AI Imports', 'Rating', 'Last Active']
     ];
@@ -97,14 +114,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `azmk_analytics_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `azmk_real_analytics_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   // Filter visitors
-  const filteredVisitors = summary.recentVisitors.filter(v => {
+  const filteredVisitors = (summary?.recentVisitors || []).filter(v => {
     const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -179,6 +196,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     );
   }
 
+  if (isLoading || !summary) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 space-y-4 animate-fade-in text-center">
+        <div className="w-14 h-14 rounded-3xl bg-accent-emerald/20 border border-accent-emerald/40 text-accent-emerald flex items-center justify-center animate-spin">
+          <RefreshCw className="w-7 h-7" />
+        </div>
+        <div>
+          <h3 className="font-extrabold text-base text-white">
+            {language === 'ar' ? 'جاري جلب البيانات الحقيقية من السحابة...' : 'Syncing real live cloud telemetry...'}
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            {language === 'ar' ? 'يتم الاتصال بقاعدة البيانات السحابية المركزية لعزمك' : 'Connecting to AZMK central cloud registry'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-20 animate-fade-in max-w-6xl mx-auto">
       
@@ -188,7 +223,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald animate-ping" />
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-accent-emerald">
-              {language === 'ar' ? 'بث مباشر للتحليلات • LIVE TELEMETRY' : 'LIVE TELEMETRY & INSIGHTS'}
+              {language === 'ar' ? 'بيانات سحابية حقيقية 100% • REAL LIVE TELEMETRY' : 'REAL LIVE TELEMETRY & INSIGHTS'}
             </span>
           </div>
           
@@ -541,80 +576,88 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {filteredVisitors.map((visitor) => (
-                    <tr key={visitor.id} className="hover:bg-background-elevated/50 transition-colors">
-                      
-                      {/* Name & ID */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-accent-emerald/20 to-accent-cyan/20 border border-accent-emerald/30 text-accent-emerald flex items-center justify-center font-bold text-xs shrink-0">
-                            {visitor.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="font-bold text-white flex items-center gap-1.5">
-                              <span>{visitor.name}</span>
-                              {visitor.isPWA && (
-                                <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/40">
-                                  PWA
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] text-slate-500 font-mono">{visitor.id}</span>
-                          </div>
-                        </div>
+                  {filteredVisitors.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        {language === 'ar' ? 'لا يوجد زوار بعد. شارك الرابط وستظهر الزيارات الحقيقية هنا فوراً! 📲' : 'No visitors yet. Share the app link and real visits will appear here live!'}
                       </td>
-
-                      {/* Device */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-200">{visitor.device}</div>
-                        <span className="text-[10px] text-slate-400">{visitor.platform}</span>
-                      </td>
-
-                      {/* Location */}
-                      <td className="py-3.5 px-4 font-medium text-slate-300">
-                        <div>{visitor.city}</div>
-                        <span className="text-[10px] text-slate-400">{visitor.country}</span>
-                      </td>
-
-                      {/* Sessions */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs ${
-                          visitor.sessionCount > 3
-                            ? 'bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/30'
-                            : visitor.sessionCount > 1
-                            ? 'bg-accent-cyan/20 text-accent-cyan'
-                            : 'bg-background-elevated text-slate-400'
-                        }`}>
-                          {visitor.sessionCount} {visitor.sessionCount > 1 ? (language === 'ar' ? 'مرات 🔄' : 'visits') : (language === 'ar' ? 'مرة' : 'visit')}
-                        </span>
-                      </td>
-
-                      {/* Workouts */}
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-white">
-                        {visitor.workoutsCompleted > 0 ? (
-                          <span className="text-amber-400 font-black">{visitor.workoutsCompleted} 🏋️</span>
-                        ) : (
-                          <span className="text-slate-500">-</span>
-                        )}
-                      </td>
-
-                      {/* AI Imports */}
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-accent-indigo">
-                        {visitor.aiImportsCount > 0 ? `${visitor.aiImportsCount} 🤖` : '-'}
-                      </td>
-
-                      {/* Last Active */}
-                      <td className="py-3.5 px-4 text-[11px] text-slate-400 font-mono">
-                        {new Date(visitor.lastActiveDate).toLocaleDateString('ar-SA', { 
-                          month: 'numeric', 
-                          day: 'numeric', 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </td>
-
                     </tr>
-                  ))}
+                  ) : (
+                    filteredVisitors.map((visitor) => (
+                      <tr key={visitor.id} className="hover:bg-background-elevated/50 transition-colors">
+                        
+                        {/* Name & ID */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-accent-emerald/20 to-accent-cyan/20 border border-accent-emerald/30 text-accent-emerald flex items-center justify-center font-bold text-xs shrink-0">
+                              {visitor.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-white flex items-center gap-1.5">
+                                <span>{visitor.name}</span>
+                                {visitor.isPWA && (
+                                  <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/40">
+                                    PWA
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-mono">{visitor.id}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Device */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-200">{visitor.device}</div>
+                          <span className="text-[10px] text-slate-400">{visitor.platform}</span>
+                        </td>
+
+                        {/* Location */}
+                        <td className="py-3.5 px-4 font-medium text-slate-300">
+                          <div>{visitor.city}</div>
+                          <span className="text-[10px] text-slate-400">{visitor.country}</span>
+                        </td>
+
+                        {/* Sessions */}
+                        <td className="py-3.5 px-4 text-center">
+                          <span className={`inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs ${
+                            visitor.sessionCount > 3
+                              ? 'bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/30'
+                              : visitor.sessionCount > 1
+                              ? 'bg-accent-cyan/20 text-accent-cyan'
+                              : 'bg-background-elevated text-slate-400'
+                          }`}>
+                            {visitor.sessionCount} {visitor.sessionCount > 1 ? (language === 'ar' ? 'مرات 🔄' : 'visits') : (language === 'ar' ? 'مرة' : 'visit')}
+                          </span>
+                        </td>
+
+                        {/* Workouts */}
+                        <td className="py-3.5 px-4 text-center font-mono font-bold text-white">
+                          {visitor.workoutsCompleted > 0 ? (
+                            <span className="text-amber-400 font-black">{visitor.workoutsCompleted} 🏋️</span>
+                          ) : (
+                            <span className="text-slate-500">-</span>
+                          )}
+                        </td>
+
+                        {/* AI Imports */}
+                        <td className="py-3.5 px-4 text-center font-mono font-bold text-accent-indigo">
+                          {visitor.aiImportsCount > 0 ? `${visitor.aiImportsCount} 🤖` : '-'}
+                        </td>
+
+                        {/* Last Active */}
+                        <td className="py-3.5 px-4 text-[11px] text-slate-400 font-mono">
+                          {new Date(visitor.lastActiveDate).toLocaleDateString('ar-SA', { 
+                            month: 'numeric', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </td>
+
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -637,44 +680,58 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                 : 'Real feedback submitted by users to understand satisfaction and requested improvements.'}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {summary.feedbacks.map((fb) => (
-                <div 
-                  key={fb.id}
-                  className="p-5 rounded-2xl bg-background-elevated border border-border/80 relative space-y-3 shadow-card"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-accent-emerald/20 text-accent-emerald font-bold flex items-center justify-center text-xs">
-                        {fb.userName.charAt(0)}
+            {summary.feedbacks.length === 0 ? (
+              <div className="p-8 text-center bg-background-elevated rounded-2xl border border-border/60 text-slate-400 text-xs space-y-2">
+                <div className="text-2xl">⭐</div>
+                <p className="font-bold text-white">
+                  {language === 'ar' ? 'لم يتم إرسال أي تقييمات حتى الآن' : 'No reviews submitted yet'}
+                </p>
+                <p>
+                  {language === 'ar' 
+                    ? 'ستظهر آراء المستخدمين الحقيقية هنا فور إرسالها من زر "⭐ تقييم ورأي" في زاوية الشاشة.'
+                    : 'Real user reviews submitted via the feedback button will appear here in real-time.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {summary.feedbacks.map((fb) => (
+                  <div 
+                    key={fb.id}
+                    className="p-5 rounded-2xl bg-background-elevated border border-border/80 relative space-y-3 shadow-card"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-accent-emerald/20 text-accent-emerald font-bold flex items-center justify-center text-xs">
+                          {fb.userName.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xs text-white">{fb.userName}</h4>
+                          <span className="text-[10px] text-slate-400 font-mono">{fb.device}</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-white">{fb.userName}</h4>
-                        <span className="text-[10px] text-slate-400 font-mono">{fb.device}</span>
+
+                      {/* Star Badge */}
+                      <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-black">
+                        <Star className="w-3.5 h-3.5 fill-amber-400" />
+                        <span>{fb.rating}.0</span>
                       </div>
                     </div>
 
-                    {/* Star Badge */}
-                    <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-black">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" />
-                      <span>{fb.rating}.0</span>
+                    {/* Comment */}
+                    <p className="text-xs text-slate-200 font-medium leading-relaxed bg-background-card p-3 rounded-xl border border-border/50">
+                      "{fb.comment}"
+                    </p>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+                      <span>{new Date(fb.date).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      {fb.isPWA && (
+                        <span className="text-accent-emerald font-bold">📲 تطبيق جوال PWA</span>
+                      )}
                     </div>
                   </div>
-
-                  {/* Comment */}
-                  <p className="text-xs text-slate-200 font-medium leading-relaxed bg-background-card p-3 rounded-xl border border-border/50">
-                    "{fb.comment}"
-                  </p>
-
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
-                    <span>{new Date(fb.date).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    {fb.isPWA && (
-                      <span className="text-accent-emerald font-bold">📲 تطبيق جوال PWA</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
           </div>
 
