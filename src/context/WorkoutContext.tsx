@@ -13,7 +13,7 @@ import {
   LoggedActivity,
   TodayScheduleState
 } from '../types';
-import { MOCK_EXERCISES, getExerciseById } from '../data/mockExercises';
+import { MOCK_EXERCISES, getExerciseById, getAllExercises } from '../data/mockExercises';
 import { 
   MOCK_USER_PROFILE, 
   MOCK_REFERRAL_STATS, 
@@ -166,7 +166,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : MOCK_USER_PROFILE;
   });
 
-  const [exercises] = useState<Exercise[]>(MOCK_EXERCISES);
+  const [exercises] = useState<Exercise[]>(() => getAllExercises());
 
   const [history, setHistory] = useState<WorkoutSession[]>(() => {
     const saved = localStorage.getItem('pulse_history');

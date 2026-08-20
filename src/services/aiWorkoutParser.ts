@@ -1,4 +1,5 @@
-import { MOCK_EXERCISES } from '../data/mockExercises';
+import { getExerciseById, findOrCreateExercise } from '../data/mockExercises';
+import { matchExerciseId } from './geminiService';
 import { WorkoutExercise } from '../types';
 
 export interface ParsedWorkoutResult {
@@ -15,64 +16,6 @@ export interface ParsedWorkoutResult {
 }
 
 /**
- * Fuzzy match user exercise text to available database exercises
- */
-const findMatchingExercise = (text: string) => {
-  const clean = text.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-  
-  // 1. Direct name match
-  const exact = MOCK_EXERCISES.find(ex => clean.includes(ex.name.toLowerCase()) || ex.name.toLowerCase().includes(clean));
-  if (exact) return exact;
-
-  // 2. Keyword mapping
-  if (clean.includes('bench') && !clean.includes('incline') && !clean.includes('dumbbell')) {
-    return MOCK_EXERCISES.find(e => e.id === 'barbell_bench_press');
-  }
-  if (clean.includes('incline') && clean.includes('dumbbell')) {
-    return MOCK_EXERCISES.find(e => e.id === 'incline_dumbbell_press');
-  }
-  if (clean.includes('incline') && clean.includes('barbell')) {
-    return MOCK_EXERCISES.find(e => e.id === 'incline_barbell_press');
-  }
-  if (clean.includes('lateral raise') || clean.includes('side raise')) {
-    return MOCK_EXERCISES.find(e => e.id === 'dumbbell_lateral_raise');
-  }
-  if (clean.includes('tricep') || clean.includes('pushdown')) {
-    return MOCK_EXERCISES.find(e => e.id === 'tricep_rope_pushdown');
-  }
-  if (clean.includes('squat')) {
-    return MOCK_EXERCISES.find(e => e.id === 'barbell_back_squat');
-  }
-  if (clean.includes('deadlift')) {
-    return MOCK_EXERCISES.find(e => e.id === 'barbell_deadlift');
-  }
-  if (clean.includes('lat pulldown') || clean.includes('pulldown')) {
-    return MOCK_EXERCISES.find(e => e.id === 'lat_pulldown');
-  }
-  if (clean.includes('pull up') || clean.includes('pullups') || clean.includes('pull-up')) {
-    return MOCK_EXERCISES.find(e => e.id === 'pull_ups');
-  }
-  if (clean.includes('row')) {
-    return MOCK_EXERCISES.find(e => e.id === 'barbell_row');
-  }
-  if (clean.includes('curl') || clean.includes('bicep')) {
-    return MOCK_EXERCISES.find(e => e.id === 'barbell_bicep_curl');
-  }
-  if (clean.includes('leg press')) {
-    return MOCK_EXERCISES.find(e => e.id === 'leg_press');
-  }
-  if (clean.includes('rdl') || clean.includes('romanian')) {
-    return MOCK_EXERCISES.find(e => e.id === 'romanian_deadlift');
-  }
-  if (clean.includes('overhead') || clean.includes('ohp') || clean.includes('shoulder press')) {
-    return MOCK_EXERCISES.find(e => e.id === 'overhead_barbell_press');
-  }
-
-  // Fallback first exercise
-  return MOCK_EXERCISES[0];
-};
-
-/**
  * Natural language parser converting typed workouts into structured objects
  */
 export const parseNaturalLanguageWorkout = (input: string): ParsedWorkoutResult => {
@@ -84,8 +27,8 @@ export const parseNaturalLanguageWorkout = (input: string): ParsedWorkoutResult 
   // Check if first line is a title (e.g. "I do push day:" or "Push Day:")
   if (lines.length > 0) {
     const firstLine = lines[0];
-    if (firstLine.includes(':') || firstLine.toLowerCase().includes('day') || firstLine.toLowerCase().includes('routine')) {
-      workoutName = firstLine.replace(/^(i do|my routine is|workout:)\s*/i, '').replace(':', '').trim();
+    if (firstLine.includes(':') || firstLine.toLowerCase().includes('day') || firstLine.toLowerCase().includes('routine') || firstLine.toLowerCase().includes('يوم')) {
+      workoutName = firstLine.replace(/^(i do|my routine is|workout:|اليوم الأول:|اليوم الثاني:)\s*/i, '').replace(':', '').trim();
       exerciseLines.push(...lines.slice(1));
     } else {
       exerciseLines.push(...lines);
@@ -93,50 +36,68 @@ export const parseNaturalLanguageWorkout = (input: string): ParsedWorkoutResult 
   }
 
   const parsedExercises = exerciseLines.map(line => {
-    // Match patterns like:
-    // "4 sets of 8"
-    // "3x10" or "3 x 10" or "4*8"
-    // "3 sets 12 reps"
     let sets = 3;
     let reps = 10;
+    let weight = 0;
+    let hasExplicitWeight = false;
 
-    const setRepPattern1 = /(\d+)\s*(?:sets\s*(?:of)?\s*|x|\*)\s*(\d+)/i;
-    const match1 = line.match(setRepPattern1);
+    const setRepPattern = /(\d+)\s*(?:sets?|x|\*|×|جولات?|مجموعات?)\s*(?:of\s*|×\s*)?(\d+(?:\s*[\-–—~to]\s*\d+)?\s*(?:s|sec|ثانية)?)/i;
+    const match1 = line.match(setRepPattern);
 
     if (match1) {
       sets = parseInt(match1[1], 10);
-      reps = parseInt(match1[2], 10);
+      reps = parseInt(match1[2], 10) || 10;
     } else {
-      const matchRepsOnly = /(\d+)\s*reps/i;
+      const matchRepsOnly = /(\d+)\s*(?:reps?|عدات?)/i;
       const mReps = line.match(matchRepsOnly);
       if (mReps) reps = parseInt(mReps[1], 10);
       
-      const matchSetsOnly = /(\d+)\s*sets/i;
+      const matchSetsOnly = /(\d+)\s*(?:sets?|جولات?)/i;
       const mSets = line.match(matchSetsOnly);
       if (mSets) sets = parseInt(mSets[1], 10);
     }
 
-    // Extract exercise name by removing set/rep digits
-    const cleanedLine = line.replace(/(\d+)\s*(?:sets\s*(?:of)?\s*|x|\*)\s*(\d+)/i, '').replace(/(\d+)\s*(sets|reps)/gi, '').trim();
-    const matchedEx = findMatchingExercise(cleanedLine || line) || MOCK_EXERCISES[0];
+    const weightMatch = line.match(/(\d+(?:\.\d+)?)\s*(?:kg|kilos?|كيلو|كجم|lbs?|باوند)/i);
+    if (weightMatch) {
+      weight = parseFloat(weightMatch[1]) || 0;
+      hasExplicitWeight = true;
+    }
 
-    // Estimate suggested starting weight based on equipment
-    let suggestedWeight = 20;
-    if (matchedEx.id === 'barbell_bench_press') suggestedWeight = 62.5;
-    else if (matchedEx.id === 'incline_dumbbell_press') suggestedWeight = 26;
-    else if (matchedEx.id === 'dumbbell_lateral_raise') suggestedWeight = 12;
-    else if (matchedEx.id === 'tricep_rope_pushdown') suggestedWeight = 27.5;
-    else if (matchedEx.id === 'barbell_back_squat') suggestedWeight = 105;
-    else if (matchedEx.id === 'barbell_deadlift') suggestedWeight = 140;
-    else if (matchedEx.id === 'lat_pulldown') suggestedWeight = 65;
-    else if (matchedEx.equipment === 'Barbell') suggestedWeight = 50;
-    else if (matchedEx.equipment === 'Dumbbell') suggestedWeight = 16;
-    else if (matchedEx.equipment === 'Cable') suggestedWeight = 25;
-    else if (matchedEx.equipment === 'Machine') suggestedWeight = 45;
+    // Extract clean exercise name
+    const cleanedLine = line
+      .replace(setRepPattern, '')
+      .replace(/(\d+(?:\.\d+)?)\s*(?:kg|kilos?|كيلو|كجم|lbs?|باوند)/gi, '')
+      .replace(/[@#\*]/g, ' ')
+      .replace(/^[\-–—•\.\d\)]+\s*/, '')
+      .replace(/[\-–—]+\s*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const matchedId = matchExerciseId(cleanedLine || line);
+    const exerciseObj = getExerciseById(matchedId);
+
+    // Calculate suggested weight if not specified
+    let suggestedWeight = weight;
+    if (!hasExplicitWeight) {
+      if (exerciseObj.equipment === 'Bodyweight') suggestedWeight = 0;
+      else if (exerciseObj.id === 'barbell_bench_press') suggestedWeight = 60;
+      else if (exerciseObj.id === 'smith_bench_press') suggestedWeight = 50;
+      else if (exerciseObj.id === 'incline_dumbbell_press') suggestedWeight = 24;
+      else if (exerciseObj.id === 'dumbbell_lateral_raise') suggestedWeight = 10;
+      else if (exerciseObj.id === 'tricep_rope_pushdown') suggestedWeight = 22.5;
+      else if (exerciseObj.id === 'barbell_back_squat') suggestedWeight = 80;
+      else if (exerciseObj.id === 'barbell_deadlift') suggestedWeight = 100;
+      else if (exerciseObj.id === 'lat_pulldown') suggestedWeight = 50;
+      else if (exerciseObj.equipment === 'Barbell') suggestedWeight = 40;
+      else if (exerciseObj.equipment === 'Dumbbell') suggestedWeight = 16;
+      else if (exerciseObj.equipment === 'Cable') suggestedWeight = 25;
+      else if (exerciseObj.equipment === 'Machine') suggestedWeight = 45;
+      else suggestedWeight = 20;
+    }
 
     return {
-      exerciseId: matchedEx.id,
-      exerciseName: matchedEx.name,
+      exerciseId: exerciseObj.id,
+      exerciseName: exerciseObj.name,
       targetSets: sets,
       targetReps: reps,
       suggestedWeight,
@@ -145,26 +106,18 @@ export const parseNaturalLanguageWorkout = (input: string): ParsedWorkoutResult 
   });
 
   return {
-    workoutName: workoutName || 'AI Push / Pull Routine',
+    workoutName: workoutName || 'Custom AI Workout',
     exercises: parsedExercises.length > 0 ? parsedExercises : [
       {
         exerciseId: 'barbell_bench_press',
         exerciseName: 'Barbell Bench Press',
         targetSets: 4,
         targetReps: 8,
-        suggestedWeight: 62.5,
+        suggestedWeight: 60,
         rawText: 'bench press 4x8'
-      },
-      {
-        exerciseId: 'incline_dumbbell_press',
-        exerciseName: 'Incline Dumbbell Press',
-        targetSets: 3,
-        targetReps: 10,
-        suggestedWeight: 26,
-        rawText: 'incline dumbbell press 3x10'
       }
     ],
-    confidence: 0.96
+    confidence: 0.98
   };
 };
 
@@ -186,8 +139,8 @@ export const buildWorkoutFromParsed = (parsed: ParsedWorkoutResult): WorkoutExer
       previousWeight: Math.max(0, item.suggestedWeight - 2.5),
       previousReps: item.targetReps,
       targetWeight: item.suggestedWeight,
-      targetRepsMin: item.targetReps,
-      targetRepsMax: item.targetReps + 2
+      targetRepsMin: Math.max(1, item.targetReps - 2),
+      targetRepsMax: item.targetReps
     }))
   }));
 };

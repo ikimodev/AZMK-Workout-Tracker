@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { YoutubeIcon } from '../common/YoutubeIcon';
 import { useWorkout } from '../../context/WorkoutContext';
-import { getExerciseById, MOCK_EXERCISES } from '../../data/mockExercises';
+import { getExerciseById, getAllExercises } from '../../data/mockExercises';
 import { getExerciseSummary, getNextSetRecommendation } from '../../services/progressiveOverload';
 import { ExerciseReplaceModal } from './ExerciseReplaceModal';
 
@@ -89,7 +89,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
   };
 
   // Filtered exercise library for "Add Exercise" modal
-  const filteredExercisesToAdd = MOCK_EXERCISES.filter(ex => 
+  const filteredExercisesToAdd = getAllExercises().filter(ex => 
     ex.name.toLowerCase().includes(searchExQuery.toLowerCase()) ||
     ex.muscleGroup.toLowerCase().includes(searchExQuery.toLowerCase())
   );

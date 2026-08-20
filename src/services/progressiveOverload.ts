@@ -98,9 +98,13 @@ export const getExerciseSummary = (
 
   // Fallbacks if no history exists
   if (lastWeight === 0) {
-    const isBarbell = exercise?.equipment === 'Barbell';
-    const isDumbbell = exercise?.equipment === 'Dumbbell';
-    lastWeight = isBarbell ? 40 : isDumbbell ? 14 : 20;
+    if (exercise?.equipment === 'Bodyweight') {
+      lastWeight = 0;
+    } else {
+      const isBarbell = exercise?.equipment === 'Barbell';
+      const isDumbbell = exercise?.equipment === 'Dumbbell';
+      lastWeight = isBarbell ? 40 : isDumbbell ? 14 : 20;
+    }
     lastReps = exercise?.defaultReps || 8;
     allTimeBestWeight = lastWeight;
     allTimeBestReps = lastReps;

@@ -12,7 +12,7 @@ import {
   Play
 } from 'lucide-react';
 import { YoutubeIcon } from '../common/YoutubeIcon';
-import { MOCK_EXERCISES, getExerciseById, getAlternativeExercises } from '../../data/mockExercises';
+import { MOCK_EXERCISES, getExerciseById, getAlternativeExercises, getAllExercises } from '../../data/mockExercises';
 import { Exercise, MuscleGroup, Equipment } from '../../types';
 import { useWorkout } from '../../context/WorkoutContext';
 
@@ -89,7 +89,9 @@ export const ExerciseDatabaseView: React.FC<ExerciseDatabaseViewProps> = ({ onNa
     return false;
   };
 
-  const filteredExercises = MOCK_EXERCISES.filter(ex => {
+  const allExList = getAllExercises();
+
+  const filteredExercises = allExList.filter(ex => {
     const matchesSearch = normalizeArabicSearch(searchQuery, ex);
     const matchesMuscle = selectedMuscle === 'All' || ex.muscleGroup === selectedMuscle;
     const matchesEquipment = selectedEquipment === 'All' || ex.equipment === selectedEquipment;
@@ -110,7 +112,7 @@ export const ExerciseDatabaseView: React.FC<ExerciseDatabaseViewProps> = ({ onNa
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs uppercase font-mono font-bold tracking-wider text-accent-emerald">{t('exerciseDirectory')}</span>
-            <h1 className="text-2xl font-black text-white mt-1">{t('exerciseDatabaseTitle')} ({MOCK_EXERCISES.length} Movements)</h1>
+            <h1 className="text-2xl font-black text-white mt-1">{t('exerciseDatabaseTitle')} ({allExList.length} Movements)</h1>
             <p className="text-xs text-slate-400 mt-1">
               {language === 'ar' 
                 ? 'أسماء التمارين الرياضية العالمية بالإنجليزية مع شرح الأداء والبدائل الحركية بالعربية.'

@@ -34,6 +34,21 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
     const workoutExercises: WorkoutExercise[] = workout.exercises.map((item, idx) => {
       const numSets = item.targetSets || 3;
       const parsedRep = parseInt(item.targetReps, 10) || 8;
+      const exObj = getExerciseById(item.exerciseId);
+
+      let initialWeight = 30;
+      if (exObj.equipment === 'Bodyweight') initialWeight = 0;
+      else if (exObj.id.includes('squat')) initialWeight = 80;
+      else if (exObj.id.includes('deadlift')) initialWeight = 100;
+      else if (exObj.id.includes('bench')) initialWeight = 60;
+      else if (exObj.id.includes('press') && exObj.equipment === 'Machine') initialWeight = 60;
+      else if (exObj.id.includes('press') && exObj.equipment === 'Barbell') initialWeight = 40;
+      else if (exObj.id.includes('press') && exObj.equipment === 'Dumbbell') initialWeight = 20;
+      else if (exObj.id.includes('curl') || exObj.id.includes('raise') || exObj.id.includes('fly')) initialWeight = 12;
+      else if (exObj.equipment === 'Barbell') initialWeight = 40;
+      else if (exObj.equipment === 'Dumbbell') initialWeight = 16;
+      else if (exObj.equipment === 'Cable') initialWeight = 25;
+      else if (exObj.equipment === 'Machine') initialWeight = 40;
 
       return {
         id: `we_prog_${Date.now()}_${idx}`,
@@ -43,13 +58,13 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
         sets: Array.from({ length: numSets }).map((_, sIdx) => ({
           id: `set_prog_${Date.now()}_${idx}_${sIdx}`,
           setNumber: sIdx + 1,
-          weight: item.exerciseId.includes('bench') ? 65 : item.exerciseId.includes('squat') ? 105 : 30,
+          weight: initialWeight,
           reps: parsedRep,
           isCompleted: false,
-          previousWeight: item.exerciseId.includes('bench') ? 62.5 : item.exerciseId.includes('squat') ? 100 : 28,
+          previousWeight: Math.max(0, initialWeight - 2.5),
           previousReps: parsedRep,
-          targetWeight: item.exerciseId.includes('bench') ? 65 : item.exerciseId.includes('squat') ? 105 : 30,
-          targetRepsMin: parsedRep - 2,
+          targetWeight: initialWeight,
+          targetRepsMin: Math.max(1, parsedRep - 2),
           targetRepsMax: parsedRep
         }))
       };
