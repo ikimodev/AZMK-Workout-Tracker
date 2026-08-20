@@ -1,7 +1,7 @@
 {
-  "name": "AZMK — Train with purpose | عزمك",
-  "short_name": "AZMK عزمك",
-  "description": "تطبيق عزمك لمتابعة التمارين بالذكاء الاصطناعي وزيادة الأوزان التدريجية",
+  "name": "عزمك — تطبيق سعودي لبناء جيل أقوى | AZMK",
+  "short_name": "عزمك AZMK",
+  "description": "تطبيق سعودي لبناء جيل أقوى. من أول عدة إلى أول PR — عزمك يتابع رحلتك ويساعدك تتطور.",
   "start_url": "/",
   "id": "/",
   "display": "standalone",

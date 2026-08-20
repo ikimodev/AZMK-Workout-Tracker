@@ -13,9 +13,10 @@ interface NavbarProps {
   activeTab: string;
   onNavigate: (tab: string) => void;
   onOpenOnboarding: () => void;
+  onOpenInstallPrompt?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, onOpenOnboarding }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, onOpenOnboarding, onOpenInstallPrompt }) => {
   const { 
     user, 
     activeWorkout, 
@@ -58,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, onOpenOnb
               </div>
             </div>
             <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium tracking-wide hidden xs:block">
-              {language === 'ar' ? 'تمرّن بهدف' : 'Train with purpose'}
+              {language === 'ar' ? 'تطبيق سعودي لبناء جيل أقوى' : 'Train with purpose'}
             </p>
           </div>
         </div>
@@ -80,6 +81,18 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, onOpenOnb
         {/* Right Action Icons & User Stats */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           
+          {/* Install App Button */}
+          {onOpenInstallPrompt && (
+            <button
+              onClick={onOpenInstallPrompt}
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-accent-emerald/15 hover:bg-accent-emerald/25 border border-accent-emerald/40 text-accent-emerald text-xs font-extrabold transition-all active:scale-95 shadow-glow-sm"
+              title={language === 'ar' ? 'تثبيت التطبيق على الجوال' : 'Install App on Phone'}
+            >
+              <span className="text-xs">📲</span>
+              <span className="text-[11px] sm:text-xs font-bold hidden sm:inline">{language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}</span>
+            </button>
+          )}
+
           {/* Language Switcher (AR / EN) */}
           <button
             onClick={toggleLanguage}

@@ -32,16 +32,23 @@ const AppContent: React.FC = () => {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAIImportOpen, setIsAIImportOpen] = useState(false);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+  const [isInstallPromptOpen, setIsInstallPromptOpen] = useState(false);
 
   // If user hasn't completed setup (first time or factory reset), show setup screen
   if (!user.hasCompletedOnboarding) {
     return (
-      <InitialSetupScreen
-        onComplete={() => {
-          setActiveTab('dashboard');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
+      <>
+        <InitialSetupScreen
+          onComplete={() => {
+            setActiveTab('dashboard');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+        <PWAInstallPrompt 
+          forceOpen={isInstallPromptOpen}
+          onClose={() => setIsInstallPromptOpen(false)}
+        />
+      </>
     );
   }
 
@@ -59,6 +66,7 @@ const AppContent: React.FC = () => {
         activeTab={activeTab}
         onNavigate={handleNavigate}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenInstallPrompt={() => setIsInstallPromptOpen(true)}
       />
 
       {/* Main Body Shell */}
@@ -184,8 +192,11 @@ const AppContent: React.FC = () => {
         onProgramGenerated={() => handleNavigate('programs')}
       />
 
-      {/* Mobile PWA Install Prompt Banner */}
-      <PWAInstallPrompt />
+      {/* Mobile PWA Install Prompt Banner & Gateway */}
+      <PWAInstallPrompt 
+        forceOpen={isInstallPromptOpen}
+        onClose={() => setIsInstallPromptOpen(false)}
+      />
 
     </div>
   );
