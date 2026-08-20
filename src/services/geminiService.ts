@@ -150,8 +150,10 @@ Analyze the user workout text (which may be in Arabic, English, gym slang, or bu
 
 CRITICAL RULES:
 1. If the input describes multiple days/splits (e.g. Day 1 Push, Day 2 Pull, Day 3 Legs or الأحد صدر، الاثنين ظهر، إلخ), you MUST separate them into distinct items in the "days" array!
-2. If it is only 1 workout session, return isMultiDaySplit: false with 1 day in "days".
-3. Return valid JSON only.
+2. A day title/header (like "Day 1: Push", "اليوم الأول: صدر وتراي") belongs in "dayName" and MUST NEVER BE INCLUDED AS AN EXERCISE inside "exercises"!
+3. "exercises" must ONLY contain actual physical weightlifting movements (e.g. Bench Press, Squats, Rows, Curls).
+4. If it is only 1 workout session, return isMultiDaySplit: false with 1 day in "days".
+5. Return valid JSON only.
 
 JSON Output Schema:
 {
@@ -179,7 +181,19 @@ JSON Output Schema:
     const rawJson = await callGeminiAPI(rawText, systemInstruction, true);
     const parsed: ParsedMultiDaySplit = JSON.parse(rawJson);
 
+    // Filter out any exercise that looks like a day header
+    const headerRegex = /^(day\s*\d+|يوم\s*\d+|اليوم\s*(الأول|الثاني|الثالث|الرابع|الخامس|السادس)|\bpush\b|\bpull\b|\blegs\b|\bupper\b|\blower\b|صدر|ظهر|أرجل|اكتاف)/i;
+
     parsed.days.forEach(day => {
+      day.exercises = day.exercises.filter(ex => {
+        const name = ex.exerciseName.trim().toLowerCase();
+        const dName = day.dayName.trim().toLowerCase();
+        if (name === dName || (headerRegex.test(name) && name.length < 30)) {
+          return false;
+        }
+        return true;
+      });
+
       day.exercises.forEach(ex => {
         ex.matchedExerciseId = matchExerciseId(ex.exerciseName);
       });
@@ -190,6 +204,49 @@ JSON Output Schema:
     console.warn('Gemini Parse Fallback:', error);
     return fallbackLocalSplitParser(rawText);
   }
+};
+
+/**
+ * Parse a single day's text lines into structured exercises
+ */
+export const parseSingleDayText = (dayText: string) => {
+  const lines = dayText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const dayHeaderRegex = /^(day\s*\d+|يوم\s*\d+|اليوم\s*(الأول|الثاني|الثالث|الرابع|الخامس|السادس)|\bpush\b|\bpull\b|\blegs\b|\bupper\b|\blower\b|صدر|ظهر|أرجل|اكتاف)/i;
+
+  const validLines = lines.filter(l => !dayHeaderRegex.test(l) || l.length > 35);
+
+  return validLines.map((line, eIdx) => {
+    let sets = 3;
+    let reps = '8-10';
+    let weight = 40;
+
+    const setRepMatch = line.match(/(\d+)\s*(?:sets?|x|\*|جولات?|مجموعات?)\s*(?:of\s*|×\s*)?(\d+(?:-\d+)?)/i);
+    if (setRepMatch) {
+      sets = parseInt(setRepMatch[1], 10) || 3;
+      reps = setRepMatch[2] || '8-10';
+    }
+
+    const weightMatch = line.match(/(\d+(?:\.\d+)?)\s*(?:kg|kilos?|كيلو|كجم)/i);
+    if (weightMatch) {
+      weight = parseFloat(weightMatch[1]) || 40;
+    }
+
+    const cleanName = line
+      .replace(/(\d+)\s*(?:sets?|x|\*|جولات?|مجموعات?)\s*(?:of\s*|×\s*)?(\d+(?:-\d+)?)/gi, '')
+      .replace(/(\d+(?:\.\d+)?)\s*(?:kg|kilos?|كيلو|كجم)/gi, '')
+      .replace(/[@#\-\:\*\.]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || `Exercise ${eIdx + 1}`;
+
+    return {
+      exerciseName: cleanName,
+      matchedExerciseId: matchExerciseId(cleanName),
+      targetSets: sets,
+      targetReps: reps,
+      suggestedWeightKg: weight,
+      restSeconds: 90
+    };
+  });
 };
 
 /**
