@@ -56,6 +56,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
       
+      {/* PERSISTENT DEMO MODE BANNER */}
+      {user.isDemoUser && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-between gap-3 text-xs text-amber-200 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">🧪</span>
+            <div>
+              <p className="font-bold">
+                {language === 'ar' ? 'وضع الحساب التجريبي التوضيحي (بيانات تجريبية ومحاكاة لـ 22 جلسة)' : 'Demo Mode (22 Simulated Workout Sessions)'}
+              </p>
+              <p className="text-[11px] text-amber-300/80">
+                {language === 'ar' ? 'هذه البيانات لعرض إمكانيات التطبيق. يمكنك إجراء إعادة ضبط مصنع من صفحة الملف الشخصي.' : 'Demo data for exploration. You can reset to a clean slate from your Profile.'}
+              </p>
+            </div>
+          </div>
+          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold shrink-0">
+            DEMO ACCOUNT
+          </span>
+        </div>
+      )}
+
       {/* Top Welcome & Streak Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-background-card via-background-elevated to-background-card border border-border/80 rounded-3xl p-6 relative overflow-hidden shadow-card">
         <div className="absolute top-0 right-0 w-96 h-96 bg-accent-emerald/5 rounded-full blur-3xl pointer-events-none" />
@@ -67,10 +87,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-xs text-accent-cyan font-semibold">{user.primaryGoal}{user.secondaryGoal ? ` + ${user.secondaryGoal}` : ''}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            {t('welcomeBack')}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-emerald to-emerald-400">{user.name ? user.name.split(' ')[0] : 'Athlete'}</span>
+            {history.length === 0 
+              ? (language === 'ar' ? `أهلاً بك يا ${user.name ? user.name.split(' ')[0] : 'بطل'}!` : `Welcome ${user.name ? user.name.split(' ')[0] : 'Athlete'}!`) 
+              : `${t('welcomeBack')}, ${user.name ? user.name.split(' ')[0] : 'Athlete'}`}
           </h1>
           <p className="text-sm text-slate-300 mt-1 max-w-xl">
-            {t('streakBanner', { streak: user.streakDays })}
+            {history.length === 0 
+              ? (language === 'ar' ? 'جاهز لتسجيل تمرينك الأول وتفعيل التحليلات الذكية.' : 'Ready to log your first session and activate AI analytics.')
+              : t('streakBanner', { streak: user.streakDays })}
           </p>
         </div>
 
@@ -104,7 +128,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* AI SMART TOOLS BAR (MOBILE & DESKTOP QUICK ACCESS) */}
+      {/* NEW USER ONBOARDING 3-STEP STARTER CHECKLIST */}
+      {history.length === 0 && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-background-card to-cyan-950/30 border border-accent-emerald/40 shadow-card space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-accent-emerald/20 flex items-center justify-center text-accent-emerald">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <h3 className="font-extrabold text-sm text-white">
+                {language === 'ar' ? '🚀 خطواتك لبداية تدريبية موفقة مع عزمك:' : '🚀 3 Steps to Launch Your Training on AZMK:'}
+              </h3>
+            </div>
+            <span className="text-xs font-mono font-bold text-accent-emerald bg-accent-emerald/10 px-2.5 py-1 rounded-full border border-accent-emerald/30">
+              1 / 3 {language === 'ar' ? 'مكتمل' : 'Done'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-2xl bg-background-elevated/80 border border-accent-emerald/30 flex items-start gap-2.5">
+              <span className="w-5 h-5 rounded-full bg-accent-emerald text-black font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">✓</span>
+              <div>
+                <p className="text-xs font-bold text-white">{language === 'ar' ? '1. إعداد الخطة المخصصة' : '1. Generate Protocol'}</p>
+                <p className="text-[11px] text-accent-emerald mt-0.5">{language === 'ar' ? 'تم تجهيز خطتك لـ 4 أسابيع بنجاح' : 'Your 4-week split is ready'}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-background-elevated/80 border border-accent-cyan/40 flex items-start gap-2.5">
+              <span className="w-5 h-5 rounded-full bg-accent-cyan text-black font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <div>
+                <p className="text-xs font-bold text-white">{language === 'ar' ? '2. إتمام تمرينك الأول' : '2. Complete First Workout'}</p>
+                <p className="text-[11px] text-slate-300 mt-0.5">{language === 'ar' ? 'سجل جولاتك لتفعيل بيانات الحجم والأوزان' : 'Log sets to activate data'}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-background-elevated/80 border border-border flex items-start gap-2.5">
+              <span className="w-5 h-5 rounded-full bg-background-card border border-border text-slate-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <div>
+                <p className="text-xs font-bold text-white">{language === 'ar' ? '3. الزيادة التدريجية والمدرب' : '3. AI Overload Targets'}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{language === 'ar' ? 'حساب أوزان الجلسة القادمة آلياً' : 'Automated load calculations'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI SMART TOOLS BAR */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           onClick={onOpenAIImport}
@@ -120,7 +189,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="px-1.5 py-0.2 rounded bg-accent-cyan/10 text-accent-cyan text-[9px] font-mono font-bold">REAL AI</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                {language === 'ar' ? 'الصق جدولك (سواء يوم أو عدة أيام) وسيقوم الـ AI بتوزيعه بدقة' : 'Paste workout text and Gemini AI will distribute days'}
+                {language === 'ar' ? 'الصق جدولك وسيقوم الـ AI بتوزيعه بدقة' : 'Paste workout text and Gemini AI will distribute days'}
               </p>
             </div>
           </div>
@@ -149,7 +218,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </div>
 
-      {/* 5 CORE ESSENTIAL METRICS (DYNAMIC MATHEMATICALLY CALCULATED) */}
+      {/* 5 CORE ESSENTIAL METRICS */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
         
         {/* Metric 1: Strength Delta */}
@@ -159,10 +228,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <TrendingUp className="w-4 h-4 text-accent-emerald" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.primaryLiftName}</p>
+            <p className="text-lg sm:text-xl font-black font-mono text-white">
+              {history.length > 0 ? analytics.primaryLiftName : (language === 'ar' ? 'تطور القوة' : 'Strength')}
+            </p>
             <div className="flex items-center gap-1 text-accent-emerald text-xs font-mono font-bold mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>+{analytics.strengthDeltaPercent}% ({analytics.strengthTimeframeWeeks}w)</span>
+              <span>
+                {history.length > 0 ? `+${analytics.strengthDeltaPercent}% (${analytics.strengthTimeframeWeeks}w)` : (language === 'ar' ? '0% (سجل أول تمرين)' : '0% (Start Set 1)')}
+              </span>
             </div>
           </div>
         </div>
@@ -177,7 +250,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.recent7dVolumeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
             <div className="flex items-center gap-1 text-accent-cyan text-xs font-mono font-bold mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{analytics.volumeDeltaPercent >= 0 ? `+${analytics.volumeDeltaPercent}%` : `${analytics.volumeDeltaPercent}%`} {t('vsAvg')}</span>
+              <span>
+                {history.length > 0 ? `${analytics.volumeDeltaPercent >= 0 ? `+${analytics.volumeDeltaPercent}%` : `${analytics.volumeDeltaPercent}%`} ${t('vsAvg')}` : (language === 'ar' ? '0 كجم أسبوعياً' : '0 kg / wk')}
+              </span>
             </div>
           </div>
         </div>
@@ -189,8 +264,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Activity className="w-4 h-4 text-accent-indigo" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.actualWorkoutsPerWeek} <span className="text-xs text-slate-400 font-normal">{t('workoutsPerWeek')}</span></p>
-            <p className="text-xs text-slate-400 mt-1">{analytics.goalAdherencePercent}% {t('goalAdherence')}</p>
+            <p className="text-lg sm:text-xl font-black font-mono text-white">
+              {analytics.actualWorkoutsPerWeek} <span className="text-xs text-slate-400 font-normal">/ {user.daysPerWeek || 4} {language === 'ar' ? 'أيام' : 'd'}</span>
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              {history.length > 0 ? `${analytics.goalAdherencePercent}% ${t('goalAdherence')}` : (language === 'ar' ? '0% هذا الأسبوع' : '0% adherence')}
+            </p>
           </div>
         </div>
 
@@ -202,7 +281,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <p className="text-lg sm:text-xl font-black font-mono text-amber-400">{analytics.prsThisMonth} PRs</p>
-            <p className="text-xs text-slate-400 mt-1">{t('prsThisMonth')}</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {history.length > 0 ? t('prsThisMonth') : (language === 'ar' ? 'في انتظار أول إنجاز' : 'Awaiting 1st PR')}
+            </p>
           </div>
         </div>
 
@@ -214,7 +295,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="w-full h-2.5 rounded-full bg-background-elevated overflow-hidden mb-2">
-              <div className="h-full rounded-full bg-gradient-to-r from-accent-emerald to-accent-cyan" style={{ width: `${Math.max(10, analytics.programProgressPercent)}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-accent-emerald to-accent-cyan" style={{ width: `${Math.max(5, analytics.programProgressPercent)}%` }} />
             </div>
             <p className="text-xs text-slate-300 font-medium truncate">{activeProgram.name || '4-Week Protocol'}</p>
           </div>
@@ -326,7 +407,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-xs font-mono">
                       <span className="text-slate-400">{t('targetToday')}:</span>
                       <span className="font-bold text-accent-emerald">
-                        {ex.id === 'barbell_bench_press' ? '62.5kg' : ex.id === 'barbell_back_squat' ? '105kg' : ex.id === 'incline_dumbbell_press' ? '28kg' : 'Ready'}
+                        {history.length > 0
+                          ? (ex.id === 'barbell_bench_press' ? '62.5kg' : ex.id === 'barbell_back_squat' ? '105kg' : ex.id === 'incline_dumbbell_press' ? '28kg' : 'Ready')
+                          : (user.experience === 'Beginner' ? (language === 'ar' ? '20 كجم (استكشافي)' : '20kg (Starter)') : user.experience === 'Intermediate' ? '45kg' : '60kg')}
                       </span>
                     </div>
                   </div>
@@ -348,15 +431,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs uppercase font-extrabold tracking-wider text-accent-indigo">{t('aiAssistantTitle')}</span>
-                <span className="px-2 py-0.5 rounded-full bg-accent-indigo/10 text-accent-indigo text-[10px] font-bold">{t('nextSessionTarget')}</span>
+                <span className="px-2 py-0.5 rounded-full bg-accent-indigo/10 text-accent-indigo text-[10px] font-bold">
+                  {history.length > 0 ? t('nextSessionTarget') : (language === 'ar' ? 'جاهز للبدء' : 'Ready')}
+                </span>
               </div>
               <p className="text-sm font-semibold text-white mt-1">
-                {language === 'ar' 
-                  ? 'تم تحليل أداء تمرين Bench Press ومستويات الـ RPE السابقة بدقة.'
-                  : 'Your Bench Press has increased with steady RPE adaptation over previous cycles.'}
+                {history.length > 0
+                  ? (language === 'ar' 
+                      ? 'تم تحليل أداء تمرين Bench Press ومستويات الـ RPE السابقة بدقة.'
+                      : 'Your Bench Press has increased with steady RPE adaptation over previous cycles.')
+                  : (language === 'ar'
+                      ? 'أنا كابتن عزام، مدربك الذكي المباشر. خطتك جاهزة لبدء أول تمرين اليوم.'
+                      : "I'm Coach Azzam, your AI strength coach. Your custom protocol is ready for session 1.")}
               </p>
               <p className="text-xs text-slate-300 mt-1">
-                🔥 {language === 'ar' ? 'التوصية المبرمجة:' : 'Recommendation:'} <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">65kg × 6–8</span> {language === 'ar' ? 'في التمرين القادم' : 'next workout'}.
+                {history.length > 0 ? (
+                  <>🔥 {language === 'ar' ? 'التوصية المبرمجة:' : 'Recommendation:'} <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">65kg × 6–8</span> {language === 'ar' ? 'في التمرين القادم' : 'next workout'}.</>
+                ) : (
+                  <>💡 {language === 'ar' ? 'توجيه البداية:' : 'Starter Tip:'} {language === 'ar' ? 'ابدأ الجولة الأولى بأوزان خفيفة وتكنيك مريح (RPE 7).' : 'Begin your first workout with comfortable weights (RPE 7).'}</>
+                )}
               </p>
             </div>
           </div>
@@ -364,17 +457,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onNavigate('ai_coach')}
-              className="px-4 py-2.5 rounded-xl bg-background-elevated hover:bg-background-hover border border-border text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-all"
+              className="px-4 py-2.5 rounded-xl bg-background-elevated hover:bg-background-hover border border-border text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-all active:scale-95"
             >
               <span>{t('askAiCoach')}</span>
               <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
             </button>
             <button
               onClick={startTodaysAutocompleteWorkout}
-              className="px-4 py-2.5 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black text-xs font-extrabold flex items-center gap-1.5 shadow-glow-sm transition-all"
+              className="px-4 py-2.5 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black text-xs font-extrabold flex items-center gap-1.5 shadow-glow-sm transition-all active:scale-95"
             >
               <Zap className="w-3.5 h-3.5 fill-black" />
-              <span>{t('applyTarget')}</span>
+              <span>{history.length > 0 ? t('applyTarget') : (language === 'ar' ? 'بدء التمرين' : 'Start')}</span>
             </button>
           </div>
 
@@ -388,13 +481,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Clock className="w-5 h-5 text-accent-cyan" />
             <h3 className="font-bold text-lg text-white">{t('recentWorkouts')}</h3>
           </div>
-          <button 
-            onClick={() => onNavigate('workouts')}
-            className="text-xs font-bold text-accent-cyan hover:underline flex items-center gap-1"
-          >
-            <span>{t('viewAll')}</span>
-            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-          </button>
+          {history.length > 0 && (
+            <button 
+              onClick={() => onNavigate('workouts')}
+              className="text-xs font-bold text-accent-cyan hover:underline flex items-center gap-1"
+            >
+              <span>{t('viewAll')}</span>
+              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            </button>
+          )}
         </div>
 
         {recentSessions.length > 0 ? (
@@ -440,8 +535,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ))}
           </div>
         ) : (
-          <div className="p-8 rounded-2xl bg-background-card border border-dashed border-border text-center">
-            <p className="text-sm text-slate-400">{language === 'ar' ? 'لا توجد تمارين سابقة حتى الآن. ابدأ تمرينك الأول الآن!' : 'No workouts logged yet. Start your first session now!'}</p>
+          <div className="p-8 rounded-3xl bg-background-card border border-dashed border-border/80 text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-accent-emerald/10 border border-accent-emerald/30 flex items-center justify-center text-accent-emerald">
+              <Dumbbell className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-bold text-white">
+              {language === 'ar' ? 'لا توجد تمارين مسجلة حتى الآن' : 'No workouts logged yet'}
+            </p>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+              {language === 'ar' 
+                ? 'اضغط على زر "ابدأ تمرين اليوم" بالأعلى لتسجيل جلستك الأولى وبناء تحليلاتك الشخصية.' 
+                : 'Tap "Start Today\'s Workout" above to record your first session and initiate your personal analytics.'}
+            </p>
+            <button
+              onClick={startTodaysAutocompleteWorkout}
+              className="px-6 py-2.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs shadow-glow-sm transition-all active:scale-95 inline-flex items-center gap-2"
+            >
+              <Play className="w-3.5 h-3.5 fill-black" />
+              <span>{t('startTodayWorkout')}</span>
+            </button>
           </div>
         )}
       </div>

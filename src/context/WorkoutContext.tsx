@@ -160,34 +160,98 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return str;
   };
 
+  const DEFAULT_CLEAN_USER: UserProfile = {
+    id: `user_${Date.now()}`,
+    name: '',
+    email: '',
+    experience: 'Intermediate',
+    primaryGoal: 'Muscle Gain',
+    secondaryGoal: 'Strength',
+    daysPerWeek: 4,
+    preferredDurationMinutes: 60,
+    availableEquipment: ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight'],
+    tier: 'free',
+    role: 'user',
+    isDemoUser: false,
+    referralCode: `AZMK${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+    streakDays: 0,
+    joinedDate: new Date().toISOString().split('T')[0],
+    hasCompletedOnboarding: false
+  };
+
   // State initialization with localStorage fallback
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('pulse_user');
-    return saved ? JSON.parse(saved) : MOCK_USER_PROFILE;
+    return saved ? JSON.parse(saved) : DEFAULT_CLEAN_USER;
   });
 
   const [exercises] = useState<Exercise[]>(() => getAllExercises());
 
   const [history, setHistory] = useState<WorkoutSession[]>(() => {
     const saved = localStorage.getItem('pulse_history');
-    return saved ? JSON.parse(saved) : generateHistoricalWorkouts();
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return [];
+      }
+    }
+    // If user is not specifically a demo user, start with 0 history
+    return [];
   });
 
   const [programs, setPrograms] = useState<Program[]>(() => {
     const saved = localStorage.getItem('pulse_programs');
-    return saved ? JSON.parse(saved) : [MOCK_PROGRAM];
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [MOCK_PROGRAM];
+      }
+    }
+    return [MOCK_PROGRAM];
   });
 
   const activeProgram = programs[0] || MOCK_PROGRAM;
 
   const [prs, setPrs] = useState<PRRecord[]>(() => {
     const saved = localStorage.getItem('pulse_prs');
-    return saved ? JSON.parse(saved) : MOCK_PRS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return [];
+      }
+    }
+    return [];
   });
 
   const [referralStats, setReferralStats] = useState<ReferralStats>(() => {
     const saved = localStorage.getItem('pulse_referral');
-    return saved ? JSON.parse(saved) : MOCK_REFERRAL_STATS;
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          code: 'AZMK25',
+          clicks: 0,
+          signups: 0,
+          paidUsers: 0,
+          rewardMonthsEarned: 0,
+          history: []
+        };
+      }
+    }
+    return {
+      code: user.referralCode || 'AZMK25',
+      clicks: 0,
+      signups: 0,
+      paidUsers: 0,
+      rewardMonthsEarned: 0,
+      history: []
+    };
   });
 
   // Active Live Workout State
@@ -205,23 +269,71 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [restTimerTotal, setRestTimerTotal] = useState(90);
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
 
-  // AI Chat State
-  const [aiMessages, setAiMessages] = useState<AIChatMessage[]>([
-    {
-      id: 'welcome_ai_msg',
-      sender: 'assistant',
-      text: `👋 Hey Kareem! I'm your **PULSE AI Coach**.
+  // Dynamic initial AI message based on actual history count & user name
+  const getInitialAiMessageText = (userName: string, histCount: number, lang: Language) => {
+    const displayName = userName ? userName.split(' ')[0] : (lang === 'ar' ? 'يا بطل' : 'Athlete');
+    
+    if (histCount === 0) {
+      if (lang === 'ar') {
+        return `👋 مرحباً بك ${displayName}! أنا **كابتن عزام**، مدربك الذكي المخصص في تطبيق عزمك.
 
-I have direct access to your 22 completed sessions, 1RM progression curves, and RPE history.
+حسابك جديد وجاهز لتسجيل أول تمرين لك. بمجرد إتمام جلستك الأولى، سأقوم بتحليل أدائك وتوليد نصائح الزيادة التدريجية (Progressive Overload) المخصصة لك بدقة!
 
-Try asking me:
-- *"Why has my bench stopped improving?"*
-- *"What should I do next workout?"*
-- *"Which muscle groups am I training the most?"*
-- *"Am I progressing?"*`,
-      timestamp: new Date().toISOString()
+💡 **جرب سؤالي الآن:**
+- *"كيف أختار أوزاني المناسبة للتمرين الأول؟"*
+- *"كيف أطبق مقياس الجهد RPE أثناء التمرين؟"*
+- *"وش أفضل طريقة للإحماء لتفادي الإصابات؟"*`;
+      } else {
+        return `👋 Welcome ${displayName}! I'm **Coach Azzam**, your dedicated AI Strength Coach on AZMK.
+
+Your account is clean and ready for your first session. Once you complete and log your first workout, I will analyze your performance and calculate your custom progressive overload targets!
+
+💡 **Try asking me:**
+- *"How do I choose safe starting weights for day 1?"*
+- *"How does RPE effort rating work?"*
+- *"What is the best warm-up to prevent joint strain?"*`;
+      }
     }
-  ]);
+
+    if (lang === 'ar') {
+      return `👋 مرحباً بك مجدداً ${displayName}! أنا **كابتن عزام**، مدربك الذكي.
+
+لدي وصول مباشر إلى **${histCount}** جلسة مسجلة في سجلك التدريبي الفعلي مع منحنيات الأوزان ومعدل الجهد RPE.
+
+🔥 **جرب سؤالي:**
+- *"كيف تطور أوزاني ومعدل قوتي؟"*
+- *"وش الوزن المستهدف للتمرين القادم؟"*
+- *"هل حجم تماريني الأسبوعي كافي للبناء العضلي؟"*`;
+    } else {
+      return `👋 Welcome back ${displayName}! I'm **Coach Azzam**, your AI Strength Coach.
+
+I have direct access to your **${histCount}** logged workout sessions, strength curves, and RPE history.
+
+🔥 **Try asking me:**
+- *"How has my strength progressed?"*
+- *"What is my recommended target for next workout?"*
+- *"Is my training volume optimal?"*`;
+    }
+  };
+
+  // AI Chat State
+  const [aiMessages, setAiMessages] = useState<AIChatMessage[]>(() => {
+    const saved = localStorage.getItem('pulse_ai_messages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return [
+      {
+        id: 'welcome_ai_msg',
+        sender: 'assistant',
+        text: getInitialAiMessageText(user.name, history.length, language),
+        timestamp: new Date().toISOString()
+      }
+    ];
+  });
   const [isAILoading, setIsAILoading] = useState(false);
 
   // Sync to LocalStorage
@@ -299,6 +411,10 @@ Try asking me:
    * Starts a brand new live workout session
    */
   const startWorkout = (name = 'Live Workout', templateExercises?: WorkoutExercise[]) => {
+    // Experience-based starter defaults (conservative exploratory weights)
+    const baseBenchWeight = user.experience === 'Beginner' ? 20 : user.experience === 'Intermediate' ? 45 : 60;
+    const baseTargetWeight = user.experience === 'Beginner' ? 22.5 : user.experience === 'Intermediate' ? 50 : 62.5;
+
     const defaultExs: WorkoutExercise[] = templateExercises || [
       {
         id: `we_${Date.now()}_0`,
@@ -306,9 +422,9 @@ Try asking me:
         order: 1,
         restTimerSeconds: 90,
         sets: [
-          { id: `s_${Date.now()}_1`, setNumber: 1, weight: 62.5, reps: 8, isCompleted: false, previousWeight: 60, previousReps: 8, targetWeight: 65, targetRepsMin: 6, targetRepsMax: 8 },
-          { id: `s_${Date.now()}_2`, setNumber: 2, weight: 62.5, reps: 8, isCompleted: false, previousWeight: 60, previousReps: 8, targetWeight: 65, targetRepsMin: 6, targetRepsMax: 8 },
-          { id: `s_${Date.now()}_3`, setNumber: 3, weight: 62.5, reps: 8, isCompleted: false, previousWeight: 60, previousReps: 8, targetWeight: 65, targetRepsMin: 6, targetRepsMax: 8 }
+          { id: `s_${Date.now()}_1`, setNumber: 1, weight: baseBenchWeight, reps: 8, rpe: 7, isCompleted: false, targetWeight: baseTargetWeight, targetRepsMin: 6, targetRepsMax: 8 },
+          { id: `s_${Date.now()}_2`, setNumber: 2, weight: baseBenchWeight, reps: 8, rpe: 7, isCompleted: false, targetWeight: baseTargetWeight, targetRepsMin: 6, targetRepsMax: 8 },
+          { id: `s_${Date.now()}_3`, setNumber: 3, weight: baseBenchWeight, reps: 8, rpe: 7.5, isCompleted: false, targetWeight: baseTargetWeight, targetRepsMin: 6, targetRepsMax: 8 }
         ]
       }
     ];
@@ -929,7 +1045,9 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
       preferredDurationMinutes: 60,
       availableEquipment: ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight'],
       tier: 'free',
-      referralCode: `JOIN${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      role: 'user',
+      isDemoUser: false,
+      referralCode: `AZMK${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
       streakDays: 0,
       joinedDate: new Date().toISOString().split('T')[0],
       hasCompletedOnboarding: false
@@ -953,7 +1071,7 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
       {
         id: 'welcome_ai_msg_clean',
         sender: 'assistant',
-        text: `👋 Welcome to **PULSE AI**! I'm ready to track your progress and calculate your progressive overload targets. Start logging your sets to begin building analytics.`,
+        text: getInitialAiMessageText('', 0, language),
         timestamp: new Date().toISOString()
       }
     ]);
@@ -961,13 +1079,26 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
 
   const loadPrepopulatedDemoAccount = () => {
     localStorage.clear();
-    const demoUser = { ...MOCK_USER_PROFILE, hasCompletedOnboarding: true };
+    const demoUser: UserProfile = { 
+      ...MOCK_USER_PROFILE, 
+      hasCompletedOnboarding: true,
+      isDemoUser: true,
+      role: 'admin'
+    };
     setUser(demoUser);
     setHistory(generateHistoricalWorkouts());
     setPrs(MOCK_PRS);
     setPrograms([MOCK_PROGRAM]);
     setReferralStats(MOCK_REFERRAL_STATS);
     setActiveWorkout(null);
+    setAiMessages([
+      {
+        id: 'welcome_ai_msg_demo',
+        sender: 'assistant',
+        text: getInitialAiMessageText(demoUser.name, 22, language),
+        timestamp: new Date().toISOString()
+      }
+    ]);
   };
 
   const resetAllDemoData = resetToCleanSlate;

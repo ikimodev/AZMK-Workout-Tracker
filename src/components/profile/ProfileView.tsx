@@ -243,12 +243,25 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onOpenOnbo
           </button>
 
           <button
-            onClick={() => onNavigate('admin')}
-            className="px-4 py-2.5 rounded-xl bg-accent-emerald/20 hover:bg-accent-emerald/30 text-accent-emerald text-xs font-bold border border-accent-emerald/50 flex items-center gap-2 transition-all active:scale-95 shadow-glow-sm"
+            onClick={() => {
+              loadPrepopulatedDemoAccount();
+              alert(language === 'ar' ? 'تم تحميل الحساب التجريبي التوضيحي بنجاح.' : 'Demo account loaded.');
+            }}
+            className="px-4 py-2.5 rounded-xl bg-background-elevated hover:bg-background-hover text-slate-300 text-xs font-bold border border-border flex items-center gap-2 transition-all active:scale-95"
           >
-            <span>📊</span>
-            <span>{language === 'ar' ? 'لوحة تحليلات الإدارة (Admin)' : 'Admin & Analytics'}</span>
+            <span>🧪</span>
+            <span>{language === 'ar' ? 'تحميل بيانات تجريبية توضيحية' : 'Load Demo Data (22 Sessions)'}</span>
           </button>
+
+          {user.role === 'admin' && (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="px-4 py-2.5 rounded-xl bg-accent-emerald/20 hover:bg-accent-emerald/30 text-accent-emerald text-xs font-bold border border-accent-emerald/50 flex items-center gap-2 transition-all active:scale-95 shadow-glow-sm"
+            >
+              <span>📊</span>
+              <span>{language === 'ar' ? 'لوحة تحليلات الإدارة (Admin)' : 'Admin & Analytics'}</span>
+            </button>
+          )}
         </div>
       </div>
 

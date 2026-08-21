@@ -155,6 +155,9 @@ export interface UserProfile {
   preferredDurationMinutes: number;
   availableEquipment: Equipment[];
   tier: 'free' | 'premium';
+  role?: 'user' | 'admin';
+  isDemoUser?: boolean;
+  startingBaselineOption?: 'experienced' | 'beginner_rpe';
   referralCode: string;
   streakDays: number;
   joinedDate: string;

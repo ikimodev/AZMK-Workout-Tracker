@@ -21,6 +21,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [duration, setDuration] = useState(60);
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
   const [startDayOption, setStartDayOption] = useState<'today' | 'tomorrow'>('today');
+  const [baselineOption, setBaselineOption] = useState<'experienced' | 'beginner_rpe'>('beginner_rpe');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const goalOptionsAr: { id: FitnessGoal; title: string; desc: string }[] = [
@@ -42,6 +43,57 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   ];
 
   const goalOptions = language === 'ar' ? goalOptionsAr : goalOptionsEn;
+
+  // Dynamic helper for split descriptions matching user experience level
+  const getSplitDescription = (numDays: number, exp: 'Beginner' | 'Intermediate' | 'Advanced') => {
+    if (language === 'ar') {
+      if (exp === 'Beginner') {
+        if (numDays === 2) return 'يومان: جدول شامل مبسط لتعلم التكنيك';
+        if (numDays === 3) return '3 أيام: شامل للجسم (Full Body A/B/C) - الخيار الأمثل للمبتدئين';
+        if (numDays === 4) return '4 أيام: علوي/سفلي بحجم تدريبي معتدل واستشفاء كافٍ للمبتدئين';
+        if (numDays === 5) return '5 أيام: تقسيم متكرر للمبتدئ';
+        return '6 أيام: تكرار عالي للمبتدئ';
+      }
+      if (exp === 'Advanced') {
+        if (numDays === 2) return 'يومان: علوي / سفلي عالي الكثافة';
+        if (numDays === 3) return '3 أيام: شامل للجسم مكثف ومتقدم';
+        if (numDays === 4) return '4 أيام: علوي وسفلي متقدم مع تركيز على نقاط الضعف';
+        if (numDays === 5) return '5 أيام: Push/Pull/Legs + Upper/Lower متقدم';
+        return '6 أيام: PPL × 2 تخصصي متقدم بحجم عالي';
+      }
+      // Intermediate default
+      if (numDays === 2) return 'يومان: علوي / سفلي مضغوط';
+      if (numDays === 3) return '3 أيام: شامل للجسم A/B/C';
+      if (numDays === 4) return '4 أيام: علوي وسفلي مع زيادة تدريجية للأوزان';
+      if (numDays === 5) return '5 أيام: Push/Pull/Legs + Upper/Lower';
+      return '6 أيام: PPL × 2';
+    } else {
+      if (exp === 'Beginner') {
+        if (numDays === 2) return '2 Days: Full Body Foundation';
+        if (numDays === 3) return '3 Days: Full Body A/B/C (Recommended for Beginners)';
+        if (numDays === 4) return '4 Days: Upper/Lower Balanced Split for Beginners';
+        return `${numDays} Days: Frequent Split`;
+      }
+      if (exp === 'Advanced') {
+        if (numDays === 4) return '4 Days: Advanced Upper/Lower Specialization';
+        return `${numDays} Days: High Volume Advanced Split`;
+      }
+      if (numDays === 2) return '2 Days: Upper / Lower';
+      if (numDays === 3) return '3 Days: Full Body A/B/C';
+      if (numDays === 4) return '4 Days: 4-Day Progressive Split';
+      if (numDays === 5) return '5 Days: 5-Day PPL+Upper/Lower';
+      return '6 Days: 6-Day PPL×2';
+    }
+  };
+
+  const handleSelectPrimaryGoal = (goal: FitnessGoal) => {
+    setPrimaryGoal(goal);
+    // If secondary goal was the same, switch it automatically to a complementary different goal
+    if (secondaryGoal === goal) {
+      const remaining = goalOptions.map(g => g.id).filter(id => id !== goal);
+      setSecondaryGoal(remaining[0] || 'Strength');
+    }
+  };
 
   const equipmentOptionsAr = [
     { id: 'Full Gym', title: 'نادي تجاري متكامل (Full Gym)', desc: 'بارات، دامبلز، أجهزة كيبل، وآلات متكاملة' },
@@ -72,7 +124,10 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       daysPerWeek: days,
       preferredDurationMinutes: duration,
       tier: 'free',
-      streakDays: 1,
+      role: 'user',
+      isDemoUser: false,
+      startingBaselineOption: baselineOption,
+      streakDays: 0,
       hasCompletedOnboarding: true,
       startDayOption,
       programStartDate: new Date().toISOString().split('T')[0]
@@ -156,7 +211,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder={language === 'ar' ? 'مثال: عبدالكريم أو بطل' : 'e.g. Kareem Al-Otaibi'}
+                placeholder={language === 'ar' ? 'مثال: عبدالكريم أو بطل' : 'e.g. Kareem'}
                 className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white font-semibold text-sm focus:outline-none focus:border-accent-emerald shadow-inner"
               />
             </div>
@@ -167,24 +222,37 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 <label className="text-xs font-bold text-accent-emerald uppercase font-mono tracking-wider">
                   {language === 'ar' ? '1. الهدف التدريبي الأساسي' : '1. Primary Fitness Goal'}
                 </label>
-                <span className="text-[10px] text-slate-400">{language === 'ar' ? 'التركيز الأول' : 'Main Focus'}</span>
+                <span className="text-[10px] text-accent-emerald font-semibold">
+                  {language === 'ar' ? 'اختر هدفاً واحداً يمثل أولويتك الرئيسية (التركيز الأول)' : 'Select your #1 primary priority'}
+                </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {goalOptions.slice(0, 4).map(item => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setPrimaryGoal(item.id)}
-                    className={`p-3 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
-                      primaryGoal === item.id
-                        ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm'
-                        : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                    }`}
-                  >
-                    <p className="font-bold text-xs text-white">{item.title}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{item.desc}</p>
-                  </button>
-                ))}
+                {goalOptions.slice(0, 4).map(item => {
+                  const isSelected = primaryGoal === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSelectPrimaryGoal(item.id)}
+                      className={`p-3 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
+                        isSelected
+                          ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm ring-1 ring-accent-emerald/50'
+                          : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-xs text-white">{item.title}</p>
+                        {isSelected && (
+                          <span className="text-[10px] font-bold text-accent-emerald bg-accent-emerald/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>{language === 'ar' ? 'تم الاختيار' : 'Selected'}</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{item.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -194,23 +262,41 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 <label className="text-xs font-bold text-accent-cyan uppercase font-mono tracking-wider">
                   {language === 'ar' ? '2. الهدف التدريبي الثانوي' : '2. Secondary Fitness Goal'}
                 </label>
-                <span className="text-[10px] text-slate-400">{language === 'ar' ? 'هدف مساند' : 'Supporting Objective'}</span>
+                <span className="text-[10px] text-slate-400">
+                  {language === 'ar' ? 'اختر هدفاً مسانداً يدعم هدفك الأساسي' : 'Select a complementary supporting goal'}
+                </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {goalOptions.map(item => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSecondaryGoal(item.id)}
-                    className={`p-2.5 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
-                      secondaryGoal === item.id
-                        ? 'bg-accent-cyan/20 border-accent-cyan text-white shadow-sm'
-                        : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                    }`}
-                  >
-                    <p className="font-bold text-xs text-white truncate">{item.title.split('(')[0]}</p>
-                  </button>
-                ))}
+                {goalOptions.map(item => {
+                  const isPrimary = item.id === primaryGoal;
+                  const isSelected = secondaryGoal === item.id;
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={isPrimary}
+                      onClick={() => setSecondaryGoal(item.id)}
+                      className={`p-2.5 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
+                        isPrimary
+                          ? 'opacity-40 bg-background-elevated/40 border-border text-slate-500 cursor-not-allowed'
+                          : isSelected
+                          ? 'bg-accent-cyan/20 border-accent-cyan text-white shadow-sm ring-1 ring-accent-cyan/50'
+                          : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="font-bold text-xs text-white truncate">{item.title.split('(')[0]}</p>
+                        {isSelected && (
+                          <Check className="w-3 h-3 text-accent-cyan stroke-[3] shrink-0" />
+                        )}
+                      </div>
+                      {isPrimary && (
+                        <span className="text-[9px] text-slate-500 block mt-0.5">{language === 'ar' ? '(الهدف الأساسي)' : '(Primary Goal)'}</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -250,19 +336,37 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                         : 'bg-background-elevated border-border text-slate-300'
                     }`}
                   >
-                    {language === 'ar' ? lvl.titleAr : lvl.titleEn}
+                    <div className="flex items-center justify-center gap-1">
+                      <span>{language === 'ar' ? lvl.titleAr : lvl.titleEn}</span>
+                      {experience === lvl.id && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {language === 'ar' ? 'أيام التمرين أسبوعياً:' : 'Days Per Week:'} <span className="text-accent-emerald font-mono font-bold">{days} {language === 'ar' ? 'أيام' : 'Days'}</span>
-                <span className="text-[11px] text-slate-400 font-normal ml-2 rtl:mr-2">
-                  ({days === 2 ? (language === 'ar' ? 'يومان: علوي / سفلي' : 'Upper / Lower') : days === 3 ? (language === 'ar' ? '3 أيام: شامل للجسم A/B/C' : 'Full Body A/B/C') : days === 4 ? (language === 'ar' ? '4 أيام: علوي وسفلي متقدم' : '4-Day Split') : days === 5 ? (language === 'ar' ? '5 أيام: Push/Pull/Legs+Upper/Lower' : '5-Day PPL+Upper/Lower') : (language === 'ar' ? '6 أيام: PPL × 2' : '6-Day PPL×2')})
-                </span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
+                  {language === 'ar' ? 'أيام التمرين أسبوعياً:' : 'Days Per Week:'} <span className="text-accent-emerald font-mono font-bold">{days} {language === 'ar' ? 'أيام' : 'Days'}</span>
+                </label>
+              </div>
+              <p className="text-[11px] text-accent-cyan font-medium mb-2">
+                • {getSplitDescription(days, experience)}
+              </p>
+
+              {/* Beginner Days Guidance Alert */}
+              {experience === 'Beginner' && days >= 4 && (
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] mb-2 leading-relaxed flex items-start gap-2">
+                  <span>💡</span>
+                  <span>
+                    {language === 'ar'
+                      ? 'للمبتدئين، نوصي بالبدء من يومين إلى 3 أيام أسبوعياً لبناء التكيف والاستشفاء الأمثل. يمكنك الاستمرار بـ 4 أيام إذا كانت لديك لياقة سابقة.'
+                      : 'For beginners, 2 to 3 days/week is ideal for optimal adaptation & recovery. You can continue with 4 days if you have prior activity.'}
+                  </span>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 {[2, 3, 4, 5, 6].map(d => (
                   <button
@@ -275,7 +379,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                         : 'bg-background-elevated border-border text-slate-300'
                     }`}
                   >
-                    {d}d
+                    {d} {language === 'ar' ? 'أيام' : 'd'}
                   </button>
                 ))}
               </div>
@@ -297,7 +401,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                         : 'bg-background-elevated border-border text-slate-300'
                     }`}
                   >
-                    {m}m
+                    {m} {language === 'ar' ? 'دقيقة' : 'min'}
                   </button>
                 ))}
               </div>
@@ -316,36 +420,83 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 onClick={() => setStep(3)}
                 className="flex-1 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
               >
-                <span>{language === 'ar' ? 'التالي: الأدوات المتاحة' : 'Next: Available Equipment'}</span>
+                <span>{language === 'ar' ? 'التالي: الأدوات وبداية الأوزان' : 'Next: Equipment & Baseline'}</span>
                 <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Available Equipment & 4-Week Free Routine Generation */}
+        {/* STEP 3: Available Equipment, Baseline Weights & 4-Week Routine Generation */}
         {step === 3 && (
           <div className="space-y-5 relative z-10">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
                 {language === 'ar' ? 'اختر الأدوات المتاحة لتمرينك' : 'Select Your Equipment Setup'}
               </label>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {equipmentOptions.map(item => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => setEquipment(item.id as any)}
-                    className={`w-full p-3.5 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
+                    className={`w-full p-3 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
                       equipment === item.id
                         ? 'bg-accent-emerald/15 border-accent-emerald text-white shadow-glow-sm'
                         : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                     }`}
                   >
-                    <p className="font-bold text-sm text-white">{item.title}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{item.desc}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-xs text-white">{item.title}</p>
+                      {equipment === item.id && <Check className="w-3.5 h-3.5 text-accent-emerald stroke-[3]" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{item.desc}</p>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Baseline Weight Preference (Safety & Baseline Collection) */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                {language === 'ar' ? 'كيف تود تحديد أوزان بداية تمرينك الأول؟' : 'How should we suggest your starting weights?'}
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBaselineOption('beginner_rpe')}
+                  className={`p-3 rounded-2xl border text-left rtl:text-right transition-all ${
+                    baselineOption === 'beginner_rpe'
+                      ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-sm'
+                      : 'bg-background-elevated border-border text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-xs text-white">{language === 'ar' ? 'استكشاف الأوزان بـ RPE (موصى به)' : 'RPE-Guided Starter (Recommended)'}</p>
+                    {baselineOption === 'beginner_rpe' && <Check className="w-3 h-3 text-accent-emerald stroke-[3]" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {language === 'ar' ? 'أوزان خفيفة وتكنيك مريح مع التركيز على مقياس الجهد' : 'Conservative starter weights focusing on movement quality'}
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setBaselineOption('experienced')}
+                  className={`p-3 rounded-2xl border text-left rtl:text-right transition-all ${
+                    baselineOption === 'experienced'
+                      ? 'bg-accent-cyan/20 border-accent-cyan text-white shadow-sm'
+                      : 'bg-background-elevated border-border text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-xs text-white">{language === 'ar' ? 'لدي أوزان سابقة معروفة' : 'I Have Prior Lifting Experience'}</p>
+                    {baselineOption === 'experienced' && <Check className="w-3 h-3 text-accent-cyan stroke-[3]" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {language === 'ar' ? 'سأقوم بضبط أوزاني المعتادة يدوياً في الجولة الأولى' : 'Manually adjust customary working weights in set 1'}
+                  </p>
+                </button>
               </div>
             </div>
 
@@ -364,7 +515,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                       : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  <p className="font-bold text-xs">{language === 'ar' ? '🟢 ابدأ اليوم (Day 1 اليوم)' : '🟢 Start Today (Day 1 Today)'}</p>
+                  <p className="font-bold text-xs">{language === 'ar' ? '🟢 ابدأ اليوم (اليوم 1 يبدأ اليوم)' : '🟢 Start Today (Day 1 Today)'}</p>
                   <p className={`text-[10px] mt-0.5 ${startDayOption === 'today' ? 'text-black/80 font-medium' : 'text-slate-400'}`}>
                     {language === 'ar' ? 'أول تمرين يبدأ فوراً اليوم' : 'First workout starts today'}
                   </p>
@@ -381,7 +532,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 >
                   <p className="font-bold text-xs">{language === 'ar' ? '🔵 ابدأ غداً (اليوم راحة وتجهيز)' : '🔵 Start Tomorrow (Prep Today)'}</p>
                   <p className={`text-[10px] mt-0.5 ${startDayOption === 'tomorrow' ? 'text-black/80 font-medium' : 'text-slate-400'}`}>
-                    {language === 'ar' ? 'اليوم راحة وتجهيز، Day 1 يبدأ غداً' : 'Today is rest, Day 1 starts tomorrow'}
+                    {language === 'ar' ? 'اليوم راحة وتجهيز، اليوم 1 يبدأ غداً' : 'Today is rest, Day 1 starts tomorrow'}
                   </p>
                 </button>
               </div>
@@ -392,11 +543,11 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               <Zap className="w-5 h-5 text-accent-emerald shrink-0 mt-0.5" />
               <div className="text-xs text-slate-200 leading-relaxed">
                 <strong className="text-accent-emerald font-bold block mb-0.5">
-                  {language === 'ar' ? 'خطة 4 أسابيع مجانية بالذكاء الاصطناعي:' : 'Free 4-Week Periodized Routine:'}
+                  {language === 'ar' ? 'ملخص خطة الـ 4 أسابيع المجانية بالذكاء الاصطناعي:' : 'Free 4-Week Periodized Routine:'}
                 </strong>
                 {language === 'ar'
-                  ? `سيقوم نظام عزمك الذكي بتجميع جدول مخصص لـ ${days} أيام أسبوعياً يبدأ (${startDayOption === 'today' ? 'اليوم' : 'غداً'}) مع زيادة تدريجية للأوزان يركز على ${primaryGoal} مع تركيز مساند على ${secondaryGoal}.`
-                  : `AZMK AI will assemble your personalized ${days}-day protocol starting (${startDayOption === 'today' ? 'today' : 'tomorrow'}) optimized for ${primaryGoal} with secondary emphasis on ${secondaryGoal}.`}
+                  ? `التركيز الرئيسي: ${primaryGoal}. التركيز المساند: ${secondaryGoal}. جدول مخصص لـ ${days} أيام أسبوعياً بمستوى ${experience === 'Beginner' ? 'مبتدئ' : experience === 'Intermediate' ? 'متوسط' : 'متقدم'} يبدأ (${startDayOption === 'today' ? 'اليوم' : 'غداً'}).`
+                  : `Main Focus: ${primaryGoal}. Supporting Focus: ${secondaryGoal}. Tailored for ${days} days/week at ${experience} level starting (${startDayOption === 'today' ? 'today' : 'tomorrow'}).`}
               </div>
             </div>
 

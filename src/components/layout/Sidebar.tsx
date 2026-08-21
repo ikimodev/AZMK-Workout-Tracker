@@ -31,30 +31,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { user, activeWorkout, startTodaysAutocompleteWorkout, startWorkout, language, t } = useWorkout();
 
-  const navItems = [
+  const primaryNavItems = [
     { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
+    { id: 'workouts', label: activeWorkout ? (language === 'ar' ? 'تمرين نشط' : 'Active Workout') : t('workouts'), icon: Dumbbell, badge: activeWorkout ? t('activeTag') : undefined },
     { id: 'calendar', label: t('calendar'), icon: CalendarDays },
-    { id: 'workouts', label: t('workouts'), icon: Dumbbell, badge: activeWorkout ? t('activeTag') : undefined },
-    { id: 'programs', label: t('programs'), icon: CalendarDays },
     { id: 'progress', label: t('progress'), icon: TrendingUp },
     { id: 'ai_coach', label: t('aiCoach'), icon: Bot, highlight: true },
-    { id: 'exercises', label: t('exercises'), icon: BookOpen },
+  ];
+
+  const secondaryNavItems = [
+    { id: 'programs', label: t('programs'), icon: CalendarDays },
     { id: 'prs', label: t('prs'), icon: Trophy },
+    { id: 'exercises', label: t('exercises'), icon: BookOpen },
     { id: 'referrals', label: t('referrals'), icon: Users },
     { id: 'premium', label: t('pricing'), icon: Sparkles },
     { id: 'profile', label: t('profile'), icon: User },
-    { id: 'admin', label: language === 'ar' ? 'لوحة الإدارة 📊' : 'Admin & Analytics 📊', icon: BarChart3 },
+    ...(user.role === 'admin' ? [{ id: 'admin', label: language === 'ar' ? 'لوحة الإدارة 📊' : 'Admin & Analytics 📊', icon: BarChart3 }] : [])
   ];
 
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-background-secondary/60 border-r rtl:border-r-0 rtl:border-l border-border p-4 sticky top-[65px] h-[calc(100vh-65px)] overflow-y-auto">
       
       {/* Quick Start / Autocomplete CTA */}
-      <div className="mb-6">
+      <div className="mb-5">
         {!activeWorkout ? (
           <button
             onClick={startTodaysAutocompleteWorkout}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-accent-emerald to-emerald-500 hover:from-emerald-400 hover:to-emerald-500 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all transform active:scale-[0.98]"
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-accent-emerald to-emerald-500 hover:from-emerald-400 hover:to-emerald-500 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-sm transition-all transform active:scale-[0.98]"
           >
             <Play className="w-4 h-4 fill-black" />
             <span>{t('startTodayWorkout')}</span>
@@ -62,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <button
             onClick={() => onNavigate('active_workout')}
-            className="w-full py-3 px-4 rounded-xl bg-emerald-950/80 border border-accent-emerald text-emerald-300 font-bold text-sm flex items-center justify-center gap-2 shadow-glow-sm"
+            className="w-full py-3 px-4 rounded-2xl bg-emerald-950/80 border border-accent-emerald text-emerald-300 font-bold text-xs flex items-center justify-center gap-2 shadow-glow-sm"
           >
             <div className="w-2 h-2 rounded-full bg-accent-emerald animate-ping" />
             <span>{t('resumeWorkout')}</span>
@@ -70,9 +73,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Main Navigation Links */}
-      <nav className="space-y-1.5 flex-1">
-        {navItems.map((item) => {
+      {/* Primary Navigation Links */}
+      <nav className="space-y-1">
+        <div className="px-2 pb-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 font-mono">
+            {language === 'ar' ? 'القائمة الرئيسية' : 'MAIN MENU'}
+          </p>
+        </div>
+        {primaryNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id || (item.id === 'workouts' && activeTab === 'active_workout');
 
@@ -80,28 +88,66 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
-                  ? 'bg-accent-emerald/15 text-accent-emerald border border-accent-emerald/30 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-background-elevated'
+                  ? 'bg-accent-emerald/15 text-accent-emerald border border-accent-emerald/40 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-background-elevated'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-accent-emerald' : 'text-slate-400'}`} />
+              <div className="flex items-center gap-2.5">
+                <Icon className={`w-4 h-4 ${isActive ? 'text-accent-emerald' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </div>
-              {item.badge && (
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-accent-emerald text-black animate-pulse">
-                  {item.badge}
-                </span>
-              )}
-              {item.highlight && !isActive && (
-                <span className="w-2 h-2 rounded-full bg-accent-indigo" />
-              )}
+              <div className="flex items-center gap-1.5">
+                {item.badge && (
+                  <span className="text-[9px] uppercase font-mono font-bold px-1.5 py-0.2 rounded-full bg-accent-emerald text-black animate-pulse">
+                    {item.badge}
+                  </span>
+                )}
+                {isActive && (
+                  <span className="text-[10px] text-accent-emerald font-bold">✓</span>
+                )}
+                {item.highlight && !isActive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-indigo" />
+                )}
+              </div>
             </button>
           );
         })}
       </nav>
+
+      {/* Secondary / More Tools Navigation */}
+      <div className="pt-4 mt-4 border-t border-border/80 space-y-1">
+        <div className="px-2 pb-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 font-mono">
+            {language === 'ar' ? 'أدوات إضافية والمزيد' : 'MORE TOOLS'}
+          </p>
+        </div>
+        {secondaryNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-background-elevated text-accent-cyan border border-accent-cyan/40 font-bold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-background-elevated/60'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Icon className={`w-4 h-4 ${isActive ? 'text-accent-cyan' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+              </div>
+              {isActive && (
+                <span className="text-[10px] text-accent-cyan font-bold">✓</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* AI & Manual Workout Creation Tools */}
       <div className="pt-4 mt-4 border-t border-border space-y-2">

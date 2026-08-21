@@ -44,6 +44,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     reorderExercisesInActiveWorkout,
     finishActiveWorkout, 
     cancelActiveWorkout,
+    language,
     t
   } = useWorkout();
 
@@ -177,18 +178,26 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
 
                     {/* Previous vs Target Benchmark Line */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mt-1">
-                      <span className="text-slate-400">
-                        {t('last')}: <strong className="text-slate-200 font-mono">{exSummary.lastWeight}kg × {exSummary.lastReps}</strong>
-                      </span>
-                      <span className="text-slate-500">•</span>
-                      <span className="text-slate-400">
-                        {t('best')}: <strong className="text-slate-200 font-mono">{exSummary.allTimeBestWeight}kg × {exSummary.allTimeBestReps}</strong>
-                      </span>
-                      <span className="text-slate-500">•</span>
-                      <span className="text-accent-emerald flex items-center gap-1 font-bold font-mono">
-                        {t('target')}: {exSummary.targetWeight}kg × {exSummary.targetRepsMin}–{exSummary.targetRepsMax}
-                        <span className="text-[10px] bg-accent-emerald/10 px-1 py-0.2 rounded">↑ +{exSummary.improvementPercentage}%</span>
-                      </span>
+                      {exSummary.lastWeight > 0 ? (
+                        <>
+                          <span className="text-slate-400">
+                            {t('last')}: <strong className="text-slate-200 font-mono">{exSummary.lastWeight}kg × {exSummary.lastReps}</strong>
+                          </span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-slate-400">
+                            {t('best')}: <strong className="text-slate-200 font-mono">{exSummary.allTimeBestWeight}kg × {exSummary.allTimeBestReps}</strong>
+                          </span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-accent-emerald flex items-center gap-1 font-bold font-mono" title="Suggested from last session (+2.5kg progressive overload)">
+                            {t('target')}: {exSummary.targetWeight}kg × {exSummary.targetRepsMin}–{exSummary.targetRepsMax}
+                            <span className="text-[10px] bg-accent-emerald/10 px-1 py-0.2 rounded">↑ +{exSummary.improvementPercentage}%</span>
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-accent-cyan flex items-center gap-1 font-bold font-mono text-[11px]">
+                          🎯 {language === 'ar' ? 'هدف البداية: وزن استكشافي خفيف مع RPE 7' : 'Starter Target: Exploratory load @ RPE 7'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -249,16 +258,16 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
               </div>
 
               {/* Sets Table */}
-              <div className="space-y-2">
+              <div className="p-4 sm:p-5 space-y-2.5">
                 
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-2 px-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  <div className="col-span-1 text-center">{t('set')}</div>
-                  <div className="col-span-3 text-center">{t('previous')}</div>
-                  <div className="col-span-3 text-center">{t('weightKg')}</div>
-                  <div className="col-span-2 text-center">{t('reps')}</div>
-                  <div className="col-span-2 text-center">{t('rpe')}</div>
-                  <div className="col-span-1 text-center">{t('done')}</div>
+                {/* Sets Header */}
+                <div className="grid grid-cols-12 gap-2 text-center text-[11px] font-mono uppercase font-bold text-slate-400 px-2 pb-1 border-b border-border/60">
+                  <div className="col-span-1">{t('setCol')}</div>
+                  <div className="col-span-3">{t('previousCol')}</div>
+                  <div className="col-span-3">{t('weightKgCol')}</div>
+                  <div className="col-span-2">{t('repsCol')}</div>
+                  <div className="col-span-2">{t('rpeCol')}</div>
+                  <div className="col-span-1">{t('doneCol')}</div>
                 </div>
 
                 {/* Set Rows */}
@@ -282,21 +291,37 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                         {set.previousWeight ? `${set.previousWeight} × ${set.previousReps}` : '—'}
                       </div>
 
-                      {/* Weight Input (kg) */}
-                      <div className="col-span-3 flex items-center justify-center">
-                        <div className="relative w-full max-w-[90px]">
+                      {/* Weight Input (kg) with quick +/- buttons */}
+                      <div className="col-span-3 flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => updateSet(exIdx, setIdx, { weight: Math.max(0, (set.weight || 0) - 2.5) })}
+                          className="w-5 h-6 rounded bg-background-card hover:bg-background-elevated border border-border text-[10px] text-slate-400 font-bold"
+                          title="-2.5kg"
+                        >
+                          -
+                        </button>
+                        <div className="relative w-full max-w-[65px]">
                           <input
                             type="number"
                             step="0.5"
                             inputMode="decimal"
                             value={set.weight || ''}
                             onChange={(e) => updateSet(exIdx, setIdx, { weight: parseFloat(e.target.value) || 0 })}
-                            className={`w-full py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
+                            className={`w-full py-1.5 px-1 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
                               set.isCompleted ? 'border-accent-emerald/40 text-accent-emerald' : 'border-border text-white'
                             }`}
                             placeholder="0"
                           />
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => updateSet(exIdx, setIdx, { weight: (set.weight || 0) + 2.5 })}
+                          className="w-5 h-6 rounded bg-background-card hover:bg-background-elevated border border-border text-[10px] text-slate-400 font-bold"
+                          title="+2.5kg"
+                        >
+                          +
+                        </button>
                       </div>
 
                       {/* Reps Input */}

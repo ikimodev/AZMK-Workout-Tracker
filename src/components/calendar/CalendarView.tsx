@@ -297,6 +297,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
       {/* Monthly Calendar Grid */}
       <div className="bg-background-card border border-border rounded-3xl p-4 sm:p-6 shadow-card overflow-hidden">
         
+        {/* Status Legend */}
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5 px-3 py-2.5 mb-4 rounded-2xl bg-background-elevated/40 border border-border/60 text-xs font-semibold text-slate-300">
+          <span className="text-slate-400 font-bold font-mono text-[10px] uppercase">
+            {language === 'ar' ? 'دليل الألوان:' : 'LEGEND:'}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald shadow-glow-sm" />
+            <span className="text-xs">{language === 'ar' ? 'مكتمل' : 'Completed'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent-indigo" />
+            <span className="text-xs">{language === 'ar' ? 'مجدول' : 'Scheduled'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
+            <span className="text-xs">{language === 'ar' ? 'يوم راحة' : 'Rest Day'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent-cyan" />
+            <span className="text-xs">{language === 'ar' ? 'نشاط / كارديو' : 'Activity'}</span>
+          </div>
+        </div>
+
         {/* Day of Week Headers */}
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2 text-center text-xs font-bold font-mono uppercase tracking-wider text-slate-400">
           {weekDayHeaders.map((dh, idx) => (

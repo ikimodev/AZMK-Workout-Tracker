@@ -11,6 +11,8 @@ export const MOCK_USER_PROFILE: UserProfile = {
   preferredDurationMinutes: 60,
   availableEquipment: ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight'],
   tier: 'premium',
+  role: 'admin',
+  isDemoUser: true,
   referralCode: 'KAREEM25',
   streakDays: 14,
   joinedDate: '2026-06-01'

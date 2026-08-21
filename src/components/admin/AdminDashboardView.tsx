@@ -33,8 +33,33 @@ interface AdminDashboardViewProps {
 }
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNavigate }) => {
-  const { language } = useWorkout();
+  const { user, language } = useWorkout();
   
+  // Security guard: If user is not an admin, immediately block and display no admin metrics
+  if (user.role !== 'admin') {
+    return (
+      <div className="p-8 max-w-lg mx-auto text-center bg-background-card rounded-3xl border border-border space-y-4 animate-fade-in my-12 shadow-2xl">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+          <Lock className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-white">
+          {language === 'ar' ? 'منطقة إدارية مقيدة' : 'Access Restricted — Admin Only'}
+        </h2>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {language === 'ar' 
+            ? 'هذه الصفحة مخصصة لمدراء النظام فقط ولا تتوفر لحسابات المتدربين العاديين. تم تأمين البيانات.' 
+            : 'This section is restricted to authorized administrators and contains no public metrics.'}
+        </p>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="px-6 py-2.5 rounded-2xl bg-accent-emerald text-black font-extrabold text-xs shadow-glow-sm transition-all active:scale-95"
+        >
+          {language === 'ar' ? 'العودة إلى لوحة التحكم' : 'Return to Dashboard'}
+        </button>
+      </div>
+    );
+  }
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return sessionStorage.getItem('azmk_admin_auth') === 'true';
   });

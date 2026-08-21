@@ -143,36 +143,59 @@ export const queryAICoach = async (
   
   const containsArabic = /[\u0600-\u06FF]/.test(userMessage) || context.isArabic;
 
-  // 0. MEDICAL / INJURY SAFETY GUARD
+  // 0. MEDICAL / INJURY / EMERGENCY SAFETY GUARD
   if (
     lowerMsg.includes('pain') || 
     lowerMsg.includes('hurt') || 
     lowerMsg.includes('injury') || 
     lowerMsg.includes('shoulder ache') || 
     lowerMsg.includes('sharp pain') ||
+    lowerMsg.includes('chest pain') ||
+    lowerMsg.includes('breath') ||
+    lowerMsg.includes('dizzy') ||
+    lowerMsg.includes('faint') ||
+    lowerMsg.includes('numb') ||
+    lowerMsg.includes('tingling') ||
     lowerMsg.includes('الم') ||
     lowerMsg.includes('ألم') ||
     lowerMsg.includes('إصابة') ||
     lowerMsg.includes('اصابة') ||
-    lowerMsg.includes('وجع')
+    lowerMsg.includes('وجع') ||
+    lowerMsg.includes('صدر') && (lowerMsg.includes('الم') || lowerMsg.includes('ألم') || lowerMsg.includes('ضيق')) ||
+    lowerMsg.includes('تنفس') ||
+    lowerMsg.includes('دوخة') ||
+    lowerMsg.includes('اغماء') ||
+    lowerMsg.includes('إغماء') ||
+    lowerMsg.includes('تنميل') ||
+    lowerMsg.includes('خدر') ||
+    lowerMsg.includes('ديسك') ||
+    lowerMsg.includes('تمزق')
   ) {
-    const textAr = `⚠️ **تنبيه وإرشادات السلامة الطبية (كابتن عزام)**:
+    const isRedFlagEmergency = 
+      lowerMsg.includes('chest') || lowerMsg.includes('breath') || lowerMsg.includes('faint') ||
+      lowerMsg.includes('صدر') || lowerMsg.includes('تنفس') || lowerMsg.includes('إغماء') || lowerMsg.includes('اغماء');
 
-أهلاً يا بطل، لاحظت أنك ذكرت شعورك بألم أو إصابة. كمدرب ذكي، صحتك وسلامة مفاصلك هي الأولوية القصوى ولا يمكنني تقديم تشخيص طبي مباشر.
+    const textAr = `⚠️ **تنبيه وإرشادات السلامة الطبية الصارمة (كابتن عزام)**:
 
-### 📋 التوجيهات الفورية:
-1. **أوقف الحركة المسببة للألم فوراً**: لا تضغط على المفصل أو الوتر إذا كان هناك ألم حاد.
-2. **استشارة طبيب عظام أو أخصائي علاج طبيعي**: للتأكد من ميكانيكية المفصل وسلامة الأربطة.
-3. **البدائل الحركية الآمنة**: إذا كان الألم خفيفاً في الكتف أثناء البنش برس، يمكنك بعد التعافي استخدام **Neutral Grip Dumbbell Press** (قبضة محايدة) أو **Floor Press** لتقليل الإجهاد على مفصل الكتف.`;
+أهلاً ${context.userName || 'يا بطل'}، لاحظت أنك تشير إلى شعور بألم أو إصابة أو أعراض غير معتادة. كمدرب ذكي، **صحتك وسلامتك البدنية هي الأولوية القصوى دائماً**، وتطبيق عزمك **لا يقدم أي تشخيص أو استشارة طبية**.
 
-    const textEn = `⚠️ **Medical & Safety Advisory (Coach Azzam)**:
+${isRedFlagEmergency ? `🚨 **تنبيه حالات الطوارئ**: إذا كنت تشعر بألم في الصدر، ضيق تنفس، خدر مفاجئ، أو دوخة حادة، يرجى **التوقف فوراً وطلب الرعاية الطبية الطارئة**.` : ''}
 
-I noticed you mentioned discomfort or pain. As your AI Coach, your joint longevity is priority #1.
+### 📋 بروتوكول السلامة الإلزامي:
+1. **أوقف التمرين فوراً**: لا تواصل رفع الأوزان أو الضغط على المفصل أو العضلة المصابة.
+2. **استشارة طبيب مختص أو أخصائي علاج طبيعي**: للحصول على فحص سريري دقيق وتحديد سلامة الأربطة والغضاريف.
+3. **العودة الآمنة**: لا تستأنف رفع الأوزان إلا بعد الشفاء التام والحصول على الموافقة الطبية، مع تفضيل البدائل الحركية الآمنة للمفاصل.`;
 
-### Immediate Steps:
-1. **Discontinue the provoking movement immediately**: Do not push through sharp joint or tendon pain.
-2. **Consult a Physical Therapist / Orthopedic Specialist**: Ensure proper joint mechanics.
-3. **Safe Biomechanical Alternatives**: Consider switching to **Neutral Grip Dumbbell Press** or **Floor Press** once cleared.`;
+    const textEn = `⚠️ **Strict Medical & Safety Advisory (Coach Azzam)**:
+
+Hey ${context.userName || 'Athlete'}, I noticed you mentioned pain, discomfort, or potential injury. As your AI Coach, **your health and joint longevity are top priority**, and AZMK **does not provide medical diagnosis or advice**.
+
+${isRedFlagEmergency ? `🚨 **EMERGENCY ADVISORY**: If experiencing chest pressure, shortness of breath, severe dizziness, or sudden numbness, **stop immediately and seek emergency medical care**.` : ''}
+
+### 📋 Mandatory Safety Protocol:
+1. **Discontinue exercise immediately**: Do not push through sharp joint, tendon, or spine pain.
+2. **Consult a Doctor or Physical Therapist**: Receive proper medical assessment.
+3. **Safe Return**: Resume training only after medical clearance.`;
 
     return {
       id: `ai_msg_${Date.now()}`,
@@ -190,9 +213,36 @@ I noticed you mentioned discomfort or pain. As your AI Coach, your joint longevi
     lowerMsg.includes('plateau') ||
     lowerMsg.includes('وقف') ||
     lowerMsg.includes('بنش') ||
-    lowerMsg.includes('صدر') ||
     lowerMsg.includes('وزني')
   ) {
+    if (context.history.length === 0) {
+      const replyCleanAr = `### 📊 حالة تمرين Bench Press (كابتن عزام)
+
+أهلاً ${context.userName || 'يا بطل'}! حسابك جديد ولم تقم بتسجيل أي جلسة تمرين للبنش برس في سجلك الفعلي حتى الآن.
+
+💡 **نصيحة لبداية قوية:**
+1. ابدأ جلستك الأولى بوزن استكشافي خفيف (مثل البار بدون أوزان 20 كجم إذا كنت مبتدئاً، أو 40-50 كجم إذا كانت لديك خبرة).
+2. سجل الأوزان والعدات الفعلية بعد كل جولة.
+3. فور حفظ أول تمرين، سأقوم بحساب قوة الـ 1RM التقريبية وتوليد أهداف الزيادة التدريجية للجلسة القادمة!`;
+
+      const replyCleanEn = `### 📊 Bench Press Status (Coach Azzam)
+
+Hey ${context.userName || 'Athlete'}! Your account is fresh and no Bench Press workouts are logged in your history yet.
+
+💡 **Starter Tip:**
+1. Start your first session with conservative exploratory weight (empty bar 20kg for beginners, or 40-50kg for intermediate).
+2. Log your actual weight, reps, and RPE after each set.
+3. Once logged, I will calculate your estimated 1RM and automated progressive overload targets!`;
+
+      return {
+        id: `ai_msg_${Date.now()}`,
+        sender: 'assistant',
+        text: containsArabic ? replyCleanAr : replyCleanEn,
+        timestamp: new Date().toISOString(),
+        toolCalls: []
+      };
+    }
+
     const benchData = tools.get_exercise_history('barbell_bench_press', 8);
     const weeklyVol = tools.get_weekly_volume();
 
@@ -200,61 +250,36 @@ I noticed you mentioned discomfort or pain. As your AI Coach, your joint longevi
       id: `tool_${Date.now()}_1`,
       toolName: 'get_exercise_history',
       arguments: { exerciseId: 'barbell_bench_press', weeks: 8 },
-      resultSummary: `Found ${benchData.totalSessionsFound} sessions. Progression: 55kg × 8 (W1) ➔ 60kg × 8 (W3-4) ➔ 62.5kg × 8 @ RPE 8.5 (W8).`,
-      timestamp: new Date().toLocaleTimeString()
-    });
-
-    toolLogs.push({
-      id: `tool_${Date.now()}_2`,
-      toolName: 'get_weekly_volume',
-      arguments: {},
-      resultSummary: `Calculated weekly push volume: ~8,400kg - 9,200kg across workouts.`,
+      resultSummary: `Found ${benchData.totalSessionsFound} sessions in verified user history.`,
       timestamp: new Date().toLocaleTimeString()
     });
 
     const replyAr = `### 📊 تحليل أداء تمرين Bench Press (من كابتن عزام)
 
-أهلاً ${context.userName || 'يا بطل'}! قمت بفحص بياناتك المسجلة لتمرين **Barbell Bench Press** على مدار الأسابيع الماضية:
+أهلاً ${context.userName || 'يا بطل'}! قمت بفحص بياناتك المسجلة لتمرين **Barbell Bench Press** في سجلك التدريبي:
 
-| الفترة | الوزن × العدات | الحجم التدريبي | معدل الجهد (RPE) |
-| :--- | :--- | :--- | :--- |
-| **الأسبوع 1** | 55.0 kg × 8 | 1,320 kg | 7.5 |
-| **الأسبوع 3** | 60.0 kg × 8 | 1,440 kg | 8.0 |
-| **الأسبوع 5** | 60.0 kg × 7 | 1,420 kg | 9.0 |
-| **الأسبوع الأخير** | **62.5 kg × 8** | **1,500 kg** | **8.5** |
-
-### 🎯 الاستنتاج الرياضي:
-1. **مستواك لم يتوقف إطلاقاً**: نجحت في كسر حاجز الـ 60kg وسجلت **62.5kg × 8** بمعدل RPE ممتاز (8.5)، بزيادة قوة حقيقية **+4.2%**.
-2. **التكرار الأسبوعي**: تتمرن الصدر بمعدل 1.8 مرة أسبوعياً وهو المدى المثالي للبناء العضلي.
+- عدد الجلسات المسجلة: **${benchData.totalSessionsFound}** جلسة.
+- مستوى التطور: يتم تطبيق مبدأ الزيادة التدريجية (Double Progression) برفع الأوزان عندما تصل للحد الأعلى من العدات بمعدل RPE ≤ 8.5.
 
 ### 🚀 الخطة للتمرين القادم:
-- **الهدف المستهدف**: ضع **65.0 kg** على البار.
-- **العدات**: استهدف **6 إلى 8 عدات** في الجولة الأولى. إذا كان RPE ≤ 8.5 استمر على 65kg، وإذا كان أعلى خفف إلى 62.5kg لتجميع الحجم.`;
+- استهدف الحفاظ على أداء حركي سليم، وزيادة الوزن بمقدار **+2.5 كجم** عندما تنجز جميع الجولات بالعدات المستهدفة!`;
 
     const replyEn = `### 📊 Bench Press Performance Breakdown (Coach Azzam)
 
 Hey ${context.userName || 'Athlete'}! Based on your verified training history for **Barbell Bench Press**:
 
-| Period | Weight × Reps | Volume (Kg) | Average RPE |
-| :--- | :--- | :--- | :--- |
-| **Week 1** | 55.0 kg × 8 | 1,320 kg | 7.5 |
-| **Week 3** | 60.0 kg × 8 | 1,440 kg | 8.0 |
-| **Week 5** | 60.0 kg × 7 | 1,420 kg | 9.0 |
-| **Week 8 (Latest)** | **62.5 kg × 8** | **1,500 kg** | **8.5** |
+- Logged Sessions: **${benchData.totalSessionsFound}**
+- Strategy: Progressive overload applied via double progression method.
 
-### 🎯 Key Observations:
-1. **You are NOT stalled**: You broke the 60kg barrier by hitting **62.5kg × 8** at RPE 8.5 (a **+4.2%** strength jump).
-2. **Next Target**: Load **65.0 kg** for 6-8 reps on your top set.`;
+### 🚀 Next Workout Action:
+- Maintain strict form and add **+2.5 kg** once target reps are completed at RPE ≤ 8.5!`;
 
     return {
       id: `ai_msg_${Date.now()}`,
       sender: 'assistant',
       text: containsArabic ? replyAr : replyEn,
       timestamp: new Date().toISOString(),
-      toolCalls: toolLogs,
-      suggestedActions: [
-        { label: containsArabic ? 'تطبيق هدف البنش القادم (65kg × 6-8)' : 'Set Next Bench Target (65kg × 6-8)', actionType: 'apply_progression', payload: { exerciseId: 'barbell_bench_press', weight: 65 } }
-      ]
+      toolCalls: toolLogs
     };
   }
 
@@ -267,44 +292,46 @@ Hey ${context.userName || 'Athlete'}! Based on your verified training history fo
     lowerMsg.includes('مستواي') ||
     lowerMsg.includes('improving')
   ) {
+    if (context.history.length === 0) {
+      const replyAr = `### 📈 مستوى التطور والتحليلات (كابتن عزام)
+
+أهلاً ${context.userName || 'يا بطل'}! حسابك في مرحلة البداية ولا توجد تمارين منجزة في السجل حتى الآن.
+
+🚀 **خطوتك الأولى:**
+سجل أول تمرين لك اليوم من خلال الضغط على زر **"ابدأ تمرين اليوم"**، وسأقوم بإنشاء تقارير القوة والحجم التدريبي والأرقام القياسية PRs فور حفظ التمرين!`;
+
+      const replyEn = `### 📈 Progress & Analytics (Coach Azzam)
+
+Hey ${context.userName || 'Athlete'}! Your account is brand new with 0 logged workouts.
+
+🚀 **Your Next Step:**
+Start today's session via **"Start Today's Workout"**, and I will generate your strength curves, tonnage analytics, and PR milestones immediately after completion!`;
+
+      return {
+        id: `ai_msg_${Date.now()}`,
+        sender: 'assistant',
+        text: containsArabic ? replyAr : replyEn,
+        timestamp: new Date().toISOString(),
+        toolCalls: []
+      };
+    }
+
     const prs = tools.get_prs();
-    const muscleVol = tools.get_muscle_group_volume();
-
-    toolLogs.push({
-      id: `tool_${Date.now()}_1`,
-      toolName: 'get_prs',
-      arguments: {},
-      resultSummary: `Retrieved ${prs.length} PRs in database.`,
-      timestamp: new Date().toLocaleTimeString()
-    });
-
     const replyAr = `### 📈 التقرير الشامل لتطور مستواك الرياضي (كابتن عزام)
 
-أداءك وتطورك يسير بوتيرة ممتازة جداً وأعلى من المتوسط:
+أهلاً ${context.userName || 'يا بطل'}! بناءً على **${context.history.length}** جلسة مكتملة في سجلك:
 
-- 🔥 **الأرقام القياسية المسجلة (PRs)**:
-  - **Barbell Back Squat**: 100kg ➔ **105kg × 6** (+5.0%)
-  - **Barbell Bench Press**: 60kg ➔ **62.5kg × 8** (+4.2%)
-  - **Barbell Deadlift**: 135kg ➔ **140kg × 5** (+3.7%)
-  - **Pull-Ups**: 12 عَدة ➔ **15 عَدة بوزن الجسم** (+25%)
+- 🔥 **الأرقام القياسية المسجلة**: لديك **${prs.length}** أرقام قياسية PRs.
+- ⚡ **الالتزام التدريبي**: مستمر ومسجل في خطتك بنجاح!
+- 🏋️‍♂️ **توجيه كابتن عزام**: استمر في تطبيق الزيادة التدريجية للحفاظ على استمرار البناء العضلي.`;
 
-- ⚡ **معدل الالتزام والتناسق**: تتمرن بمتوسط **4.2 تمرين/أسبوعياً** بنسبة التزام تفوق **94%**.
-- 🏋️‍♂️ **الحجم التدريبي الإجمالي**: ارتفع حجمك الأسبوعي من 28,400kg إلى **32,150kg**، مما يضمن زيادة مستمرة في البناء العضلي.
+    const replyEn = `### 📈 Overall Progression Report (Coach Azzam)
 
-> **نصيحة عزام**: استمر بنفس الانضباط وسنصل إلى **70kg Bench** و **120kg Squat** خلال الأسابيع القليلة القادمة بإذن الله!`;
+Hey ${context.userName || 'Athlete'}! Based on your **${context.history.length}** verified completed sessions:
 
-    const replyEn = `### 📈 Overall Progression Analysis (Coach Azzam)
-
-You are progressing at an above-average pace:
-
-- 🔥 **Strength Milestones**:
-  - **Squat**: 100kg ➔ **105kg × 6** (+5.0%)
-  - **Bench**: 60kg ➔ **62.5kg × 8** (+4.2%)
-  - **Deadlift**: 135kg ➔ **140kg × 5** (+3.7%)
-  - **Pull-Ups**: 12 ➔ **15 reps** (+25%)
-
-- ⚡ **Consistency Rate**: **4.2 workouts/week** (94% adherence).
-- 🏋️‍♂️ **Volume Growth**: Weekly workload grew to 32,150 kg (**+13.2% net growth**).`;
+- 🔥 **Milestones**: You have **${prs.length}** verified PR records.
+- ⚡ **Consistency**: Tracked and progressing steadily!
+- 🏋️‍♂️ **Coach Advice**: Keep applying progressive overload to sustain hypertrophy gains.`;
 
     return {
       id: `ai_msg_${Date.now()}`,

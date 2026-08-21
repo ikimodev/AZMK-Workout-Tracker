@@ -86,6 +86,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'referrals', label: t('referrals'), icon: Users, color: 'text-purple-400' },
     { id: 'premium', label: t('pricing'), icon: Sparkles, color: 'text-amber-300' },
     { id: 'profile', label: t('profile'), icon: User, color: 'text-slate-300' },
+    ...(user.role === 'admin' ? [{ id: 'admin', label: language === 'ar' ? 'لوحة الإدارة 📊' : 'Admin & Analytics 📊', icon: TrendingUp, color: 'text-accent-emerald' }] : [])
   ];
 
   const handleTabClick = (item: typeof mainNavItems[0]) => {
