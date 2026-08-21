@@ -22,6 +22,7 @@ import { YoutubeIcon } from '../common/YoutubeIcon';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById, getAllExercises } from '../../data/mockExercises';
 import { getExerciseSummary, getNextSetRecommendation } from '../../services/progressiveOverload';
+import { getExerciseDisplayName, getMuscleGroupDisplayName } from '../../i18n/fitnessDictionary';
 import { ExerciseReplaceModal } from './ExerciseReplaceModal';
 
 interface ActiveWorkoutLoggerProps {
@@ -167,11 +168,11 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-extrabold text-base sm:text-lg text-white font-mono">
-                        {exerciseInfo?.name || workoutEx.exerciseId}
+                        {getExerciseDisplayName(workoutEx.exerciseId, language)}
                       </h3>
                       {exerciseInfo?.muscleGroup && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-background-elevated border border-border text-slate-300">
-                          {exerciseInfo.muscleGroup}
+                          {getMuscleGroupDisplayName(exerciseInfo.muscleGroup, language)}
                         </span>
                       )}
                     </div>
@@ -195,7 +196,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                         </>
                       ) : (
                         <span className="text-accent-cyan flex items-center gap-1 font-bold font-mono text-[11px]">
-                          🎯 {language === 'ar' ? 'هدف البداية: وزن استكشافي خفيف مع RPE 7' : 'Starter Target: Exploratory load @ RPE 7'}
+                          {t('starterTargetRpe')}
                         </span>
                       )}
                     </div>

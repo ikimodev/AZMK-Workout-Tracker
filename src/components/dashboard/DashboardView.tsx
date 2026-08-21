@@ -22,6 +22,7 @@ import {
 import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById } from '../../data/mockExercises';
 import { calculateDashboardAnalytics } from '../../services/progressiveOverload';
+import { getExerciseDisplayName, getFitnessGoalDisplayName, formatUnitDisplay } from '../../i18n/fitnessDictionary';
 
 interface DashboardViewProps {
   onNavigate: (tab: string) => void;
@@ -51,7 +52,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const todaysWorkoutTemplate = schedState.workoutTemplate;
   const analytics = calculateDashboardAnalytics(history, prs, user.daysPerWeek);
 
-  const isFatLossOrGeneral = user.primaryGoal === 'Fat Loss' || user.secondaryGoal === 'Fat Loss' || user.primaryGoal === 'General Fitness' || user.secondaryGoal === 'General Fitness';
+  const primaryGoalLabel = getFitnessGoalDisplayName(user.primaryGoal, language);
+  const secondaryGoalLabel = user.secondaryGoal ? getFitnessGoalDisplayName(user.secondaryGoal, language) : '';
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
@@ -63,7 +65,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-base">🧪</span>
             <div>
               <p className="font-bold">
-                {language === 'ar' ? 'وضع الحساب التجريبي التوضيحي (بيانات تجريبية ومحاكاة لـ 22 جلسة)' : 'Demo Mode (22 Simulated Workout Sessions)'}
+                {t('demoBannerText')}
               </p>
               <p className="text-[11px] text-amber-300/80">
                 {language === 'ar' ? 'هذه البيانات لعرض إمكانيات التطبيق. يمكنك إجراء إعادة ضبط مصنع من صفحة الملف الشخصي.' : 'Demo data for exploration. You can reset to a clean slate from your Profile.'}
@@ -84,7 +86,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-accent-emerald">{t('readyToTrain')}</span>
             <span className="text-slate-600">•</span>
-            <span className="text-xs text-accent-cyan font-semibold">{user.primaryGoal}{user.secondaryGoal ? ` + ${user.secondaryGoal}` : ''}</span>
+            <span className="text-xs text-accent-cyan font-semibold">{primaryGoalLabel}{secondaryGoalLabel ? ` + ${secondaryGoalLabel}` : ''}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
             {history.length === 0 
@@ -105,7 +107,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="w-full sm:w-auto px-4 py-3.5 rounded-2xl bg-background-elevated hover:bg-background-hover border border-border text-slate-200 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95"
           >
             <Calendar className="w-4 h-4 text-accent-cyan" />
-            <span>{language === 'ar' ? 'الجدول والتقويم' : 'View Calendar'}</span>
+            <span>{t('calendar')}</span>
           </button>
 
           {!activeWorkout ? (
@@ -137,7 +139,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <Sparkles className="w-4 h-4" />
               </div>
               <h3 className="font-extrabold text-sm text-white">
-                {language === 'ar' ? '🚀 خطواتك لبداية تدريبية موفقة مع عزمك:' : '🚀 3 Steps to Launch Your Training on AZMK:'}
+                {t('starterChecklistTitle')}
               </h3>
             </div>
             <span className="text-xs font-mono font-bold text-accent-emerald bg-accent-emerald/10 px-2.5 py-1 rounded-full border border-accent-emerald/30">
@@ -206,7 +208,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-white">{language === 'ar' ? 'توليد خطة تدريب 4 أسابيع' : 'Generate 4-Week Routine'}</span>
+                <span className="text-xs font-black text-white">{t('generate4WeekRoutine')}</span>
                 <span className="px-1.5 py-0.2 rounded bg-accent-indigo/10 text-accent-indigo text-[9px] font-mono font-bold">AI SPLIT</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
@@ -229,7 +231,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <p className="text-lg sm:text-xl font-black font-mono text-white">
-              {history.length > 0 ? analytics.primaryLiftName : (language === 'ar' ? 'تطور القوة' : 'Strength')}
+              {history.length > 0 ? getExerciseDisplayName(analytics.primaryLiftName, language) : (language === 'ar' ? 'تطور القوة' : 'Strength')}
             </p>
             <div className="flex items-center gap-1 text-accent-emerald text-xs font-mono font-bold mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -247,7 +249,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Weight className="w-4 h-4 text-accent-cyan" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.recent7dVolumeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+            <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.recent7dVolumeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">{language === 'ar' ? 'كجم' : 'kg'}</span></p>
             <div className="flex items-center gap-1 text-accent-cyan text-xs font-mono font-bold mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>
@@ -265,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <p className="text-lg sm:text-xl font-black font-mono text-white">
-              {analytics.actualWorkoutsPerWeek} <span className="text-xs text-slate-400 font-normal">/ {user.daysPerWeek || 4} {language === 'ar' ? 'أيام' : 'd'}</span>
+              {analytics.actualWorkoutsPerWeek} <span className="text-xs text-slate-400 font-normal">/ {formatUnitDisplay(user.daysPerWeek || 4, 'days', language)}</span>
             </p>
             <p className="text-xs text-slate-400 mt-1">
               {history.length > 0 ? `${analytics.goalAdherencePercent}% ${t('goalAdherence')}` : (language === 'ar' ? '0% هذا الأسبوع' : '0% adherence')}
@@ -280,7 +282,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Trophy className="w-4 h-4 text-amber-400" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-black font-mono text-amber-400">{analytics.prsThisMonth} PRs</p>
+            <p className="text-lg sm:text-xl font-black font-mono text-amber-400">{analytics.prsThisMonth} {language === 'ar' ? 'أرقام PR' : 'PRs'}</p>
             <p className="text-xs text-slate-400 mt-1">
               {history.length > 0 ? t('prsThisMonth') : (language === 'ar' ? 'في انتظار أول إنجاز' : 'Awaiting 1st PR')}
             </p>
@@ -297,7 +299,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-full h-2.5 rounded-full bg-background-elevated overflow-hidden mb-2">
               <div className="h-full rounded-full bg-gradient-to-r from-accent-emerald to-accent-cyan" style={{ width: `${Math.max(5, analytics.programProgressPercent)}%` }} />
             </div>
-            <p className="text-xs text-slate-300 font-medium truncate">{activeProgram.name || '4-Week Protocol'}</p>
+            <p className="text-xs text-slate-300 font-medium truncate">{activeProgram.name || (language === 'ar' ? 'خطة 4 أسابيع' : '4-Week Protocol')}</p>
           </div>
         </div>
 
@@ -362,14 +364,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div>
                 <strong className="text-xs font-bold text-accent-emerald block">{t('cardioReminder')}</strong>
                 <p className="text-[11px] text-slate-300 mt-0.5">
-                  {t('cardioReminderText', { goal: user.primaryGoal })}
+                  {t('cardioReminderText', { goal: primaryGoalLabel })}
                 </p>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        /* TODAY'S SCHEDULED WORKOUT (AUTOMATICALLY ADVANCES DAY 1 -> DAY 2 -> DAY 3...) */
+        /* TODAY'S SCHEDULED WORKOUT */
         todaysWorkoutTemplate && (
           <div className="p-6 rounded-3xl bg-background-card border border-border space-y-4 shadow-card">
             <div className="flex items-center justify-between">
@@ -395,10 +397,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 const ex = getExerciseById(item.exerciseId);
                 if (!ex) return null;
 
+                const displayName = getExerciseDisplayName(ex.id, language);
+
                 return (
                   <div key={idx} className="p-3.5 rounded-2xl bg-background-elevated border border-border/80 flex flex-col justify-between">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-bold text-sm text-white line-clamp-1 font-mono">{ex.name}</span>
+                      <span className="font-bold text-sm text-white line-clamp-1 font-mono">{displayName}</span>
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/40 text-slate-400">
                         {item.targetSets} × {item.targetReps}
                       </span>
@@ -438,8 +442,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <p className="text-sm font-semibold text-white mt-1">
                 {history.length > 0
                   ? (language === 'ar' 
-                      ? 'تم تحليل أداء تمرين Bench Press ومستويات الـ RPE السابقة بدقة.'
-                      : 'Your Bench Press has increased with steady RPE adaptation over previous cycles.')
+                      ? 'تم تحليل أداء التمارين السابقة بدقة لحساب الزيادة التدريجية المثالية.'
+                      : 'Your lifts have been analyzed with steady RPE adaptation over previous cycles.')
                   : (language === 'ar'
                       ? 'أنا كابتن عزام، مدربك الذكي المباشر. خطتك جاهزة لبدء أول تمرين اليوم.'
                       : "I'm Coach Azzam, your AI strength coach. Your custom protocol is ready for session 1.")}
@@ -503,7 +507,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
                     <span className="font-mono">{session.date.split('T')[0]}</span>
                     <span className="px-2 py-0.5 rounded bg-background-elevated text-[10px] font-semibold text-slate-300">
-                      {session.durationMinutes}m
+                      {formatUnitDisplay(session.durationMinutes, 'minutes', language)}
                     </span>
                   </div>
                   <h4 className="font-bold text-base text-white font-mono">{session.name}</h4>
@@ -511,10 +515,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="mt-3 space-y-1">
                     {session.exercises.slice(0, 3).map((exWrap, i) => {
                       const ex = getExerciseById(exWrap.exerciseId);
+                      const displayName = getExerciseDisplayName(ex?.id || exWrap.exerciseId, language);
                       const bestSet = exWrap.sets.reduce((max, s) => s.weight > max.weight ? s : max, exWrap.sets[0] || { weight: 0, reps: 0 });
                       return (
                         <div key={i} className="flex items-center justify-between text-xs text-slate-300">
-                          <span className="text-slate-400 truncate max-w-[140px] font-mono">{ex?.name || 'Exercise'}</span>
+                          <span className="text-slate-400 truncate max-w-[140px] font-mono">{displayName}</span>
                           <span className="font-mono font-semibold text-white">{bestSet.weight}kg × {bestSet.reps}</span>
                         </div>
                       );
@@ -523,7 +528,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-400">{t('volumeTonnage')}: <strong className="text-slate-200">{session.totalVolumeKg.toLocaleString()}kg</strong></span>
+                  <span className="text-slate-400">{t('volumeTonnage')}: <strong className="text-slate-200">{session.totalVolumeKg.toLocaleString()}{language === 'ar' ? ' كجم' : 'kg'}</strong></span>
                   {session.prCount > 0 && (
                     <span className="text-amber-400 font-bold flex items-center gap-1">
                       <Trophy className="w-3 h-3" />
@@ -543,9 +548,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {language === 'ar' ? 'لا توجد تمارين مسجلة حتى الآن' : 'No workouts logged yet'}
             </p>
             <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-              {language === 'ar' 
-                ? 'اضغط على زر "ابدأ تمرين اليوم" بالأعلى لتسجيل جلستك الأولى وبناء تحليلاتك الشخصية.' 
-                : 'Tap "Start Today\'s Workout" above to record your first session and initiate your personal analytics.'}
+              {t('noHistoryPrompt')}
             </p>
             <button
               onClick={startTodaysAutocompleteWorkout}

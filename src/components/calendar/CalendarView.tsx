@@ -300,28 +300,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
         {/* Status Legend */}
         <div className="flex flex-wrap items-center gap-3 sm:gap-5 px-3 py-2.5 mb-4 rounded-2xl bg-background-elevated/40 border border-border/60 text-xs font-semibold text-slate-300">
           <span className="text-slate-400 font-bold font-mono text-[10px] uppercase">
-            {language === 'ar' ? 'دليل الألوان:' : 'LEGEND:'}
+            {t('legendTitle')}
           </span>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald shadow-glow-sm" />
-            <span className="text-xs">{language === 'ar' ? 'مكتمل' : 'Completed'}</span>
+            <span className="text-xs">{t('completedStatus')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-accent-indigo" />
-            <span className="text-xs">{language === 'ar' ? 'مجدول' : 'Scheduled'}</span>
+            <span className="text-xs">{t('scheduledStatus')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-            <span className="text-xs">{language === 'ar' ? 'يوم راحة' : 'Rest Day'}</span>
+            <span className="text-xs">{t('restDayStatus')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-accent-cyan" />
-            <span className="text-xs">{language === 'ar' ? 'نشاط / كارديو' : 'Activity'}</span>
+            <span className="text-xs">{t('activityStatus')}</span>
           </div>
           {user.isDemoUser && (
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
               <span>🧪</span>
-              <span>{language === 'ar' ? 'بيانات تجريبية' : 'Demo Data'}</span>
+              <span>{t('demoDataStatus')}</span>
             </div>
           )}
         </div>

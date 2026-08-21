@@ -15,6 +15,7 @@ import {
 import { useWorkout } from '../../context/WorkoutContext';
 import { Program, ProgramWorkout, WorkoutExercise } from '../../types';
 import { getExerciseById } from '../../data/mockExercises';
+import { getExerciseDisplayName } from '../../i18n/fitnessDictionary';
 
 interface ProgramsViewProps {
   onNavigate: (tab: string) => void;
@@ -219,7 +220,7 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-slate-500 font-mono font-bold">{idx + 1}.</span>
-                          <span className="font-semibold text-slate-200">{ex?.name || item.exerciseId}</span>
+                          <span className="font-semibold text-slate-200">{getExerciseDisplayName(item.exerciseId, language)}</span>
                         </div>
                         <div className="font-mono text-slate-400">
                           <strong className="text-accent-emerald">{item.targetSets}</strong> {language === 'ar' ? 'جولات' : 'sets'} × <strong className="text-white">{item.targetReps}</strong> {language === 'ar' ? 'عدة' : 'reps'}

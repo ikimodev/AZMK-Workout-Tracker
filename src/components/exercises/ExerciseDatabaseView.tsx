@@ -15,6 +15,7 @@ import { YoutubeIcon } from '../common/YoutubeIcon';
 import { MOCK_EXERCISES, getExerciseById, getAlternativeExercises, getAllExercises } from '../../data/mockExercises';
 import { Exercise, MuscleGroup, Equipment } from '../../types';
 import { useWorkout } from '../../context/WorkoutContext';
+import { getExerciseDisplayName, getMuscleGroupDisplayName, getEquipmentDisplayName } from '../../i18n/fitnessDictionary';
 
 interface ExerciseDatabaseViewProps {
   onNavigate: (tab: string) => void;
@@ -216,19 +217,19 @@ export const ExerciseDatabaseView: React.FC<ExerciseDatabaseViewProps> = ({ onNa
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">
-                  {ex.muscleGroup}
+                  {getMuscleGroupDisplayName(ex.muscleGroup, language)}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
-                  {ex.equipment}
+                  {getEquipmentDisplayName(ex.equipment, language)}
                 </span>
               </div>
 
               <h3 className="font-bold text-base text-white group-hover:text-accent-emerald transition-colors font-mono">
-                {ex.name}
+                {getExerciseDisplayName(ex.id, language)}
               </h3>
               
               <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Pattern: {ex.movementPattern}
+                {language === 'ar' ? 'النمط الحركي:' : 'Pattern:'} {ex.movementPattern}
               </p>
 
               <p className="text-xs text-slate-300 mt-2.5 line-clamp-2 leading-relaxed">
