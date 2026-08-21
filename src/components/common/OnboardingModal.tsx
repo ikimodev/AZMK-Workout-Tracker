@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, Check, Dumbbell, Target, Clock, Calendar, Zap, X 
 import { useWorkout } from '../../context/WorkoutContext';
 import { generateAIProgram } from '../../services/aiProgramGenerator';
 import { FitnessGoal } from '../../types';
+import { FITNESS_GOALS_DICT } from '../../i18n/fitnessDictionary';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose, onProgramGenerated }) => {
-  const { user, updateUserProfile, saveGeneratedProgram, language } = useWorkout();
+  const { user, updateUserProfile, saveGeneratedProgram, language, t } = useWorkout();
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState(user.name);
@@ -25,39 +26,32 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  const goalOptionsAr: { id: FitnessGoal; title: string; desc: string }[] = [
-    { id: 'Muscle Gain', title: 'بناء العضلات والضخامة (Hypertrophy)', desc: 'زيادة الحجم والشكل العضلي الجذاب' },
-    { id: 'Strength', title: 'القوة والباورلفتنج (Strength)', desc: 'رفع أوزان أعلى في التمارين المركبة' },
-    { id: 'Fat Loss', title: 'حرق الدهون والتنشيف (Fat Loss)', desc: 'إبراز تفاصيل العضلات وكثافة تدريبية' },
-    { id: 'General Fitness', title: 'لياقة وصحة عامة (General Fitness)', desc: 'تحسين النشاط والطاقة اليومية' },
-    { id: 'Endurance', title: 'التحمل والأداء العالي (Endurance)', desc: 'زيادة سعة الرئة والتحمل البدني' },
-    { id: 'Mobility & Joint Health', title: 'مرونة وصحة المفاصل (Mobility)', desc: 'حماية المفاصل وإطالة المدى الحركي' },
+  const equipmentOptions = [
+    {
+      id: 'Full Gym',
+      title: t('fullGym'),
+      desc: t('fullGymDesc')
+    },
+    {
+      id: 'Home Gym (Dumbbells & Bench)',
+      title: t('homeGym'),
+      desc: t('homeGymDesc')
+    },
+    {
+      id: 'Bodyweight Only',
+      title: t('bodyweightOnly'),
+      desc: t('bodyweightDesc')
+    },
   ];
 
-  const goalOptionsEn: { id: FitnessGoal; title: string; desc: string }[] = [
-    { id: 'Muscle Gain', title: 'Muscle Gain (Hypertrophy)', desc: 'Maximize muscle size & aesthetics' },
-    { id: 'Strength', title: 'Strength & Power', desc: 'Heavy compounds & PR records' },
-    { id: 'Fat Loss', title: 'Fat Loss & Leanness', desc: 'Caloric burn with high intensity' },
-    { id: 'General Fitness', title: 'General Fitness', desc: 'Overall health & longevity' },
-    { id: 'Endurance', title: 'Endurance & Work Capacity', desc: 'Stamina & high rep density' },
-    { id: 'Mobility & Joint Health', title: 'Mobility & Joint Health', desc: 'Flexibility & injury resilience' },
+  const goalKeys: FitnessGoal[] = [
+    'Muscle Gain',
+    'Strength',
+    'Fat Loss',
+    'General Fitness',
+    'Endurance',
+    'Mobility & Joint Health'
   ];
-
-  const goalOptions = language === 'ar' ? goalOptionsAr : goalOptionsEn;
-
-  const equipmentOptionsAr = [
-    { id: 'Full Gym', title: 'نادي تجاري متكامل (Full Gym)', desc: 'بارات، دامبلز، أجهزة كيبل، وآلات متكاملة' },
-    { id: 'Home Gym (Dumbbells & Bench)', title: 'نادي منزلي (Home Gym)', desc: 'دامبلز قابلة للتعديل، بنش، وعقلة' },
-    { id: 'Bodyweight Only', title: 'تمارين وزن الجسم (Calisthenics)', desc: 'بدون أوزان خارجية' },
-  ];
-
-  const equipmentOptionsEn = [
-    { id: 'Full Gym', title: 'Full Commercial Gym', desc: 'Barbells, dumbbells, cables, machines' },
-    { id: 'Home Gym (Dumbbells & Bench)', title: 'Home Gym (Dumbbells & Bench)', desc: 'Adjustable dumbbells, bench & pull-up bar' },
-    { id: 'Bodyweight Only', title: 'Bodyweight & Calisthenics', desc: 'No weights or equipment needed' },
-  ];
-
-  const equipmentOptions = language === 'ar' ? equipmentOptionsAr : equipmentOptionsEn;
 
   const handleFinishAndGenerate = () => {
     updateUserProfile({
@@ -164,21 +158,23 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             <div>
               <label className="block text-xs font-semibold text-accent-emerald mb-1.5">{language === 'ar' ? '1. الهدف الأساسي' : '1. Primary Goal'}</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {goalOptions.slice(0, 4).map(item => (
+                {goalKeys.slice(0, 4).map(key => {
+                  const term = FITNESS_GOALS_DICT[key];
+                  return (
                   <button
-                    key={item.id}
+                    key={key}
                     type="button"
-                    onClick={() => setPrimaryGoal(item.id)}
+                    onClick={() => setPrimaryGoal(key)}
                     className={`p-3 rounded-xl border text-left rtl:text-right transition-all ${
-                      primaryGoal === item.id 
+                      primaryGoal === key 
                         ? 'bg-accent-emerald/15 border-accent-emerald text-white' 
                         : 'bg-background-elevated border-border text-slate-300'
                     }`}
                   >
-                    <p className="font-bold text-xs text-white">{item.title}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{item.desc}</p>
+                    <p className="font-bold text-xs text-white">{language === 'ar' ? term.ar : term.en}</p>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -186,20 +182,23 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             <div>
               <label className="block text-xs font-semibold text-accent-cyan mb-1.5">{language === 'ar' ? '2. الهدف الثانوي' : '2. Secondary Goal'}</label>
               <div className="grid grid-cols-2 gap-2">
-                {goalOptions.map(item => (
+                {goalKeys.map(key => {
+                  const term = FITNESS_GOALS_DICT[key];
+                  return (
                   <button
-                    key={item.id}
+                    key={key}
                     type="button"
-                    onClick={() => setSecondaryGoal(item.id)}
+                    onClick={() => setSecondaryGoal(key)}
                     className={`p-2.5 rounded-xl border text-left rtl:text-right transition-all ${
-                      secondaryGoal === item.id 
+                      secondaryGoal === key 
                         ? 'bg-accent-cyan/15 border-accent-cyan text-white' 
                         : 'bg-background-elevated border-border text-slate-300'
                     }`}
                   >
-                    <p className="font-bold text-xs text-white truncate">{item.title.split('(')[0]}</p>
+                    <p className="font-bold text-xs text-white truncate">{language === 'ar' ? term.shortAr : term.shortEn}</p>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

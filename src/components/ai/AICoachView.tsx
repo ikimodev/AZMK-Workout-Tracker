@@ -39,23 +39,13 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
   const maxFreeQuestions = 5;
   const isLimitReached = isFree && usedQuestions >= maxFreeQuestions;
 
-  const sampleQueriesAr = [
-    "ليش وزني ثابت في البنش برس؟",
-    "كيف تطوري هذا الشهر؟",
-    "وش أتمرن في التمرين القادم؟",
-    "هل تمرين الظهر كافي للنمو؟",
-    "عندي ألم في الكتف أثناء البنش برس"
+  const sampleQueries = [
+    t('sampleQuery1'),
+    t('sampleQuery2'),
+    t('sampleQuery3'),
+    t('sampleQuery4'),
+    t('sampleQuery5')
   ];
-
-  const sampleQueriesEn = [
-    "Why has my bench stopped improving?",
-    "Am I progressing?",
-    "What should I do next workout?",
-    "Which muscle groups am I training the most?",
-    "I have shoulder pain during bench press"
-  ];
-
-  const sampleQueries = language === 'ar' ? sampleQueriesAr : sampleQueriesEn;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -85,7 +75,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-lg sm:text-xl text-white font-mono">
-                {language === 'ar' ? 'كابتن عزام (المدرب الذكي)' : 'Coach Azzam (AI Coach)'}
+                {t('aiCoachTitle')}
               </h1>
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 text-[10px] font-bold">
                 <Zap className="w-2.5 h-2.5 fill-accent-emerald" />
@@ -93,9 +83,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
               </div>
             </div>
             <p className="text-xs text-slate-400">
-              {language === 'ar' 
-                ? 'تحليل مباشر ومحادثة ذكية مبنية على بيانات تمارينك وأوزانك المسجلة.' 
-                : 'Context-grounded analysis of your real completed workout sessions.'}
+              {t('aiCoachSub')}
             </p>
           </div>
         </div>
@@ -105,9 +93,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           {isFree ? (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-background-elevated border border-border text-xs">
               <span className="text-slate-400 font-medium">
-                {language === 'ar' 
-                  ? `${Math.max(0, maxFreeQuestions - usedQuestions)}/5 أسئلة متبقية اليوم`
-                  : `${Math.max(0, maxFreeQuestions - usedQuestions)}/5 free queries today`}
+                {t('freeQueriesLeft', { count: Math.max(0, maxFreeQuestions - usedQuestions).toString() })}
               </span>
               <button
                 onClick={() => onNavigate('premium')}
@@ -120,7 +106,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           ) : (
             <div className="px-3 py-1.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5">
               <Crown className="w-3.5 h-3.5 fill-amber-300" />
-              <span>{language === 'ar' ? 'باقة Pro (استشارات غير محدودة)' : 'Pro Tier (Unlimited)'}</span>
+              <span>{t('proTierUnlimited')}</span>
             </div>
           )}
         </div>
@@ -149,7 +135,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           >
             <div className="flex items-center gap-2 mb-1 px-1">
               <span className="text-[11px] font-mono text-slate-400">
-                {msg.sender === 'user' ? (user.name || (language === 'ar' ? 'أنت' : 'You')) : (language === 'ar' ? 'كابتن عزام 🏋️' : 'Coach Azzam 🏋️')}
+                {msg.sender === 'user' ? (user.name || t('you')) : t('coachAzzamName')}
               </span>
               <span className="text-[10px] text-slate-600">
                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -197,7 +183,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
         {isAILoading && (
           <div className="flex items-center gap-2 p-3 bg-background-elevated rounded-2xl w-fit text-xs text-slate-400 animate-pulse border border-border">
             <Sparkles className="w-4 h-4 text-accent-indigo animate-spin" />
-            <span>{language === 'ar' ? 'كابتن عزام يحلل بياناتك ويفكر...' : 'Coach Azzam is analyzing your data...'}</span>
+            <span>{t('aiAnalyzing')}</span>
           </div>
         )}
 
@@ -213,8 +199,8 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           disabled={isLimitReached || isAILoading}
           placeholder={
             isLimitReached 
-              ? (language === 'ar' ? 'وصلت للحد اليومي (5/5) — قم بالترقية إلى Pro للدردشة بلا حدود' : 'Daily limit reached — Upgrade to Pro')
-              : (language === 'ar' ? 'اسأل كابتن عزام عن أوزانك، تمارينك، استشفائك...' : 'Ask Coach Azzam about your lifts, overload, form...')
+              ? t('dailyLimitReached')
+              : t('askPlaceholder')
           }
           className="flex-1 px-4 py-3.5 rounded-2xl bg-background-card border border-border text-white text-sm font-medium focus:outline-none focus:border-accent-indigo transition-all placeholder:text-slate-500 disabled:opacity-50"
         />

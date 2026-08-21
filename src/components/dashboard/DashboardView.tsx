@@ -68,7 +68,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {t('demoBannerText')}
               </p>
               <p className="text-[11px] text-amber-300/80">
-                {language === 'ar' ? 'هذه البيانات لعرض إمكانيات التطبيق. يمكنك إجراء إعادة ضبط مصنع من صفحة الملف الشخصي.' : 'Demo data for exploration. You can reset to a clean slate from your Profile.'}
+                {t('demoBannerDesc')}
               </p>
             </div>
           </div>
@@ -90,12 +90,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
             {history.length === 0 
-              ? (language === 'ar' ? `أهلاً بك يا ${user.name ? user.name.split(' ')[0] : 'بطل'}!` : `Welcome ${user.name ? user.name.split(' ')[0] : 'Athlete'}!`) 
-              : `${t('welcomeBack')}, ${user.name ? user.name.split(' ')[0] : 'Athlete'}`}
+              ? t('welcomeNewUser', { name: user.name ? user.name.split(' ')[0] : t('athletePlaceholder') })
+              : `${t('welcomeBack')}, ${user.name ? user.name.split(' ')[0] : t('athletePlaceholder')}`}
           </h1>
           <p className="text-sm text-slate-300 mt-1 max-w-xl">
             {history.length === 0 
-              ? (language === 'ar' ? 'جاهز لتسجيل تمرينك الأول وتفعيل التحليلات الذكية.' : 'Ready to log your first session and activate AI analytics.')
+              ? t('heroSubtitleNewUser')
               : t('streakBanner', { streak: user.streakDays })}
           </p>
         </div>
@@ -143,7 +143,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </h3>
             </div>
             <span className="text-xs font-mono font-bold text-accent-emerald bg-accent-emerald/10 px-2.5 py-1 rounded-full border border-accent-emerald/30">
-              1 / 3 {language === 'ar' ? 'مكتمل' : 'Done'}
+              1 / 3 {t('doneTag')}
             </span>
           </div>
 
@@ -151,24 +151,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-3.5 rounded-2xl bg-background-elevated/80 border border-accent-emerald/30 flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-accent-emerald text-black font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">✓</span>
               <div>
-                <p className="text-xs font-bold text-white">{language === 'ar' ? '1. إعداد الخطة المخصصة' : '1. Generate Protocol'}</p>
-                <p className="text-[11px] text-accent-emerald mt-0.5">{language === 'ar' ? 'تم تجهيز خطتك لـ 4 أسابيع بنجاح' : 'Your 4-week split is ready'}</p>
+                <p className="text-xs font-bold text-white">{t('step1TitleGen')}</p>
+                <p className="text-[11px] text-accent-emerald mt-0.5">{t('step1DescGen')}</p>
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-background-elevated/80 border border-accent-cyan/40 flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-accent-cyan text-black font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
               <div>
-                <p className="text-xs font-bold text-white">{language === 'ar' ? '2. إتمام تمرينك الأول' : '2. Complete First Workout'}</p>
-                <p className="text-[11px] text-slate-300 mt-0.5">{language === 'ar' ? 'سجل جولاتك لتفعيل بيانات الحجم والأوزان' : 'Log sets to activate data'}</p>
+                <p className="text-xs font-bold text-white">{t('step2TitleGen')}</p>
+                <p className="text-[11px] text-slate-300 mt-0.5">{t('step2DescGen')}</p>
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-background-elevated/80 border border-border flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-background-card border border-border text-slate-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
               <div>
-                <p className="text-xs font-bold text-white">{language === 'ar' ? '3. الزيادة التدريجية والمدرب' : '3. AI Overload Targets'}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">{language === 'ar' ? 'حساب أوزان الجلسة القادمة آلياً' : 'Automated load calculations'}</p>
+                <p className="text-xs font-bold text-white">{t('step3TitleGen')}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{t('step3DescGen')}</p>
               </div>
             </div>
           </div>
@@ -187,11 +187,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-white">{language === 'ar' ? 'استيراد جدول بالذكاء الاصطناعي' : 'Import Text Workout (Gemini AI)'}</span>
+                <span className="text-xs font-black text-white">{t('importAiTitle')}</span>
                 <span className="px-1.5 py-0.2 rounded bg-accent-cyan/10 text-accent-cyan text-[9px] font-mono font-bold">REAL AI</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                {language === 'ar' ? 'الصق جدولك وسيقوم الـ AI بتوزيعه بدقة' : 'Paste workout text and Gemini AI will distribute days'}
+                {t('importAiDesc')}
               </p>
             </div>
           </div>
@@ -212,7 +212,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="px-1.5 py-0.2 rounded bg-accent-indigo/10 text-accent-indigo text-[9px] font-mono font-bold">AI SPLIT</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                {language === 'ar' ? 'خطة متكاملة مع أوزان وجولات وزيادة تدريجية' : 'Full periodized routine with progressive overload'}
+                {t('generateAiDesc')}
               </p>
             </div>
           </div>
@@ -231,12 +231,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <p className="text-lg sm:text-xl font-black font-mono text-white">
-              {history.length > 0 ? getExerciseDisplayName(analytics.primaryLiftName, language) : (language === 'ar' ? 'تطور القوة' : 'Strength')}
+              {history.length > 0 ? getExerciseDisplayName(analytics.primaryLiftName, language) : t('strengthProgress')}
             </p>
             <div className="flex items-center gap-1 text-accent-emerald text-xs font-mono font-bold mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>
-                {history.length > 0 ? `+${analytics.strengthDeltaPercent}% (${analytics.strengthTimeframeWeeks}w)` : (language === 'ar' ? '0% (سجل أول تمرين)' : '0% (Start Set 1)')}
+                {history.length > 0 ? `+${analytics.strengthDeltaPercent}% (${analytics.strengthTimeframeWeeks}w)` : t('startSet1')}
               </span>
             </div>
           </div>
@@ -249,11 +249,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Weight className="w-4 h-4 text-accent-cyan" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.recent7dVolumeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">{language === 'ar' ? 'كجم' : 'kg'}</span></p>
+            <p className="text-lg sm:text-xl font-black font-mono text-white">{analytics.recent7dVolumeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">{t('kg')}</span></p>
             <div className="flex items-center gap-1 text-accent-cyan text-xs font-mono font-bold mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>
-                {history.length > 0 ? `${analytics.volumeDeltaPercent >= 0 ? `+${analytics.volumeDeltaPercent}%` : `${analytics.volumeDeltaPercent}%`} ${t('vsAvg')}` : (language === 'ar' ? '0 كجم أسبوعياً' : '0 kg / wk')}
+                {history.length > 0 ? `${analytics.volumeDeltaPercent >= 0 ? `+${analytics.volumeDeltaPercent}%` : `${analytics.volumeDeltaPercent}%`} ${t('vsAvg')}` : t('zeroKgWk')}
               </span>
             </div>
           </div>
@@ -270,7 +270,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {analytics.actualWorkoutsPerWeek} <span className="text-xs text-slate-400 font-normal">/ {formatUnitDisplay(user.daysPerWeek || 4, 'days', language)}</span>
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              {history.length > 0 ? `${analytics.goalAdherencePercent}% ${t('goalAdherence')}` : (language === 'ar' ? '0% هذا الأسبوع' : '0% adherence')}
+              {history.length > 0 ? `${analytics.goalAdherencePercent}% ${t('goalAdherence')}` : t('zeroAdherence')}
             </p>
           </div>
         </div>
@@ -282,9 +282,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Trophy className="w-4 h-4 text-amber-400" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-black font-mono text-amber-400">{analytics.prsThisMonth} {language === 'ar' ? 'أرقام PR' : 'PRs'}</p>
+            <p className="text-lg sm:text-xl font-black font-mono text-amber-400">{analytics.prsThisMonth} {t('prsLabel')}</p>
             <p className="text-xs text-slate-400 mt-1">
-              {history.length > 0 ? t('prsThisMonth') : (language === 'ar' ? 'في انتظار أول إنجاز' : 'Awaiting 1st PR')}
+              {history.length > 0 ? t('prsThisMonth') : t('awaiting1stPr')}
             </p>
           </div>
         </div>
@@ -299,7 +299,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-full h-2.5 rounded-full bg-background-elevated overflow-hidden mb-2">
               <div className="h-full rounded-full bg-gradient-to-r from-accent-emerald to-accent-cyan" style={{ width: `${Math.max(5, analytics.programProgressPercent)}%` }} />
             </div>
-            <p className="text-xs text-slate-300 font-medium truncate">{activeProgram.name || (language === 'ar' ? 'خطة 4 أسابيع' : '4-Week Protocol')}</p>
+            <p className="text-xs text-slate-300 font-medium truncate">{activeProgram.name || t('fourWeekProtocol')}</p>
           </div>
         </div>
 
@@ -315,7 +315,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {schedState.dayName} • {t('restDayTitle')}
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-white mt-1">
-                {language === 'ar' ? 'يوم استشفاء ونمو عضلي' : 'Active Recovery & Growth Day'}
+                {t('activeRecoveryDay')}
               </h2>
               <p className="text-xs text-slate-300 mt-1">
                 {t('restDaySubtitle')}
@@ -346,7 +346,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-4 rounded-2xl bg-background-elevated border border-border/80 flex items-start gap-3">
               <Moon className="w-5 h-5 text-accent-indigo shrink-0 mt-0.5" />
               <div>
-                <strong className="text-xs font-bold text-white block">{language === 'ar' ? 'جودة النوم والاستشفاء' : 'Deep Sleep & GH'}</strong>
+                <strong className="text-xs font-bold text-white block">{t('deepSleepGh')}</strong>
                 <p className="text-[11px] text-slate-300 mt-0.5">{t('sleepTip')}</p>
               </div>
             </div>
@@ -354,7 +354,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-4 rounded-2xl bg-background-elevated border border-border/80 flex items-start gap-3">
               <Droplets className="w-5 h-5 text-accent-cyan shrink-0 mt-0.5" />
               <div>
-                <strong className="text-xs font-bold text-white block">{language === 'ar' ? 'الترطيب والبروتين' : 'Hydration & Protein'}</strong>
+                <strong className="text-xs font-bold text-white block">{t('hydrationProtein')}</strong>
                 <p className="text-[11px] text-slate-300 mt-0.5">{t('hydrationTip')}</p>
               </div>
             </div>

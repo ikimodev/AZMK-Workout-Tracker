@@ -36,44 +36,25 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
 
   // Dynamic helper for split descriptions matching user experience level
   const getSplitDescription = (numDays: number, exp: 'Beginner' | 'Intermediate' | 'Advanced') => {
-    if (language === 'ar') {
-      if (exp === 'Beginner') {
-        if (numDays === 2) return 'يومان: جدول شامل مبسط لتعلم التكنيك';
-        if (numDays === 3) return '3 أيام: شامل للجسم (Full Body A/B/C) - الخيار الأمثل للمبتدئين';
-        if (numDays === 4) return '4 أيام: علوي/سفلي بحجم تدريبي معتدل واستشفاء كافٍ للمبتدئين';
-        if (numDays === 5) return '5 أيام: تقسيم متكرر للمبتدئ';
-        return '6 أيام: تكرار عالي للمبتدئ';
-      }
-      if (exp === 'Advanced') {
-        if (numDays === 2) return 'يومان: علوي / سفلي عالي الكثافة';
-        if (numDays === 3) return '3 أيام: شامل للجسم مكثف ومتقدم';
-        if (numDays === 4) return '4 أيام: علوي وسفلي متقدم مع تركيز على نقاط الضعف';
-        if (numDays === 5) return '5 أيام: Push/Pull/Legs + Upper/Lower متقدم';
-        return '6 أيام: PPL × 2 تخصصي متقدم بحجم عالي';
-      }
-      // Intermediate default
-      if (numDays === 2) return 'يومان: علوي / سفلي مضغوط';
-      if (numDays === 3) return '3 أيام: شامل للجسم A/B/C';
-      if (numDays === 4) return '4 أيام: علوي وسفلي مع زيادة تدريجية للأوزان';
-      if (numDays === 5) return '5 أيام: Push/Pull/Legs + Upper/Lower';
-      return '6 أيام: PPL × 2';
-    } else {
-      if (exp === 'Beginner') {
-        if (numDays === 2) return '2 Days: Full Body Foundation';
-        if (numDays === 3) return '3 Days: Full Body A/B/C (Recommended for Beginners)';
-        if (numDays === 4) return '4 Days: Upper/Lower Balanced Split for Beginners';
-        return `${numDays} Days: Frequent Split`;
-      }
-      if (exp === 'Advanced') {
-        if (numDays === 4) return '4 Days: Advanced Upper/Lower Specialization';
-        return `${numDays} Days: High Volume Advanced Split`;
-      }
-      if (numDays === 2) return '2 Days: Upper / Lower';
-      if (numDays === 3) return '3 Days: Full Body A/B/C';
-      if (numDays === 4) return '4 Days: 4-Day Progressive Split';
-      if (numDays === 5) return '5 Days: 5-Day PPL+Upper/Lower';
-      return '6 Days: 6-Day PPL×2';
+    if (exp === 'Beginner') {
+      if (numDays === 2) return t('splitBeg2');
+      if (numDays === 3) return t('splitBeg3');
+      if (numDays === 4) return t('splitBeg4');
+      return t('splitBegX', { days: numDays });
     }
+    if (exp === 'Advanced') {
+      if (numDays === 2) return t('splitAdv2');
+      if (numDays === 3) return t('splitAdv3');
+      if (numDays === 4) return t('splitAdv4');
+      if (numDays === 5) return t('splitAdv5');
+      return t('splitAdvX', { days: numDays });
+    }
+    // Intermediate default
+    if (numDays === 2) return t('splitInt2');
+    if (numDays === 3) return t('splitInt3');
+    if (numDays === 4) return t('splitInt4');
+    if (numDays === 5) return t('splitInt5');
+    return t('splitInt6');
   };
 
   const handleSelectPrimaryGoal = (goal: FitnessGoal) => {
@@ -87,18 +68,18 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const equipmentOptions = [
     {
       id: 'Full Gym',
-      title: language === 'ar' ? 'نادي تجاري متكامل (Full Gym)' : 'Full Commercial Gym',
-      desc: language === 'ar' ? 'بارات، دامبلز، أجهزة كيبل، وآلات متكاملة' : 'Barbells, dumbbells, cables, machines'
+      title: t('fullGym'),
+      desc: t('fullGymDesc')
     },
     {
       id: 'Home Gym (Dumbbells & Bench)',
-      title: language === 'ar' ? 'نادي منزلي (Home Gym)' : 'Home Gym (Dumbbells & Bench)',
-      desc: language === 'ar' ? 'دامبلز قابلة للتعديل، بنش، وعقلة' : 'Adjustable dumbbells, bench & pull-up bar'
+      title: t('homeGym'),
+      desc: t('homeGymDesc')
     },
     {
       id: 'Bodyweight Only',
-      title: language === 'ar' ? 'تمارين وزن الجسم (Calisthenics)' : 'Bodyweight & Calisthenics',
-      desc: language === 'ar' ? 'بدون أوزان خارجية' : 'No weights or equipment needed'
+      title: t('bodyweightOnly'),
+      desc: t('bodyweightDesc')
     },
   ];
 
@@ -106,7 +87,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     setIsGenerating(true);
     await new Promise(r => setTimeout(r, 650));
 
-    const finalName = name.trim() || (language === 'ar' ? 'بطل' : 'Athlete');
+    const finalName = name.trim() || t('athletePlaceholder');
 
     updateUserProfile({
       name: finalName,
@@ -212,7 +193,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder={language === 'ar' ? 'اكتب اسمك أو لقبك التدريبي...' : 'Enter your name or athlete alias...'}
+                placeholder={t('namePlaceholder')}
                 className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors"
               />
             </div>

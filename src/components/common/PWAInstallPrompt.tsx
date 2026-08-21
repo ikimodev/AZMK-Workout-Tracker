@@ -73,9 +73,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
 
   const handleInstallAndroid = async () => {
     if (!deferredPrompt) {
-      alert(language === 'ar' 
-        ? 'اضغط على زر الخيارات (⋮) أعلى المتصفح ثم اختر "إضافة إلى الشاشة الرئيسية" أو "تثبيت التطبيق".'
-        : 'Tap the (⋮) menu in Chrome and select "Install App" or "Add to Home Screen".');
+      alert(t('androidInstallAlert'));
       return;
     }
     deferredPrompt.prompt();
@@ -120,23 +118,21 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
 
           <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-accent-emerald/15 border border-accent-emerald/40 text-accent-emerald text-[11px] font-bold font-mono shadow-glow-sm mb-1.5">
             <span>📲</span>
-            <span>{language === 'ar' ? 'تطبيق الويب التقدمي (PWA)' : 'PWA Mobile App'}</span>
+            <span>{t('pwaAppType')}</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            {language === 'ar' ? 'ثبّت تطبيق عزمك على جوالك' : 'Install AZMK on Your Phone'}
+            {t('pwaTitle')}
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-sm leading-relaxed">
-            {language === 'ar'
-              ? 'ثبّت عزمك للوصول السريع وتسجيل تمارينك من الهاتف بدقة وسرعة وبدون الحاجة لمتجر التطبيقات.'
-              : 'Install AZMK for instant access and fast workout logging from your mobile home screen.'}
+            {t('pwaSubtitle')}
           </p>
 
           {/* Saudi Tech Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/15 border border-accent-emerald/40 text-accent-emerald text-xs font-bold font-mono shadow-glow-sm mt-3">
             <span>🇸🇦</span>
-            <span>{language === 'ar' ? 'تطبيق سعودي 100%' : '100% Saudi Fitness Tech'}</span>
+            <span>{t('saudiBadge')}</span>
           </div>
         </div>
 
@@ -150,7 +146,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
                 <div className="flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-accent-cyan" />
                   <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">
-                    {language === 'ar' ? 'طريقة التثبيت على الآيفون (iPhone / iOS Safari):' : 'How to Install on iPhone (Safari):'}
+                    {t('iosInstallGuideTitle')}
                   </h4>
                 </div>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-accent-cyan/20 text-accent-cyan">
@@ -167,14 +163,14 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
                   </div>
                   <div className="flex-1">
                     <p className="text-white font-bold flex items-center gap-1.5">
-                      <span>{language === 'ar' ? 'اضغط على زر المشاركة' : 'Tap the Share Button'}</span>
+                      <span>{t('iosStep1Title')}</span>
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-[11px]">
                         <Share className="w-3 h-3 inline mr-1 rtl:mr-0 rtl:ml-1" />
                         Share
                       </span>
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      {language === 'ar' ? 'الموجود في أسفل شاشة المتصفح (مربع فيه سهم لأعلى).' : 'Located at the bottom of the Safari browser bar.'}
+                      {t('iosStep1Desc')}
                     </p>
                   </div>
                 </div>
@@ -186,14 +182,14 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
                   </div>
                   <div className="flex-1">
                     <p className="text-white font-bold flex items-center gap-1.5">
-                      <span>{language === 'ar' ? 'اختر "إضافة إلى الصفحة الرئيسية"' : 'Select "Add to Home Screen"'}</span>
+                      <span>{t('iosStep2Title')}</span>
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[11px]">
                         <PlusSquare className="w-3 h-3 inline mr-1 rtl:mr-0 rtl:ml-1" />
                         +
                       </span>
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      {language === 'ar' ? 'مرر للأسفل في قائمة المشاركة واضغط عليها.' : 'Scroll down in the share sheet and tap on it.'}
+                      {t('iosStep2Desc')}
                     </p>
                   </div>
                 </div>
@@ -205,10 +201,10 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
                   </div>
                   <div className="flex-1">
                     <p className="text-white font-bold">
-                      {language === 'ar' ? 'اضغط "إضافة" (Add) في الزاوية العليا 🚀' : 'Tap "Add" in the top corner 🚀'}
+                      {t('iosStep3Title')}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      {language === 'ar' ? 'سيظهر أيقونة التطبيق على شاشة جوالك الرئيسية ليعمل كتطبيق كامل الشاشة بدون أشرطة المتصفح!' : 'AZMK will appear on your Home Screen as a standalone fullscreen app!'}
+                      {t('iosStep3Desc')}
                     </p>
                   </div>
                 </div>
@@ -224,14 +220,12 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
               >
                 <Download className="w-5 h-5 stroke-[3]" />
                 <span>
-                  {language === 'ar' ? '📲 تثبيت تطبيق عزمك على الجوال الآن' : '📲 Install AZMK App on Phone'}
+                  {t('installAppBtn')}
                 </span>
               </button>
 
               <div className="p-3 rounded-xl bg-background-elevated text-center text-xs text-slate-400">
-                {language === 'ar' 
-                  ? 'أو اضغط على الثلاث نقاط (⋮) في أعلى المتصفح واختر "إضافة إلى الشاشة الرئيسية".'
-                  : 'Or tap (⋮) in Chrome and select "Add to Home screen".'}
+                {t('androidInstallAlert')}
               </div>
             </div>
           )}
@@ -242,7 +236,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
               onClick={handleContinueInBrowser}
               className="w-full py-3 px-4 rounded-2xl bg-background-elevated hover:bg-background-card border border-border text-slate-200 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
             >
-              <span>{language === 'ar' ? 'دخول واستخدام تطبيق الويب مباشرة 🚀' : 'Continue into Web App 🚀'}</span>
+              <span>{t('continueInBrowser')}</span>
               <ArrowRight className="w-4 h-4 rtl:rotate-180 text-accent-emerald" />
             </button>
           </div>

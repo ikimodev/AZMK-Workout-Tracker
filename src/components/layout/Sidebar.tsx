@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const primaryNavItems = [
     { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
-    { id: 'workouts', label: activeWorkout ? (language === 'ar' ? 'تمرين نشط' : 'Active Workout') : t('workouts'), icon: Dumbbell, badge: activeWorkout ? t('activeTag') : undefined },
+    { id: 'workouts', label: activeWorkout ? t('activeWorkout') : t('workouts'), icon: Dumbbell, badge: activeWorkout ? t('activeTag') : undefined },
     { id: 'calendar', label: t('calendar'), icon: CalendarDays },
     { id: 'progress', label: t('progress'), icon: TrendingUp },
     { id: 'ai_coach', label: t('aiCoach'), icon: Bot, highlight: true },
@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'referrals', label: t('referrals'), icon: Users },
     { id: 'premium', label: t('pricing'), icon: Sparkles },
     { id: 'profile', label: t('profile'), icon: User },
-    ...(user.role === 'admin' ? [{ id: 'admin', label: language === 'ar' ? 'لوحة الإدارة 📊' : 'Admin & Analytics 📊', icon: BarChart3 }] : [])
+    ...(user.role === 'admin' ? [{ id: 'admin', label: t('adminDashboard'), icon: BarChart3 }] : [])
   ];
 
   return (
@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <nav className="space-y-1">
         <div className="px-2 pb-1">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 font-mono">
-            {language === 'ar' ? 'القائمة الرئيسية' : 'MAIN MENU'}
+            {t('mainNavigation')}
           </p>
         </div>
         {primaryNavItems.map((item) => {
@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="pt-4 mt-4 border-t border-border/80 space-y-1">
         <div className="px-2 pb-1">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 font-mono">
-            {language === 'ar' ? 'أدوات إضافية والمزيد' : 'MORE TOOLS'}
+            {t('moreTools')}
           </p>
         </div>
         {secondaryNavItems.map((item) => {
@@ -153,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="pt-4 mt-4 border-t border-border space-y-2">
         <div className="flex items-center justify-between px-2">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            {language === 'ar' ? 'أدوات التمارين' : 'Workout Tools'}
+            {t('workoutTools')}
           </p>
           {user.tier === 'free' && (
             <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Manual Workout Builder (Always available for free) */}
         <button
           onClick={() => {
-            startWorkout(language === 'ar' ? 'تمرين مخصص جديد' : 'Custom Manual Workout', [
+            startWorkout(t('customManualWorkout'), [
               {
                 id: `we_man_${Date.now()}_0`,
                 exerciseId: 'barbell_bench_press',
@@ -182,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center gap-2">
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>{language === 'ar' ? 'إضافة تمرين يدوياً (مجاني)' : 'Add Workout Manually'}</span>
+            <span>{t('addWorkoutManually')}</span>
           </div>
         </button>
 
