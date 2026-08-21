@@ -28,8 +28,27 @@ export const ExerciseDatabaseView: React.FC<ExerciseDatabaseViewProps> = ({ onNa
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All');
   const [activeExerciseModal, setActiveExerciseModal] = useState<Exercise | null>(null);
 
-  const muscles = ['All', 'Chest', 'Back', 'Quads', 'Hamstrings', 'Shoulders', 'Biceps', 'Triceps', 'Core'];
-  const equipments = ['All', 'Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight', 'Smith Machine'];
+  const muscles = [
+    { id: 'All', labelAr: 'الكل', labelEn: 'All' },
+    { id: 'Chest', labelAr: 'الصدر (Chest)', labelEn: 'Chest' },
+    { id: 'Back', labelAr: 'الظهر (Back)', labelEn: 'Back' },
+    { id: 'Quads', labelAr: 'الأرجل الأمامية (Quads)', labelEn: 'Quads' },
+    { id: 'Hamstrings', labelAr: 'الأرجل الخلفية (Hamstrings)', labelEn: 'Hamstrings' },
+    { id: 'Shoulders', labelAr: 'الأكتاف (Shoulders)', labelEn: 'Shoulders' },
+    { id: 'Biceps', labelAr: 'البايسبس (Biceps)', labelEn: 'Biceps' },
+    { id: 'Triceps', labelAr: 'الترايسبس (Triceps)', labelEn: 'Triceps' },
+    { id: 'Core', labelAr: 'البطن والكور (Core)', labelEn: 'Core' }
+  ];
+
+  const equipments = [
+    { id: 'All', labelAr: 'جميع الأدوات', labelEn: 'All' },
+    { id: 'Barbell', labelAr: 'باربل (Barbell)', labelEn: 'Barbell' },
+    { id: 'Dumbbell', labelAr: 'دامبلز (Dumbbell)', labelEn: 'Dumbbell' },
+    { id: 'Cable', labelAr: 'كيبل (Cable)', labelEn: 'Cable' },
+    { id: 'Machine', labelAr: 'أجهزة (Machine)', labelEn: 'Machine' },
+    { id: 'Bodyweight', labelAr: 'وزن الجسم (Bodyweight)', labelEn: 'Bodyweight' },
+    { id: 'Smith Machine', labelAr: 'سميث (Smith)', labelEn: 'Smith Machine' }
+  ];
 
   // Arabic keyword mapping for smart multi-lingual fitness searches
   const normalizeArabicSearch = (query: string, ex: Exercise): boolean => {
@@ -140,19 +159,23 @@ export const ExerciseDatabaseView: React.FC<ExerciseDatabaseViewProps> = ({ onNa
             <span className="text-[11px] font-bold text-slate-400 uppercase font-mono mr-1 rtl:mr-0 rtl:ml-1 shrink-0">
               {language === 'ar' ? 'العضلة:' : 'Muscle:'}
             </span>
-            {muscles.map(m => (
-              <button
-                key={m}
-                onClick={() => setSelectedMuscle(m)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedMuscle === m
-                    ? 'bg-accent-emerald text-black font-bold shadow-sm'
-                    : 'bg-background-elevated text-slate-400 hover:text-white border border-border'
-                }`}
-              >
-                {m}
-              </button>
-            ))}
+            {muscles.map(m => {
+              const isSelected = selectedMuscle === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedMuscle(m.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-accent-emerald text-black font-bold shadow-sm'
+                      : 'bg-background-elevated text-slate-300 hover:text-white border border-border'
+                  }`}
+                >
+                  <span>{language === 'ar' ? m.labelAr : m.labelEn}</span>
+                  {isSelected && <span className="text-[10px] font-bold">✓</span>}
+                </button>
+              );
+            })}
           </div>
 
           {/* Equipment Chips */}
@@ -160,19 +183,23 @@ export const ExerciseDatabaseView: React.FC<ExerciseDatabaseViewProps> = ({ onNa
             <span className="text-[11px] font-bold text-slate-400 uppercase font-mono mr-1 rtl:mr-0 rtl:ml-1 shrink-0">
               {language === 'ar' ? 'المعدات:' : 'Gear:'}
             </span>
-            {equipments.map(eq => (
-              <button
-                key={eq}
-                onClick={() => setSelectedEquipment(eq)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedEquipment === eq
-                    ? 'bg-accent-cyan text-black font-bold shadow-sm'
-                    : 'bg-background-elevated text-slate-400 hover:text-white border border-border'
-                }`}
-              >
-                {eq}
-              </button>
-            ))}
+            {equipments.map(eq => {
+              const isSelected = selectedEquipment === eq.id;
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => setSelectedEquipment(eq.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-accent-cyan text-black font-bold shadow-sm'
+                      : 'bg-background-elevated text-slate-300 hover:text-white border border-border'
+                  }`}
+                >
+                  <span>{language === 'ar' ? eq.labelAr : eq.labelEn}</span>
+                  {isSelected && <span className="text-[10px] font-bold">✓</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
 

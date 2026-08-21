@@ -21,7 +21,7 @@ interface PWAInstallPromptProps {
 }
 
 export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, onClose }) => {
-  const { language } = useWorkout();
+  const { user, language } = useWorkout();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -55,21 +55,21 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
       return;
     }
 
-    // Check if already dismissed recently in this session/browser
-    const hasSeenWelcomeGate = sessionStorage.getItem('azmk_pwa_gateway_seen');
+    // Check if user has already dismissed the PWA prompt in localStorage
+    const hasDismissed = localStorage.getItem('azmk_pwa_dismissed') === 'true';
 
-    if (!isRunningStandalone && !hasSeenWelcomeGate) {
-      // Show gateway immediately on mobile, or after a brief delay
+    // Only auto-show for users who have completed onboarding and have not dismissed it
+    if (!isRunningStandalone && !hasDismissed && user.hasCompletedOnboarding) {
       const timer = setTimeout(() => {
         setIsVisible(true);
-      }, 500);
+      }, 3000);
       return () => clearTimeout(timer);
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [forceOpen]);
+  }, [forceOpen, user.hasCompletedOnboarding]);
 
   const handleInstallAndroid = async () => {
     if (!deferredPrompt) {
@@ -82,6 +82,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
       setIsVisible(false);
+      localStorage.setItem('azmk_pwa_dismissed', 'true');
       if (onClose) onClose();
     }
     setDeferredPrompt(null);
@@ -89,7 +90,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
 
   const handleContinueInBrowser = () => {
     setIsVisible(false);
-    sessionStorage.setItem('azmk_pwa_gateway_seen', 'true');
+    localStorage.setItem('azmk_pwa_dismissed', 'true');
     if (onClose) onClose();
   };
 
@@ -108,34 +109,34 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
           <X className="w-4 h-4" />
         </button>
 
-        {/* Brand Logo & Glowing Aura */}
+        {/* Brand Logo & Benefits */}
         <div className="flex flex-col items-center text-center mb-6 pt-2">
           
-          <div className="relative mb-4">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-accent-emerald to-emerald-400 flex items-center justify-center text-black shadow-glow-lg border-2 border-emerald-300 animate-pulse-slow">
-              <Zap className="w-11 h-11 fill-black text-black" />
+          <div className="relative mb-3">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-accent-emerald to-emerald-400 flex items-center justify-center text-black shadow-glow-md border-2 border-emerald-300">
+              <Zap className="w-9 h-9 fill-black text-black" />
             </div>
-            <div className="absolute -inset-2 bg-accent-emerald/20 rounded-3xl blur-xl -z-10 animate-pulse" />
           </div>
 
-          {/* Saudi Tech Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/15 border border-accent-emerald/40 text-accent-emerald text-xs font-bold font-mono shadow-glow-sm mb-2">
-            <span>🇸🇦</span>
-            <span>{language === 'ar' ? 'تطبيق سعودي 100%' : '100% Saudi Fitness Tech'}</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-accent-emerald/15 border border-accent-emerald/40 text-accent-emerald text-[11px] font-bold font-mono shadow-glow-sm mb-1.5">
+            <span>📲</span>
+            <span>{language === 'ar' ? 'تطبيق الويب التقدمي (PWA)' : 'PWA Mobile App'}</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            {language === 'ar' ? 'عــزمــك | AZMK' : 'AZMK Workout Tracker'}
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            {language === 'ar' ? 'ثبّت تطبيق عزمك على جوالك' : 'Install AZMK on Your Phone'}
           </h2>
 
-          {/* Official Slogan requested by user */}
-          <div className="mt-3 p-3.5 rounded-2xl bg-background-elevated/70 border border-border/80 text-center">
-            <p className="text-xs sm:text-sm font-extrabold text-emerald-300 leading-relaxed">
-              "تطبيق سعودي لبناء جيل أقوى.
-            </p>
-            <p className="text-xs sm:text-sm font-semibold text-slate-200 mt-1 leading-relaxed">
-              من أول عدة إلى أول PR — عزمك يتابع رحلتك ويساعدك تتطور."
-            </p>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-sm leading-relaxed">
+            {language === 'ar'
+              ? 'ثبّت عزمك للوصول السريع وتسجيل تمارينك من الهاتف بدقة وسرعة وبدون الحاجة لمتجر التطبيقات.'
+              : 'Install AZMK for instant access and fast workout logging from your mobile home screen.'}
+          </p>
+
+          {/* Saudi Tech Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/15 border border-accent-emerald/40 text-accent-emerald text-xs font-bold font-mono shadow-glow-sm mt-3">
+            <span>🇸🇦</span>
+            <span>{language === 'ar' ? 'تطبيق سعودي 100%' : '100% Saudi Fitness Tech'}</span>
           </div>
         </div>
 

@@ -149,7 +149,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
           >
             <div className="flex items-center gap-2 mb-1 px-1">
               <span className="text-[11px] font-mono text-slate-400">
-                {msg.sender === 'user' ? (user.name || 'You') : (language === 'ar' ? 'كابتن عزام' : 'Coach Azzam')}
+                {msg.sender === 'user' ? (user.name || (language === 'ar' ? 'أنت' : 'You')) : (language === 'ar' ? 'كابتن عزام 🏋️' : 'Coach Azzam 🏋️')}
               </span>
               <span className="text-[10px] text-slate-600">
                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

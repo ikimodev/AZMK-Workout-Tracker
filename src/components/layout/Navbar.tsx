@@ -109,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, onOpenOnb
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-background-card border border-border text-amber-400 font-mono text-xs font-bold cursor-default"
           >
             <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-            <span>{user.streakDays}d</span>
+            <span>{user.streakDays} {language === 'ar' ? 'يوم' : 'd'}</span>
           </div>
 
           {/* Pro / Free Badge */}
@@ -128,10 +128,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, onOpenOnb
           {/* User Profile Avatar */}
           <button 
             onClick={() => onNavigate('profile')}
+            title={user.name || (language === 'ar' ? 'الملف الشخصي' : 'User Profile')}
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-background-elevated hover:bg-background-hover border border-border flex items-center justify-center text-slate-300 hover:text-white transition-all overflow-hidden"
           >
             <span className="font-mono text-xs font-bold text-accent-emerald">
-              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              {user.name ? user.name.charAt(0).toUpperCase() : 'ع'}
             </span>
           </button>
 

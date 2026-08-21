@@ -81,10 +81,12 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-background-card border border-border rounded-3xl p-6 shadow-card">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-mono font-bold tracking-wider text-accent-indigo">PERIODIZATION & ROUTINES</span>
+            <span className="text-xs uppercase font-mono font-bold tracking-wider text-accent-indigo">
+              {language === 'ar' ? 'الجداول والخطط التدريبية' : 'PERIODIZATION & ROUTINES'}
+            </span>
             {currentProgram?.isCustom && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-indigo/20 text-accent-indigo">
-                AI Custom Plan
+                {language === 'ar' ? 'خطة ذكية مخصصة' : 'AI Custom Plan'}
               </span>
             )}
           </div>
@@ -159,7 +161,9 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
 
       {/* Week Selector Chips */}
       <div className="bg-background-card border border-border rounded-2xl p-3 flex items-center gap-2 overflow-x-auto">
-        <span className="text-xs font-bold text-slate-400 pl-2 uppercase font-mono">Weeks:</span>
+        <span className="text-xs font-bold text-slate-400 pl-2 rtl:pl-0 rtl:pr-2 uppercase font-mono">
+          {language === 'ar' ? 'الأسابيع:' : 'Weeks:'}
+        </span>
         {currentProgram?.weeks.map(w => (
           <button
             key={w.weekNumber}
@@ -170,7 +174,7 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
                 : 'bg-background-elevated text-slate-400 hover:text-white border border-border'
             }`}
           >
-            Week {w.weekNumber}
+            {language === 'ar' ? `الأسبوع ${w.weekNumber}` : `Week ${w.weekNumber}`}
           </button>
         ))}
       </div>
@@ -179,10 +183,10 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">
-            {currentWeek?.title || `Week ${selectedWeekNum}`}
+            {language === 'ar' ? `تمارين الأسبوع ${selectedWeekNum}` : (currentWeek?.title || `Week ${selectedWeekNum}`)}
           </h2>
           <span className="text-xs text-slate-400 font-mono">
-            {currentWeek?.workouts.length || 0} Workouts Scheduled
+            {currentWeek?.workouts.length || 0} {language === 'ar' ? 'تمارين مجدولة' : 'Workouts Scheduled'}
           </span>
         </div>
 
@@ -195,10 +199,10 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-mono font-bold text-accent-emerald bg-accent-emerald/10 px-2.5 py-0.5 rounded-lg">
-                    {workout.dayOfWeek || `Day ${wIdx + 1}`}
+                    {workout.dayOfWeek || (language === 'ar' ? `اليوم ${wIdx + 1}` : `Day ${wIdx + 1}`)}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
-                    {workout.exercises.length} exercises
+                    {workout.exercises.length} {language === 'ar' ? 'تمارين' : 'exercises'}
                   </span>
                 </div>
 
@@ -218,7 +222,7 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
                           <span className="font-semibold text-slate-200">{ex?.name || item.exerciseId}</span>
                         </div>
                         <div className="font-mono text-slate-400">
-                          <strong className="text-accent-emerald">{item.targetSets}</strong> sets × <strong className="text-white">{item.targetReps}</strong>
+                          <strong className="text-accent-emerald">{item.targetSets}</strong> {language === 'ar' ? 'جولات' : 'sets'} × <strong className="text-white">{item.targetReps}</strong> {language === 'ar' ? 'عدة' : 'reps'}
                         </div>
                       </div>
                     );
@@ -230,10 +234,10 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
               <div className="pt-2 border-t border-border flex items-center gap-2">
                 <button
                   onClick={() => handleStartProgramWorkout(workout)}
-                  className="w-full py-2.5 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-sm transition-all"
+                  className="w-full py-2.5 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-95"
                 >
                   <Play className="w-4 h-4 fill-black" />
-                  <span>Start This Workout</span>
+                  <span>{language === 'ar' ? 'بدء هذا التمرين الآن 🚀' : 'Start This Workout'}</span>
                 </button>
               </div>
 

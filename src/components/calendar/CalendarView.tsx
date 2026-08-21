@@ -318,6 +318,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onNavigate }) => {
             <span className="w-2.5 h-2.5 rounded-full bg-accent-cyan" />
             <span className="text-xs">{language === 'ar' ? 'نشاط / كارديو' : 'Activity'}</span>
           </div>
+          {user.isDemoUser && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+              <span>🧪</span>
+              <span>{language === 'ar' ? 'بيانات تجريبية' : 'Demo Data'}</span>
+            </div>
+          )}
         </div>
 
         {/* Day of Week Headers */}
