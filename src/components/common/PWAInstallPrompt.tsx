@@ -21,7 +21,7 @@ interface PWAInstallPromptProps {
 }
 
 export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, onClose }) => {
-  const { user, language } = useWorkout();
+  const { user, language, t } = useWorkout();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);

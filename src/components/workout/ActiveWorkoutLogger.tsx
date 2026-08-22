@@ -62,7 +62,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
       <div className="p-8 text-center bg-background-card rounded-3xl border border-border">
         <Dumbbell className="w-12 h-12 text-slate-500 mx-auto mb-3 animate-pulse" />
         <h2 className="text-xl font-bold text-white mb-2">{t('noActiveWorkout')}</h2>
-        <p className="text-sm text-slate-400 mb-6">{t('noActiveWorkoutDesc')}</p>
+        <p className="text-sm text-slate-400 mb-6" dir="auto">{t('noActiveWorkoutDesc')}</p>
         <button
           onClick={() => onNavigate('dashboard')}
           className="px-6 py-3 rounded-2xl bg-accent-emerald text-black font-extrabold text-sm shadow-glow-sm"
@@ -502,8 +502,8 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs uppercase font-extrabold tracking-wider text-accent-emerald">EXERCISE LIBRARY</span>
-                  <h3 className="text-lg font-bold text-white">Add Exercise to Workout</h3>
+                  <span className="text-xs uppercase font-extrabold tracking-wider text-accent-emerald">{t('exerciseDirectory')}</span>
+                  <h3 className="text-lg font-bold text-white">{t('addAnotherExercise')}</h3>
                 </div>
               </div>
               <button
@@ -516,7 +516,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
 
             <input
               type="text"
-              placeholder="Search exercise or muscle group..."
+              placeholder={t('searchPlaceholder')}
               value={searchExQuery}
               onChange={e => setSearchExQuery(e.target.value)}
               className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-2xl text-white font-medium mb-4 focus:outline-none focus:border-accent-emerald"

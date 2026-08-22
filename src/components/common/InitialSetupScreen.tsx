@@ -23,7 +23,43 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
   const [startDayOption, setStartDayOption] = useState<'today' | 'tomorrow'>('today');
   const [baselineOption, setBaselineOption] = useState<'experienced' | 'beginner_rpe'>('beginner_rpe');
+  const [preferredSplit, setPreferredSplit] = useState<string>('AI Recommended');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const getSplitOptions = (d: number) => {
+    if (d === 2) return ['Full Body', 'Upper / Lower'];
+    if (d === 3) return ['PPL', 'Full Body'];
+    if (d === 4) return ['Upper / Lower', 'PHUL (Powerlifter Recommended)'];
+    if (d === 5) return ['Hybrid (Upper/Lower + PPL)', 'Bro Split'];
+    if (d === 6) return ['PPL x2', 'Arnold Split'];
+    return [];
+  };
+
+  React.useEffect(() => {
+    // 1. If Beginner, they can't do 6 days
+    if (experience === 'Beginner' && days === 6) {
+      setDays(5);
+    }
+    
+    // 2. Adjust duration if out of bounds based on days
+    if (days === 2 && (duration === 45 || duration === 60)) {
+      setDuration(75);
+    } else if (days === 3 && duration === 45) {
+      setDuration(60);
+    } else if (days === 6 && duration === 90) {
+      setDuration(75);
+    }
+
+    // 3. Adjust split
+    if (experience === 'Beginner') {
+      setPreferredSplit('AI Recommended');
+    } else {
+      const options = getSplitOptions(days);
+      if (!options.includes(preferredSplit) && options.length > 0) {
+        setPreferredSplit(options[0]);
+      }
+    }
+  }, [days, duration, experience]);
 
   const goalKeys: FitnessGoal[] = [
     'General Fitness',
@@ -104,7 +140,8 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       streakDays: 0,
       hasCompletedOnboarding: true,
       startDayOption,
-      programStartDate: new Date().toISOString().split('T')[0]
+      programStartDate: new Date().toISOString().split('T')[0],
+      preferredSplit
     });
 
     const generated = generateAIProgram({
@@ -113,7 +150,8 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       experience,
       daysPerWeek: days,
       durationMinutes: duration,
-      equipment
+      equipment,
+      preferredSplit
     });
 
     saveGeneratedProgram(generated);
@@ -130,8 +168,6 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       {/* Dynamic Background Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent-emerald/10 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-10 right-10 w-72 h-72 bg-accent-indigo/10 rounded-full blur-3xl pointer-events-none -z-10" />
-
-      </div>
 
       <div className="w-full max-w-xl bg-background-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
         
@@ -332,20 +368,26 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               )}
 
               <div className="flex gap-2">
-                {[2, 3, 4, 5, 6].map(d => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDays(d)}
-                    className={`flex-1 py-3 rounded-2xl border font-mono font-black text-sm transition-all active:scale-95 ${
-                      days === d
-                        ? 'bg-accent-emerald text-black border-accent-emerald shadow-glow-sm'
-                        : 'bg-background-elevated border-border text-slate-300'
-                    }`}
-                  >
-                    {formatUnitDisplay(d, 'days', language)}
-                  </button>
-                ))}
+                {[2, 3, 4, 5, 6].map(d => {
+                  const isDisabled = experience === 'Beginner' && d === 6;
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => setDays(d)}
+                      className={`flex-1 py-3 rounded-2xl border font-mono font-black text-sm transition-all active:scale-95 ${
+                        days === d
+                          ? 'bg-accent-emerald text-black border-accent-emerald shadow-glow-sm'
+                          : isDisabled
+                          ? 'opacity-30 bg-background-elevated border-border text-slate-500 cursor-not-allowed'
+                          : 'bg-background-elevated border-border text-slate-300'
+                      }`}
+                    >
+                      {formatUnitDisplay(d, 'days', language)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -354,22 +396,57 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 {t('sessionDurationLabel')}: <span className="text-accent-cyan font-mono font-bold">{formatUnitDisplay(duration, 'minutes', language)}</span>
               </label>
               <div className="flex gap-2">
-                {[45, 60, 75, 90].map(m => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setDuration(m)}
-                    className={`flex-1 py-2.5 rounded-2xl border font-mono font-bold text-xs transition-all active:scale-95 ${
-                      duration === m
-                        ? 'bg-accent-cyan text-black border-accent-cyan'
-                        : 'bg-background-elevated border-border text-slate-300'
-                    }`}
-                  >
-                    {formatUnitDisplay(m, 'minutes', language)}
-                  </button>
-                ))}
+                {[45, 60, 75, 90].map(m => {
+                  const isTooShortFor2 = days === 2 && (m === 45 || m === 60);
+                  const isTooShortFor3 = days === 3 && m === 45;
+                  const isTooLongFor6 = days === 6 && m === 90;
+                  const isDisabled = isTooShortFor2 || isTooShortFor3 || isTooLongFor6;
+
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => setDuration(m)}
+                      className={`flex-1 py-2.5 rounded-2xl border font-mono font-bold text-xs transition-all active:scale-95 ${
+                        duration === m
+                          ? 'bg-accent-cyan text-black border-accent-cyan'
+                          : isDisabled
+                          ? 'opacity-30 bg-background-elevated border-border text-slate-500 cursor-not-allowed'
+                          : 'bg-background-elevated border-border text-slate-300'
+                      }`}
+                    >
+                      {formatUnitDisplay(m, 'minutes', language)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Workout Split Selection (Hidden for Beginners) */}
+            {experience !== 'Beginner' && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                  Workout Split
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {getSplitOptions(days).map(split => (
+                    <button
+                      key={split}
+                      type="button"
+                      onClick={() => setPreferredSplit(split)}
+                      className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all ${
+                        preferredSplit === split
+                          ? 'bg-accent-indigo/20 border-accent-indigo text-white shadow-sm'
+                          : 'bg-background-elevated border-border text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      {split}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button
@@ -515,8 +592,11 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                   <span className="block text-xs font-bold text-white mt-0.5">{experience}</span>
                 </button>
                 <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
-                  <span className="block text-[10px] text-slate-400 uppercase">Schedule</span>
+                  <span className="block text-[10px] text-slate-400 uppercase">Schedule & Split</span>
                   <span className="block text-xs font-bold text-white mt-0.5">{days} days, {duration} mins</span>
+                  {experience !== 'Beginner' && (
+                    <span className="block text-[10px] text-accent-indigo font-bold mt-1">{preferredSplit}</span>
+                  )}
                 </button>
                 <button onClick={() => setStep(3)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
                   <span className="block text-[10px] text-slate-400 uppercase">Equipment</span>

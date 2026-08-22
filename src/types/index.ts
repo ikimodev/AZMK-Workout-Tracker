@@ -166,6 +166,7 @@ export interface UserProfile {
   startDayOption?: 'today' | 'tomorrow';
   programStartDate?: string;
   calendarCustomizations?: Record<string, { type: 'workout' | 'rest'; workoutIndex?: number; customName?: string }>;
+  preferredSplit?: string;
 }
 
 export interface ReferralStats {

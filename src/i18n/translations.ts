@@ -149,15 +149,7 @@ export const TRANSLATIONS = {
     fullGymDesc: 'Barbells, dumbbells, cables, machines',
     homeGymDesc: 'Adjustable dumbbells, bench & pull-up bar',
     bodyweightDesc: 'No weights or equipment needed',
-    kg: 'kg',
-    zeroKgWk: '0 kg / wk',
-    zeroAdherence: '0% adherence',
-    prsLabel: 'PRs',
-    awaiting1stPr: 'Awaiting 1st PR',
-    fourWeekProtocol: '4-Week Protocol',
-    activeRecoveryDay: 'Active Recovery & Growth Day',
-    deepSleepGh: 'Deep Sleep & GH',
-    hydrationProtein: 'Hydration & Protein',
+
     
     // Rest Day
     restDayTitle: 'REST & RECOVERY DAY',
