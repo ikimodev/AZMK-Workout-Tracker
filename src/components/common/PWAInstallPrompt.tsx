@@ -58,8 +58,8 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ forceOpen, o
     // Check if user has already dismissed the PWA prompt in localStorage
     const hasDismissed = localStorage.getItem('azmk_pwa_dismissed') === 'true';
 
-    // Only auto-show for users who have completed onboarding and have not dismissed it
-    if (!isRunningStandalone && !hasDismissed && user.hasCompletedOnboarding) {
+    // Only auto-show if not already installed and not dismissed
+    if (!isRunningStandalone && !hasDismissed) {
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, 3000);

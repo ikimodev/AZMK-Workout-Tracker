@@ -11,7 +11,7 @@ interface InitialSetupScreenProps {
 }
 
 export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComplete }) => {
-  const { updateUserProfile, saveGeneratedProgram, user, language, setLanguage, t } = useWorkout();
+  const { updateUserProfile, saveGeneratedProgram, user, language, t } = useWorkout();
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState(user.name === 'Kareem Al-Otaibi' ? '' : user.name);
@@ -26,10 +26,10 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [isGenerating, setIsGenerating] = useState(false);
 
   const goalKeys: FitnessGoal[] = [
+    'General Fitness',
     'Muscle Gain',
     'Strength',
     'Fat Loss',
-    'General Fitness',
     'Endurance',
     'Mobility & Joint Health'
   ];
@@ -68,18 +68,18 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const equipmentOptions = [
     {
       id: 'Full Gym',
-      title: t('fullGym'),
-      desc: t('fullGymDesc')
+      title: 'Full Gym',
+      desc: 'Access to machines, barbells, and full equipment'
     },
     {
       id: 'Home Gym (Dumbbells & Bench)',
-      title: t('homeGym'),
-      desc: t('homeGymDesc')
+      title: 'Home Gym',
+      desc: 'Requires dumbbells and a bench'
     },
     {
       id: 'Bodyweight Only',
-      title: t('bodyweightOnly'),
-      desc: t('bodyweightDesc')
+      title: 'Calisthenics',
+      desc: 'Bodyweight only, pull-up bar optional'
     },
   ];
 
@@ -131,27 +131,6 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent-emerald/10 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-10 right-10 w-72 h-72 bg-accent-indigo/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* Language Switcher Bar at Top Right */}
-      <div className="w-full max-w-xl flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-accent-emerald to-emerald-400 flex items-center justify-center shadow-glow-sm">
-            <Zap className="w-4 h-4 text-black fill-black" />
-          </div>
-          <span className="font-black text-base tracking-tight text-white font-mono">
-            {t('brandName')}
-          </span>
-          <span className="text-[10px] text-accent-emerald font-mono font-bold bg-accent-emerald/10 px-1.5 py-0.5 rounded">
-            {t('aiBadge')}
-          </span>
-        </div>
-
-        <button
-          onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-background-card hover:bg-background-elevated border border-border text-xs font-bold text-slate-300 transition-all shadow-sm active:scale-95"
-        >
-          <Globe className="w-3.5 h-3.5 text-accent-cyan" />
-          <span className="font-mono">{language === 'ar' ? 'English' : 'عربي'}</span>
-        </button>
       </div>
 
       <div className="w-full max-w-xl bg-background-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
@@ -160,7 +139,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{t('onboardingWelcomeTitle')}</span>
+            <span>Step {step} of 3</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             {step === 1 && t('step1Title')}
@@ -186,14 +165,19 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
           <div className="space-y-4 relative z-10">
             {/* Athlete Name */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
-                {t('athleteName')}
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
+                  Your Full Name / Nickname
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  Optional
+                </span>
+              </div>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder={t('namePlaceholder')}
+                placeholder="Used to personalize your AI coach messages"
                 className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors"
               />
             </div>
@@ -212,6 +196,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 {goalKeys.map(key => {
                   const isSelected = primaryGoal === key;
                   const term = FITNESS_GOALS_DICT[key];
+                  const displayTitle = key === 'General Fitness' ? 'I just want to start working out' : (language === 'ar' ? term.ar : term.en);
                   return (
                     <button
                       key={key}
@@ -224,7 +209,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <p className="font-bold text-xs text-white">{language === 'ar' ? term.ar : term.en}</p>
+                        <p className="font-bold text-xs text-white">{displayTitle}</p>
                         {isSelected && (
                           <span className="text-[10px] font-bold text-accent-emerald font-mono flex items-center gap-0.5">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -446,12 +431,17 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 <button
                   type="button"
                   onClick={() => setBaselineOption('beginner_rpe')}
-                  className={`p-3 rounded-2xl border text-left rtl:text-right transition-all ${
+                  className={`p-3 rounded-2xl border text-left rtl:text-right transition-all relative ${
                     baselineOption === 'beginner_rpe'
                       ? 'bg-accent-emerald/15 border-accent-emerald text-white shadow-sm ring-1 ring-accent-emerald'
                       : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                   }`}
                 >
+                  {experience === 'Beginner' && (
+                    <span className="absolute -top-2.5 right-3 bg-accent-emerald text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                      Best for Beginners
+                    </span>
+                  )}
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-xs text-white">{t('baselineRpeTitle')}</p>
                     {baselineOption === 'beginner_rpe' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
@@ -513,6 +503,28 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               </div>
             </div>
 
+            <div className="mt-6 pt-4 border-t border-border/50">
+              <h3 className="text-sm font-bold text-white mb-3">Plan Summary</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => setStep(1)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                  <span className="block text-[10px] text-slate-400 uppercase">Goal</span>
+                  <span className="block text-xs font-bold text-white mt-0.5">{primaryGoal}</span>
+                </button>
+                <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                  <span className="block text-[10px] text-slate-400 uppercase">Experience</span>
+                  <span className="block text-xs font-bold text-white mt-0.5">{experience}</span>
+                </button>
+                <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                  <span className="block text-[10px] text-slate-400 uppercase">Schedule</span>
+                  <span className="block text-xs font-bold text-white mt-0.5">{days} days, {duration} mins</span>
+                </button>
+                <button onClick={() => setStep(3)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                  <span className="block text-[10px] text-slate-400 uppercase">Equipment</span>
+                  <span className="block text-xs font-bold text-white mt-0.5 truncate">{equipment}</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -531,12 +543,12 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 {isGenerating ? (
                   <>
                     <Sparkles className="w-5 h-5 animate-spin" />
-                    <span>{language === 'ar' ? 'جارٍ هندسة جدولك التدريبي...' : 'Calibrating Periodization Plan...'}</span>
+                    <span>Calibrating Periodization Plan...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-5 h-5 fill-black" />
-                    <span>{t('generateFreePlanBtn')}</span>
+                    <span>Generate Plan</span>
                   </>
                 )}
               </button>
