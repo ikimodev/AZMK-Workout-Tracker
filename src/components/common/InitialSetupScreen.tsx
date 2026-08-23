@@ -25,7 +25,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [days, setDays] = useState(4);
   const [duration, setDuration] = useState(60);
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
-  const [startDayOption, setStartDayOption] = useState<'today' | 'tomorrow'>('today');
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [baselineOption, setBaselineOption] = useState<'experienced' | 'beginner_rpe'>('beginner_rpe');
   const [preferredSplit, setPreferredSplit] = useState<string>('AI Recommended');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -123,7 +123,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     },
   ];
 
-  const handleFinishAndGenerate = async () => {
+  const handleFinishAndGenerate = async (skipGeneration = false) => {
     setIsGenerating(true);
     await new Promise(r => setTimeout(r, 650));
 
@@ -147,22 +147,23 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       startingBaselineOption: baselineOption,
       streakDays: 0,
       hasCompletedOnboarding: true,
-      startDayOption,
-      programStartDate: new Date().toISOString().split('T')[0],
+      startDayOption: 'today',
+      programStartDate: startDate,
       preferredSplit
     });
 
-    const generated = generateAIProgram({
-      goal: primaryGoal,
-      secondaryGoal,
-      experience,
-      daysPerWeek: days,
-      durationMinutes: duration,
-      equipment,
-      preferredSplit
-    });
-
-    saveGeneratedProgram(generated);
+    if (!skipGeneration) {
+      const generated = generateAIProgram({
+        goal: primaryGoal,
+        secondaryGoal,
+        experience,
+        daysPerWeek: days,
+        durationMinutes: duration,
+        equipment,
+        preferredSplit
+      });
+      saveGeneratedProgram(generated);
+    }
 
     trackUserSession(finalName);
 
@@ -181,10 +182,10 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         
         {/* Header */}
         <div className="text-center mb-6">
-          {step > 1 && (
+          {step > 2 && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Step {step - 1} of 3</span>
+              <span>Step {step - 2} of 2</span>
             </div>
           )}
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -202,9 +203,8 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         </div>
 
         {/* Step Progress Indicators */}
-        {step > 1 && (
+        {step > 2 && (
           <div className="flex items-center gap-2 mb-6">
-            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
             <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
             <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 4 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
           </div>
@@ -383,51 +383,68 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               </div>
             </div>
 
-            {/* Secondary Goal */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-accent-cyan uppercase font-mono tracking-wider">
-                  2. {t('secondaryGoalLabel')}
-                </label>
-                <span className="text-[10px] text-slate-400">
-                  {t('secondaryGoalHelp')}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {goalKeys.map(key => {
-                  const isPrimary = key === primaryGoal;
-                  const isSelected = secondaryGoal === key;
-                  const term = FITNESS_GOALS_DICT[key];
-                  
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={isPrimary}
-                      onClick={() => setSecondaryGoal(key)}
-                      className={`p-2.5 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
-                        isPrimary
-                          ? 'opacity-40 bg-background-elevated/40 border-border text-slate-500 cursor-not-allowed'
-                          : isSelected
-                          ? 'bg-accent-cyan/20 border-accent-cyan text-white shadow-sm ring-1 ring-accent-cyan/50'
-                          : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="font-bold text-xs text-white truncate">{language === 'ar' ? term.shortAr : term.shortEn}</p>
-                        {isSelected && (
-                          <Check className="w-3 h-3 text-accent-cyan stroke-[3] shrink-0" />
-                        )}
-                      </div>
-                      {isPrimary && (
-                        <span className="text-[9px] text-slate-500 block mt-0.5">{t('primaryGoalBadge')}</span>
-                      )}
-                    </button>
-                  );
-                })}
+            {/* Experience Level (Moved to Step 2) */}
+            <div className="pt-2 border-t border-border/50 mt-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                {t('experienceLabel') || 'Experience Level'}
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { id: 'Beginner', title: 'Beginner', desc: '0-6 months' },
+                  { id: 'Intermediate', title: 'Intermediate', desc: '6m-3 years' },
+                  { id: 'Advanced', title: 'Advanced', desc: '3+ years' }
+                ].map(lvl => (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    onClick={() => setExperience(lvl.id as any)}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      experience === lvl.id
+                        ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-sm ring-1 ring-accent-emerald'
+                        : 'bg-background-elevated border-border text-slate-300 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-xs text-white">{lvl.title}</p>
+                      {experience === lvl.id && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{lvl.desc}</p>
+                  </button>
+                ))}
               </div>
             </div>
 
+            <div className="pt-4 mt-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                How do you want to proceed?
+              </label>
+              <div className="grid gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="w-full p-4 rounded-2xl bg-gradient-to-r from-accent-emerald via-emerald-400 to-accent-cyan hover:from-emerald-400 hover:to-accent-cyan text-black font-black text-sm flex flex-col items-start shadow-glow-sm transition-all active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>I want to be guided (AI Program)</span>
+                    <Zap className="w-5 h-5 fill-black" />
+                  </div>
+                  <span className="text-[10px] font-medium opacity-80 mt-1">We will generate a 4-week custom program for you</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleFinishAndGenerate(true)}
+                  className="w-full p-4 rounded-2xl bg-background-elevated border border-border text-slate-300 hover:border-slate-500 font-bold text-sm flex flex-col items-start transition-all active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>I want to build my own program</span>
+                    <ArrowRight className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 font-normal">Skip setup and go directly to dashboard</span>
+                </button>
+              </div>
+            </div>
+            
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -436,49 +453,13 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               >
                 {t('backBtn')}
               </button>
-              <button
-                type="button"
-                onClick={() => setStep(3)}
-                className="flex-1 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
-              >
-                <span>{t('nextScheduleBtn')}</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-              </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Experience & Schedule (Days & Duration) */}
+        {/* STEP 3: Schedule (Days & Duration) */}
         {step === 3 && (
           <div className="space-y-5 relative z-10">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {t('experienceLabel')}
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'Beginner', title: t('beginner') },
-                  { id: 'Intermediate', title: t('intermediate') },
-                  { id: 'Advanced', title: t('advanced') }
-                ].map(lvl => (
-                  <button
-                    key={lvl.id}
-                    type="button"
-                    onClick={() => setExperience(lvl.id as any)}
-                    className={`py-2.5 rounded-2xl border text-xs font-bold text-center transition-all ${
-                      experience === lvl.id
-                        ? 'bg-accent-emerald text-black border-accent-emerald shadow-sm'
-                        : 'bg-background-elevated border-border text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center gap-1">
-                      <span>{lvl.title}</span>
-                      {experience === lvl.id && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -679,36 +660,17 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               </div>
             </div>
 
-            {/* Start Day Option (Today vs Tomorrow) */}
+            {/* Start Date Option */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {t('startDayLabel')}
+                Date to start
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStartDayOption('today')}
-                  className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all ${
-                    startDayOption === 'today'
-                      ? 'bg-emerald-500/20 border-accent-emerald text-accent-emerald shadow-sm'
-                      : 'bg-background-elevated border-border text-slate-400'
-                  }`}
-                >
-                  {t('startTodayTitle')}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setStartDayOption('tomorrow')}
-                  className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all ${
-                    startDayOption === 'tomorrow'
-                      ? 'bg-cyan-500/20 border-accent-cyan text-accent-cyan shadow-sm'
-                      : 'bg-background-elevated border-border text-slate-400'
-                  }`}
-                >
-                  {t('startTomorrowTitle')}
-                </button>
-              </div>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
+              />
             </div>
 
             <div className="mt-6 pt-4 border-t border-border/50">
@@ -749,7 +711,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               <button
                 type="button"
                 disabled={isGenerating}
-                onClick={handleFinishAndGenerate}
+                onClick={() => handleFinishAndGenerate(false)}
                 className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-accent-emerald via-emerald-400 to-accent-cyan hover:from-emerald-400 hover:to-accent-cyan text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-lg transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 {isGenerating ? (
