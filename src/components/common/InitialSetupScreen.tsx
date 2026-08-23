@@ -247,7 +247,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                       : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  <span className="text-base">♂️</span>
+                  <svg className="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="6"/><path d="M14.5 9.5 20 4"/><path d="M16 4h4v4"/></svg>
                   <span>{t('male')}</span>
                   {gender === 'male' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
                 </button>
@@ -261,7 +261,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                       : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  <span className="text-base">♀️</span>
+                  <svg className="w-5 h-5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="6"/><path d="M12 15v7"/><path d="M9 19h6"/></svg>
                   <span>{t('female')}</span>
                   {gender === 'female' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
                 </button>
