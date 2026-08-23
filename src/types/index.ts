@@ -148,6 +148,9 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  gender?: 'male' | 'female';
+  weight?: number; // kg
+  height?: number; // cm
   experience: 'Beginner' | 'Intermediate' | 'Advanced';
   primaryGoal: FitnessGoal;
   secondaryGoal: FitnessGoal;

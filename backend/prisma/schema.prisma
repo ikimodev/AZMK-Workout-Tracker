@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String           @id @default(uuid())
+  name                    String
+  email                   String           @unique
+  experience              String
+  primaryGoal             String
+  secondaryGoal           String
+  daysPerWeek             Int
+  preferredDurationMinutes Int
+  availableEquipment      String // Stored as JSON string
+  tier                    String           @default("free")
+  role                    String           @default("user")
+  streakDays              Int              @default(0)
+  joinedDate              String
+  hasCompletedOnboarding  Boolean          @default(false)
+  referralCode            String
+  sessions                WorkoutSession[]
+  prs                     PRRecord[]
+  activities              LoggedActivity[]
+}
+
+model WorkoutSession {
+  id              String            @id @default(uuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  date            String
+  startedAt       String
+  durationMinutes Int
+  totalVolumeKg   Float
+  totalSets       Int
+  totalReps       Int
+  prCount         Int
+  isCompleted     Boolean
+  aiSummary       String?
+  exercises       WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id               String         @id @default(uuid())
+  sessionId        String
+  session          WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId       String
+  order            Int
+  restTimerSeconds Int
+  sets             LoggedSet[]
+}
+
+model LoggedSet {
+  id             String          @id @default(uuid())
+  exerciseId     String
+  exercise       WorkoutExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  setNumber      Int
+  weight         Float
+  reps           Int
+  rpe            Float?
+  isCompleted    Boolean
+  isPR           Boolean         @default(false)
+  previousWeight Float?
+  previousReps   Int?
+  targetWeight   Float?
+  targetRepsMin  Int?
+  targetRepsMax  Int?
+}
+
+model PRRecord {
+  id                    String @id @default(uuid())
+  userId                String
+  user                  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId            String
+  exerciseName          String
+  type                  String
+  value                 Float
+  weight                Float
+  reps                  Int
+  date                  String
+  previousBest          Float
+  improvementPercentage Float
+}
+
+model LoggedActivity {
+  id              String  @id @default(uuid())
+  userId          String
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  type            String
+  date            String
+  durationMinutes Int
+  caloriesBurned  Float
+  distanceKm      Float?
+  notes           String?
+}

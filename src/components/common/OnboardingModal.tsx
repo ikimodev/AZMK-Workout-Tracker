@@ -16,6 +16,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState(user.name);
+  const [gender, setGender] = useState<'male' | 'female'>(user.gender || 'male');
+  const [weight, setWeight] = useState<number | ''>(user.weight || 75);
+  const [height, setHeight] = useState<number | ''>(user.height || 175);
   const [primaryGoal, setPrimaryGoal] = useState<FitnessGoal>(user.primaryGoal || 'Muscle Gain');
   const [secondaryGoal, setSecondaryGoal] = useState<FitnessGoal>(user.secondaryGoal || 'Strength');
   const [experience, setExperience] = useState<'Beginner' | 'Intermediate' | 'Advanced'>(user.experience);
@@ -56,6 +59,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const handleFinishAndGenerate = () => {
     updateUserProfile({
       name,
+      gender,
+      weight: typeof weight === 'number' ? weight : 75,
+      height: typeof height === 'number' ? height : 175,
       primaryGoal,
       secondaryGoal,
       experience,
@@ -108,55 +114,143 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
         {/* Steps Progress */}
         <div className="flex items-center justify-between mb-6 border-b border-border pb-4">
-          <div className="flex items-center gap-2">
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+          <div className="flex items-center gap-1.5">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
               step >= 1 ? 'bg-accent-emerald text-black' : 'bg-background-elevated text-slate-400'
             }`}>
               1
             </span>
-            <span className="text-xs text-slate-300 font-semibold">{language === 'ar' ? 'الأهداف' : 'Goals'}</span>
+            <span className="text-[11px] text-slate-300 font-semibold">{language === 'ar' ? 'البيانات' : 'Profile'}</span>
           </div>
 
-          <div className="h-0.5 w-8 bg-border" />
+          <div className="h-0.5 w-4 bg-border" />
 
-          <div className="flex items-center gap-2">
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+          <div className="flex items-center gap-1.5">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
               step >= 2 ? 'bg-accent-emerald text-black' : 'bg-background-elevated text-slate-400'
             }`}>
               2
             </span>
-            <span className="text-xs text-slate-300 font-semibold">{language === 'ar' ? 'الجدول' : 'Schedule'}</span>
+            <span className="text-[11px] text-slate-300 font-semibold">{language === 'ar' ? 'الأهداف' : 'Goals'}</span>
           </div>
 
-          <div className="h-0.5 w-8 bg-border" />
+          <div className="h-0.5 w-4 bg-border" />
 
-          <div className="flex items-center gap-2">
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+          <div className="flex items-center gap-1.5">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
               step >= 3 ? 'bg-accent-emerald text-black' : 'bg-background-elevated text-slate-400'
             }`}>
               3
             </span>
-            <span className="text-xs text-slate-300 font-semibold">{language === 'ar' ? 'الأدوات' : 'Equipment'}</span>
+            <span className="text-[11px] text-slate-300 font-semibold">{language === 'ar' ? 'الجدول' : 'Schedule'}</span>
+          </div>
+
+          <div className="h-0.5 w-4 bg-border" />
+
+          <div className="flex items-center gap-1.5">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+              step >= 4 ? 'bg-accent-emerald text-black' : 'bg-background-elevated text-slate-400'
+            }`}>
+              4
+            </span>
+            <span className="text-[11px] text-slate-300 font-semibold">{language === 'ar' ? 'الأدوات' : 'Gear'}</span>
           </div>
         </div>
 
-        {/* STEP 1: Name & Goals */}
+        {/* STEP 1: Personal Info (Name at top, Gender, Weight, Height) */}
         {step === 1 && (
           <div className="space-y-4">
+            {/* Athlete Name (at top) */}
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5">{language === 'ar' ? 'اسم اللاعب' : 'Athlete Name'}</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('nameLabel')}</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-xl text-white text-xs font-medium focus:outline-none focus:border-accent-emerald"
-                placeholder={language === 'ar' ? 'اسمك أو لقبك' : 'Your name or nickname'}
+                placeholder={t('namePlaceholder')}
               />
             </div>
 
+            {/* Gender */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('genderLabel')}</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGender('male')}
+                  className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    gender === 'male'
+                      ? 'bg-accent-emerald/20 border-accent-emerald text-white'
+                      : 'bg-background-elevated border-border text-slate-300'
+                  }`}
+                >
+                  <span>👨</span>
+                  <span>{t('male')}</span>
+                  {gender === 'male' && <Check className="w-3.5 h-3.5 text-accent-emerald" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGender('female')}
+                  className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    gender === 'female'
+                      ? 'bg-accent-emerald/20 border-accent-emerald text-white'
+                      : 'bg-background-elevated border-border text-slate-300'
+                  }`}
+                >
+                  <span>👩</span>
+                  <span>{t('female')}</span>
+                  {gender === 'female' && <Check className="w-3.5 h-3.5 text-accent-emerald" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Weight & Height */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('weightLabel')}</label>
+                <input
+                  type="number"
+                  min="30"
+                  max="250"
+                  value={weight}
+                  onChange={e => setWeight(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-4 py-2 bg-background-elevated border border-border rounded-xl text-white text-xs font-mono font-bold focus:outline-none focus:border-accent-emerald"
+                  placeholder="75"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('heightLabel')}</label>
+                <input
+                  type="number"
+                  min="100"
+                  max="230"
+                  value={height}
+                  onChange={e => setHeight(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-4 py-2 bg-background-elevated border border-border rounded-xl text-white text-xs font-mono font-bold focus:outline-none focus:border-accent-emerald"
+                  placeholder="175"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => setStep(2)}
+              className="w-full mt-4 py-3 rounded-xl bg-accent-emerald text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-glow-sm"
+            >
+              <span>{t('nextGoalsBtn')}</span>
+              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: Goals */}
+        {step === 2 && (
+          <div className="space-y-4">
             {/* Primary Goal */}
             <div>
-              <label className="block text-xs font-semibold text-accent-emerald mb-1.5">{language === 'ar' ? '1. الهدف الأساسي' : '1. Primary Goal'}</label>
+              <label className="block text-xs font-semibold text-accent-emerald mb-1.5">{t('primaryGoalLabel')}</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {goalKeys.slice(0, 4).map(key => {
                   const term = FITNESS_GOALS_DICT[key];
@@ -180,7 +274,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
             {/* Secondary Goal */}
             <div>
-              <label className="block text-xs font-semibold text-accent-cyan mb-1.5">{language === 'ar' ? '2. الهدف الثانوي' : '2. Secondary Goal'}</label>
+              <label className="block text-xs font-semibold text-accent-cyan mb-1.5">{t('secondaryGoalLabel')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {goalKeys.map(key => {
                   const term = FITNESS_GOALS_DICT[key];
@@ -202,18 +296,28 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
             </div>
 
-            <button
-              onClick={() => setStep(2)}
-              className="w-full mt-4 py-3 rounded-xl bg-accent-emerald text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-glow-sm"
-            >
-              <span>{language === 'ar' ? 'متابعة: الجدول الأسبوعي' : 'Next: Schedule Preferences'}</span>
-              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-            </button>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="py-2.5 px-4 rounded-xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
+              >
+                {t('backBtn')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="flex-1 py-2.5 rounded-xl bg-accent-emerald text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-glow-sm"
+              >
+                <span>{t('nextScheduleBtn')}</span>
+                <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* STEP 2: Experience & Schedule */}
-        {step === 2 && (
+        {/* STEP 3: Experience & Schedule */}
+        {step === 3 && (
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1.5">{language === 'ar' ? 'مستوى الخبرة' : 'Experience Level'}</label>
@@ -282,25 +386,25 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="py-2.5 px-4 rounded-xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
               >
-                {language === 'ar' ? 'رجوع' : 'Back'}
+                {t('backBtn')}
               </button>
               <button
                 type="button"
-                onClick={() => setStep(3)}
+                onClick={() => setStep(4)}
                 className="flex-1 py-2.5 rounded-xl bg-accent-emerald text-black font-extrabold text-xs flex items-center justify-center gap-1.5"
               >
-                <span>{language === 'ar' ? 'متابعة: الأدوات' : 'Next: Equipment'}</span>
+                <span>{t('nextEquipmentBtn')}</span>
                 <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Equipment & Finish */}
-        {step === 3 && (
+        {/* STEP 4: Equipment & Finish */}
+        {step === 4 && (
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1.5">{language === 'ar' ? 'الأدوات المتاحة' : 'Available Equipment'}</label>
@@ -367,10 +471,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(3)}
                 className="py-2.5 px-4 rounded-xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
               >
-                {language === 'ar' ? 'رجوع' : 'Back'}
+                {t('backBtn')}
               </button>
               <button
                 type="button"

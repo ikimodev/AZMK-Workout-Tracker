@@ -33,6 +33,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onOpenOnbo
   } = useWorkout();
   
   const [name, setName] = useState(user.name);
+  const [gender, setGender] = useState<'male' | 'female'>(user.gender || 'male');
+  const [weight, setWeight] = useState<number | ''>(user.weight || 75);
+  const [height, setHeight] = useState<number | ''>(user.height || 175);
   const [goal, setGoal] = useState(user.primaryGoal);
   const [secGoal, setSecGoal] = useState(user.secondaryGoal || 'Strength');
   const [exp, setExp] = useState(user.experience);
@@ -43,6 +46,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onOpenOnbo
     e.preventDefault();
     updateUserProfile({
       name,
+      gender,
+      weight: typeof weight === 'number' ? weight : 75,
+      height: typeof height === 'number' ? height : 175,
       primaryGoal: goal,
       secondaryGoal: secGoal,
       experience: exp,
@@ -130,6 +136,42 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onOpenOnbo
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-xl text-white text-xs font-medium focus:outline-none focus:border-accent-emerald"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('genderLabel')}</label>
+            <select
+              value={gender}
+              onChange={e => setGender(e.target.value as any)}
+              className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-xl text-white text-xs font-medium focus:outline-none focus:border-accent-emerald"
+            >
+              <option value="male">{t('male')}</option>
+              <option value="female">{t('female')}</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('weightLabel')}</label>
+            <input
+              type="number"
+              min="30"
+              max="250"
+              value={weight}
+              onChange={e => setWeight(e.target.value ? Number(e.target.value) : '')}
+              className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-xl text-white text-xs font-mono font-bold focus:outline-none focus:border-accent-emerald"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5">{t('heightLabel')}</label>
+            <input
+              type="number"
+              min="100"
+              max="230"
+              value={height}
+              onChange={e => setHeight(e.target.value ? Number(e.target.value) : '')}
+              className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-xl text-white text-xs font-mono font-bold focus:outline-none focus:border-accent-emerald"
             />
           </div>
 

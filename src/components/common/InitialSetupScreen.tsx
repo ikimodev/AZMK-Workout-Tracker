@@ -15,6 +15,9 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState(user.name === 'Kareem Al-Otaibi' ? '' : user.name);
+  const [gender, setGender] = useState<'male' | 'female'>(user.gender || 'male');
+  const [weight, setWeight] = useState<number | ''>(user.weight || 75);
+  const [height, setHeight] = useState<number | ''>(user.height || 175);
   const [primaryGoal, setPrimaryGoal] = useState<FitnessGoal>('Muscle Gain');
   const [secondaryGoal, setSecondaryGoal] = useState<FitnessGoal>('Strength');
   const [experience, setExperience] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
@@ -127,6 +130,9 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
 
     updateUserProfile({
       name: finalName,
+      gender,
+      weight: typeof weight === 'number' ? weight : 75,
+      height: typeof height === 'number' ? height : 175,
       email: `${finalName.toLowerCase().replace(/\s+/g, '')}@azmk.fit`,
       primaryGoal,
       secondaryGoal,
@@ -175,17 +181,19 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Step {step} of 3</span>
+            <span>Step {step} of 4</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            {step === 1 && t('step1Title')}
-            {step === 2 && t('step2Title')}
-            {step === 3 && t('step3Title')}
+            {step === 1 && t('stepPersonalTitle')}
+            {step === 2 && t('step1Title')}
+            {step === 3 && t('step2Title')}
+            {step === 4 && t('step3Title')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
-            {step === 1 && t('step1Subtitle')}
-            {step === 2 && t('step2Subtitle')}
-            {step === 3 && t('step3Subtitle')}
+            {step === 1 && t('stepPersonalSubtitle')}
+            {step === 2 && t('step1Subtitle')}
+            {step === 3 && t('step2Subtitle')}
+            {step === 4 && t('step3Subtitle')}
           </p>
         </div>
 
@@ -194,16 +202,17 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
           <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
           <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
           <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
+          <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 4 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
         </div>
 
-        {/* STEP 1: Athlete Name & Goals (Primary + Secondary) */}
+        {/* STEP 1: Personal Profile (Name, Gender, Weight, Height) */}
         {step === 1 && (
           <div className="space-y-4 relative z-10">
-            {/* Athlete Name */}
+            {/* Athlete Name (at top) */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
-                  Your Full Name / Nickname
+                  {t('nameLabel')}
                 </label>
                 <span className="text-[10px] text-slate-400">
                   Optional
@@ -213,11 +222,108 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Used to personalize your AI coach messages"
+                placeholder={t('namePlaceholder')}
                 className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors"
               />
             </div>
 
+            {/* Gender */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
+                {t('genderLabel')}
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGender('male')}
+                  className={`py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                    gender === 'male'
+                      ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm ring-1 ring-accent-emerald'
+                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
+                  }`}
+                >
+                  <span className="text-base">👨</span>
+                  <span>{t('male')}</span>
+                  {gender === 'male' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGender('female')}
+                  className={`py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                    gender === 'female'
+                      ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm ring-1 ring-accent-emerald'
+                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
+                  }`}
+                >
+                  <span className="text-base">👩</span>
+                  <span>{t('female')}</span>
+                  {gender === 'female' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Weight & Height */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Weight */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
+                  {t('weightLabel')}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="30"
+                    max="250"
+                    value={weight}
+                    onChange={e => setWeight(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="75"
+                    className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
+                  />
+                  <span className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
+                    kg
+                  </span>
+                </div>
+              </div>
+
+              {/* Height */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
+                  {t('heightLabel')}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="100"
+                    max="230"
+                    value={height}
+                    onChange={e => setHeight(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="175"
+                    className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
+                  />
+                  <span className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
+                    cm
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (!name.trim()) setName(language === 'ar' ? 'بطل' : 'Athlete');
+                setStep(2);
+              }}
+              className="w-full mt-4 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
+            >
+              <span>{t('nextGoalsBtn')}</span>
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: Goals (Primary + Secondary) */}
+        {step === 2 && (
+          <div className="space-y-4 relative z-10">
             {/* Primary Goal */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -304,21 +410,28 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                if (!name.trim()) setName(language === 'ar' ? 'بطل' : 'Athlete');
-                setStep(2);
-              }}
-              className="w-full mt-4 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
-            >
-              <span>{t('nextScheduleBtn')}</span>
-              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-            </button>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
+              >
+                {t('backBtn')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="flex-1 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
+              >
+                <span>{t('nextScheduleBtn')}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* STEP 2: Experience & Schedule (Days & Duration) */}
-        {step === 2 && (
+        {/* STEP 3: Experience & Schedule (Days & Duration) */}
+        {step === 3 && (
           <div className="space-y-5 relative z-10">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
@@ -451,14 +564,14 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
               >
                 {t('backBtn')}
               </button>
               <button
                 type="button"
-                onClick={() => setStep(3)}
+                onClick={() => setStep(4)}
                 className="flex-1 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
               >
                 <span>{t('nextEquipmentBtn')}</span>
@@ -468,8 +581,8 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
           </div>
         )}
 
-        {/* STEP 3: Available Equipment, Baseline Weights & 4-Week Routine Generation */}
-        {step === 3 && (
+        {/* STEP 4: Available Equipment, Baseline Weights & 4-Week Routine Generation */}
+        {step === 4 && (
           <div className="space-y-5 relative z-10">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
@@ -583,22 +696,23 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
             <div className="mt-6 pt-4 border-t border-border/50">
               <h3 className="text-sm font-bold text-white mb-3">Plan Summary</h3>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setStep(1)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                <button onClick={() => setStep(1)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
+                  <span className="block text-[10px] text-slate-400 uppercase">Profile</span>
+                  <span className="block text-xs font-bold text-white mt-0.5 truncate">{name || 'Athlete'} ({gender === 'male' ? 'ذكر' : 'أنثى'})</span>
+                  <span className="block text-[10px] text-slate-400">{weight} kg • {height} cm</span>
+                </button>
+                <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
                   <span className="block text-[10px] text-slate-400 uppercase">Goal</span>
-                  <span className="block text-xs font-bold text-white mt-0.5">{primaryGoal}</span>
+                  <span className="block text-xs font-bold text-white mt-0.5 truncate">{primaryGoal}</span>
                 </button>
-                <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
-                  <span className="block text-[10px] text-slate-400 uppercase">Experience</span>
-                  <span className="block text-xs font-bold text-white mt-0.5">{experience}</span>
-                </button>
-                <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                <button onClick={() => setStep(3)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
                   <span className="block text-[10px] text-slate-400 uppercase">Schedule & Split</span>
                   <span className="block text-xs font-bold text-white mt-0.5">{days} days, {duration} mins</span>
                   {experience !== 'Beginner' && (
                     <span className="block text-[10px] text-accent-indigo font-bold mt-1">{preferredSplit}</span>
                   )}
                 </button>
-                <button onClick={() => setStep(3)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left hover:border-accent-emerald/50 transition-colors">
+                <button onClick={() => setStep(4)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
                   <span className="block text-[10px] text-slate-400 uppercase">Equipment</span>
                   <span className="block text-xs font-bold text-white mt-0.5 truncate">{equipment}</span>
                 </button>
@@ -608,7 +722,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(3)}
                 className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
               >
                 {t('backBtn')}
