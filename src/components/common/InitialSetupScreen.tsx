@@ -2,8 +2,35 @@ import React, { useState } from 'react';
 import { Sparkles, ArrowRight, Zap, Dumbbell, ShieldCheck, Check, Globe, ArrowLeft } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { generateAIProgram } from '../../services/aiProgramGenerator';
-import { FitnessGoal } from '../../types';
+import { FitnessGoal, Equipment } from '../../types';
 import { trackUserSession } from '../../services/analyticsService';
+
+const EQUIPMENT_CATEGORIES = [
+  {
+    title: 'Weights and Bars',
+    items: ['Dumbbell', 'Barbell', 'Plate', 'Kettlebell', 'EZ Bar', 'Landmine', 'Trap Bar']
+  },
+  {
+    title: 'Benches and Racks',
+    items: ['Pull Up Bar', 'Squat Rack', 'Flat Bench', 'Adjustable Bench', 'Dip Bar']
+  },
+  {
+    title: 'Machines',
+    items: ['Single Cable Machine', 'Dual Cable Machine', 'Lat Pulldown Cable', 'Leg Press Machine', 'Smith Machine', 'T-bar', 'Stack Machines', 'Plate Machines']
+  },
+  {
+    title: 'Cardio',
+    items: ['Treadmill', 'Rowing Machine', 'Spinning', 'Elliptical Trainer', 'Stair Machine', 'Air Bike']
+  },
+  {
+    title: 'Other',
+    items: ['Suspension Band', 'Resistance Band', 'Battle Rope', 'Rings', 'Jump Rope', 'Medicine Ball', 'Other']
+  }
+];
+
+const DEFAULT_FULL_GYM = EQUIPMENT_CATEGORIES.flatMap(c => c.items);
+const DEFAULT_HOME_GYM = ['Dumbbell', 'Barbell', 'Plate', 'Kettlebell', 'Pull Up Bar', 'Squat Rack', 'Flat Bench', 'Adjustable Bench', 'Dip Bar', 'Resistance Band', 'Jump Rope'];
+const DEFAULT_BODYWEIGHT = ['Pull Up Bar', 'Dip Bar', 'Suspension Band', 'Resistance Band', 'Rings', 'Jump Rope'];
 import { FITNESS_GOALS_DICT, formatUnitDisplay, getFitnessGoalDisplayName } from '../../i18n/fitnessDictionary';
 
 interface InitialSetupScreenProps {
@@ -25,6 +52,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [days, setDays] = useState(4);
   const [duration, setDuration] = useState(60);
   const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
+  const [detailedEquipment, setDetailedEquipment] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [baselineOption, setBaselineOption] = useState<'experienced' | 'beginner_rpe'>('beginner_rpe');
   const [preferredSplit, setPreferredSplit] = useState<string>('AI Recommended');
@@ -141,6 +169,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       experience,
       daysPerWeek: days,
       preferredDurationMinutes: duration,
+      availableEquipment: detailedEquipment.length > 0 ? (detailedEquipment as Equipment[]) : [],
       tier: 'free',
       role: 'user',
       isDemoUser: false,
@@ -185,7 +214,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
           {step > 2 && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Step {step - 2} of 2</span>
+              <span>Step {step - 2} of 3</span>
             </div>
           )}
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -193,12 +222,14 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
             {step === 2 && t('step1Title')}
             {step === 3 && t('step2Title')}
             {step === 4 && t('step3Title')}
+            {step === 5 && 'Optionally personalize equipment selections'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
             {step === 1 && t('stepPersonalSubtitle')}
             {step === 2 && t('step1Subtitle')}
             {step === 3 && t('step2Subtitle')}
             {step === 4 && t('step3Subtitle')}
+            {step === 5 && 'You can customize the selection later'}
           </p>
         </div>
 
@@ -207,6 +238,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
           <div className="flex items-center gap-2 mb-6">
             <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
             <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 4 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
+            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 5 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
           </div>
         )}
 
@@ -703,6 +735,72 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               <button
                 type="button"
                 onClick={() => setStep(3)}
+                className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
+              >
+                {t('backBtn')}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  let defaults: string[] = [];
+                  if (equipment === 'Full Gym') defaults = DEFAULT_FULL_GYM;
+                  else if (equipment === 'Home Gym (Dumbbells & Bench)') defaults = DEFAULT_HOME_GYM;
+                  else if (equipment === 'Bodyweight Only') defaults = DEFAULT_BODYWEIGHT;
+                  
+                  setDetailedEquipment(defaults);
+                  setStep(5);
+                }}
+                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-accent-emerald via-emerald-400 to-accent-cyan hover:from-emerald-400 hover:to-accent-cyan text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-lg transition-all active:scale-[0.98]"
+              >
+                <span>Personalize Equipment</span>
+                <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 5: Detailed Equipment Selection */}
+        {step === 5 && (
+          <div className="space-y-6 relative z-10">
+            <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-6 custom-scrollbar">
+              {EQUIPMENT_CATEGORIES.map(category => (
+                <div key={category.title}>
+                  <h3 className="text-sm font-bold text-white mb-3">{category.title}</h3>
+                  <div className="space-y-2">
+                    {category.items.map(item => {
+                      const isChecked = detailedEquipment.includes(item);
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => {
+                            if (isChecked) {
+                              setDetailedEquipment(prev => prev.filter(e => e !== item));
+                            } else {
+                              setDetailedEquipment(prev => [...prev, item]);
+                            }
+                          }}
+                          className="w-full flex items-center justify-between p-3 rounded-xl bg-background-elevated border border-border hover:border-slate-500 transition-colors"
+                        >
+                          <span className="text-sm font-medium text-slate-200">{item}</span>
+                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                            isChecked ? 'bg-[#007AFF] border-[#007AFF]' : 'border-slate-500'
+                          }`}>
+                            {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setStep(4)}
                 className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
               >
                 {t('backBtn')}

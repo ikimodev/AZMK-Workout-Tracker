@@ -137,7 +137,7 @@ export const MUSCLE_GROUPS_DICT: Record<MuscleGroup, BilingualTerm> = {
 // ==========================================
 // 3. EQUIPMENT DICTIONARY
 // ==========================================
-export const EQUIPMENT_DICT: Record<Equipment, BilingualTerm> = {
+export const EQUIPMENT_DICT: Partial<Record<Equipment, BilingualTerm>> = {
   'Barbell': {
     ar: 'باربل (Barbell)',
     en: 'Barbell',

@@ -14,15 +14,18 @@ export type MuscleGroup =
   | 'Full Body';
 
 export type Equipment = 
-  | 'Barbell' 
-  | 'Dumbbell' 
-  | 'Cable' 
-  | 'Machine' 
-  | 'Bodyweight' 
-  | 'Smith Machine' 
-  | 'Kettlebell' 
-  | 'Bands' 
-  | 'Other';
+  // Base 
+  | 'Barbell' | 'Dumbbell' | 'Cable' | 'Machine' | 'Bodyweight' | 'Smith Machine' | 'Kettlebell' | 'Bands' | 'Other'
+  // Weights and Bars
+  | 'Plate' | 'EZ Bar' | 'Landmine' | 'Trap Bar'
+  // Benches and Racks
+  | 'Pull Up Bar' | 'Squat Rack' | 'Flat Bench' | 'Adjustable Bench' | 'Dip Bar'
+  // Machines
+  | 'Single Cable Machine' | 'Dual Cable Machine' | 'Lat Pulldown Cable' | 'Leg Press Machine' | 'T-bar' | 'Stack Machines' | 'Plate Machines'
+  // Cardio
+  | 'Treadmill' | 'Rowing Machine' | 'Spinning' | 'Elliptical Trainer' | 'Stair Machine' | 'Air Bike'
+  // Other
+  | 'Suspension Band' | 'Resistance Band' | 'Battle Rope' | 'Rings' | 'Jump Rope' | 'Medicine Ball';
 
 export type MovementPattern = 
   | 'Horizontal Push' 
