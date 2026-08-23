@@ -16,6 +16,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [step, setStep] = useState(1);
   const [name, setName] = useState(user.name === 'Kareem Al-Otaibi' ? '' : user.name);
   const [gender, setGender] = useState<'male' | 'female'>(user.gender || 'male');
+  const [birthday, setBirthday] = useState<string>(user.birthday || '');
   const [weight, setWeight] = useState<number | ''>(user.weight || 75);
   const [height, setHeight] = useState<number | ''>(user.height || 175);
   const [primaryGoal, setPrimaryGoal] = useState<FitnessGoal>('Muscle Gain');
@@ -131,6 +132,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     updateUserProfile({
       name: finalName,
       gender,
+      birthday,
       weight: typeof weight === 'number' ? weight : 75,
       height: typeof height === 'number' ? height : 175,
       email: `${finalName.toLowerCase().replace(/\s+/g, '')}@azmk.fit`,
@@ -179,10 +181,12 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Step {step} of 4</span>
-          </div>
+          {step > 1 && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Step {step - 1} of 3</span>
+            </div>
+          )}
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             {step === 1 && t('stepPersonalTitle')}
             {step === 2 && t('step1Title')}
@@ -198,12 +202,13 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         </div>
 
         {/* Step Progress Indicators */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
-          <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
-          <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
-          <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 4 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
-        </div>
+        {step > 1 && (
+          <div className="flex items-center gap-2 mb-6">
+            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
+            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
+            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 4 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
+          </div>
+        )}
 
         {/* STEP 1: Personal Profile (Name, Gender, Weight, Height) */}
         {step === 1 && (
@@ -242,7 +247,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                       : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  <span className="text-base">👨</span>
+                  <span className="text-base">♂️</span>
                   <span>{t('male')}</span>
                   {gender === 'male' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
                 </button>
@@ -256,11 +261,24 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                       : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  <span className="text-base">👩</span>
+                  <span className="text-base">♀️</span>
                   <span>{t('female')}</span>
                   {gender === 'female' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
                 </button>
               </div>
+            </div>
+
+            {/* Birthday */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
+                {t('birthdayLabel')}
+              </label>
+              <input
+                type="date"
+                value={birthday}
+                onChange={e => setBirthday(e.target.value)}
+                className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
+              />
             </div>
 
             {/* Weight & Height */}
