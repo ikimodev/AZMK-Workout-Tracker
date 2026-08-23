@@ -26,16 +26,35 @@ const EQUIPMENT_IMAGES: Record<string, string> = {
   // Machines - Using custom generated 3D high-quality renders
   'Single Cable Machine': '/assets/equipment/icon_single_cable_machine.png',
   'Dual Cable Machine': '/assets/equipment/icon_dual_cable_machine.png',
+  'Lat Pulldown Cable': '/assets/equipment/icon_lat_pulldown_cable.png',
   'Leg Press Machine': '/assets/equipment/icon_leg_press_machine.png',
-
-  // NOTE: For the remaining machines and cardio, 
-  // temporary transparent placeholders or generic images are used until the generation limit resets.
+  'Smith Machine': '/assets/equipment/icon_smith_machine.png',
+  'T-bar': '/assets/equipment/icon_t-bar.png',
+  'Stack Machines': '/assets/equipment/icon_stack_machines.png',
+  'Plate Machines': '/assets/equipment/icon_plate_machines.png',
+  
+  // Cardio
+  'Treadmill': '/assets/equipment/icon_treadmill.png',
+  'Rowing Machine': '/assets/equipment/icon_rowing_machine.png',
+  'Spinning': '/assets/equipment/icon_spinning_bike.png',
+  'Elliptical Trainer': '/assets/equipment/icon_elliptical_trainer.png',
+  'Stair Machine': '/assets/equipment/icon_stair_machine.png',
+  'Air Bike': '/assets/equipment/icon_air_bike.png',
+  
+  // Other
+  'Suspension Band': '/assets/equipment/icon_suspension_band.png',
+  'Resistance Band': '/assets/equipment/icon_resistance_band.png',
+  'Battle Rope': '/assets/equipment/icon_battle_rope.png',
+  'Rings': '/assets/equipment/icon_gymnastics_rings.png',
+  'Jump Rope': '/assets/equipment/icon_jump_rope.png',
+  'Medicine Ball': '/assets/equipment/icon_medicine_ball.png',
 };
 
 export const EquipmentImage: React.FC<EquipmentImageProps> = ({ name, className = "w-12 h-12" }) => {
   const imageUrl = EQUIPMENT_IMAGES[name];
+  const [error, setError] = React.useState(false);
 
-  if (!imageUrl) {
+  if (!imageUrl || error) {
     // Fallback for ungenerated 3D icons
     return (
       <div className={`overflow-hidden rounded-lg bg-slate-800/50 border border-white/5 shrink-0 flex items-center justify-center ${className}`}>
@@ -51,9 +70,7 @@ export const EquipmentImage: React.FC<EquipmentImageProps> = ({ name, className 
         alt={name} 
         className="w-full h-full object-contain drop-shadow-md"
         loading="lazy"
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }}
+        onError={() => setError(true)}
       />
     </div>
   );
