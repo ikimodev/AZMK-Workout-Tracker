@@ -4,7 +4,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { generateAIProgram } from '../../services/aiProgramGenerator';
 import { FitnessGoal, Equipment } from '../../types';
 import { trackUserSession } from '../../services/analyticsService';
-import { EquipmentIcon } from './EquipmentIcon';
+import { EquipmentImage } from './EquipmentImage';
 
 const EQUIPMENT_CATEGORIES = [
   {
@@ -782,13 +782,13 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                               setDetailedEquipment(prev => [...prev, item]);
                             }
                           }}
-                          className="w-full flex items-center justify-between p-3 rounded-xl bg-background-elevated border border-border hover:border-slate-500 transition-colors"
+                          className="w-full flex items-center justify-between p-3 rounded-xl bg-background-elevated border border-border hover:border-slate-500 transition-colors group"
                         >
                           <div className="flex items-center gap-3">
-                            <EquipmentIcon name={item} className="w-6 h-6 text-slate-400" />
-                            <span className="text-sm font-medium text-slate-200">{item}</span>
+                            <EquipmentImage name={item} className="w-12 h-12 shadow-md ring-1 ring-white/10 group-hover:ring-accent-emerald/50 transition-all" />
+                            <span className="text-sm font-bold text-slate-200">{item}</span>
                           </div>
-                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all shrink-0 ${
                             isChecked ? 'bg-[#007AFF] border-[#007AFF]' : 'border-slate-500'
                           }`}>
                             {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
