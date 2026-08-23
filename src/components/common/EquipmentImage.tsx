@@ -8,20 +8,20 @@ interface EquipmentImageProps {
 
 const EQUIPMENT_IMAGES: Record<string, string> = {
   // Weights - Using custom generated 3D high-quality renders
-  'Dumbbell': '/assets/equipment/icon_dumbbell.jpg',
-  'Barbell': '/assets/equipment/icon_barbell.jpg',
-  'Plate': '/assets/equipment/icon_plate.jpg',
-  'Kettlebell': '/assets/equipment/icon_kettlebell.jpg',
-  'EZ Bar': '/assets/equipment/icon_ez_bar.jpg',
-  'Landmine': '/assets/equipment/icon_landmine.jpg',
-  'Trap Bar': '/assets/equipment/icon_trap_bar.jpg',
+  'Dumbbell': '/assets/equipment/icon_dumbbell.png',
+  'Barbell': '/assets/equipment/icon_barbell.png',
+  'Plate': '/assets/equipment/icon_plate.png',
+  'Kettlebell': '/assets/equipment/icon_kettlebell.png',
+  'EZ Bar': '/assets/equipment/icon_ez_bar.png',
+  'Landmine': '/assets/equipment/icon_landmine.png',
+  'Trap Bar': '/assets/equipment/icon_trap_bar.png',
 
   // Benches and racks - Using custom generated 3D high-quality renders
-  'Pull Up Bar': '/assets/equipment/icon_pull_up_bar.jpg',
-  'Squat Rack': '/assets/equipment/icon_squat_rack.jpg',
-  'Flat Bench': '/assets/equipment/icon_flat_bench.jpg',
-  'Adjustable Bench': '/assets/equipment/icon_adjustable_bench.jpg',
-  'Dip Bar': '/assets/equipment/icon_dip_bar.jpg',
+  'Pull Up Bar': '/assets/equipment/icon_pull_up_bar.png',
+  'Squat Rack': '/assets/equipment/icon_squat_rack.png',
+  'Flat Bench': '/assets/equipment/icon_flat_bench.png',
+  'Adjustable Bench': '/assets/equipment/icon_adjustable_bench.png',
+  'Dip Bar': '/assets/equipment/icon_dip_bar.png',
   
   // NOTE: For the remaining machines and cardio, 
   // temporary transparent placeholders or generic images are used until the generation limit resets.
@@ -40,11 +40,11 @@ export const EquipmentImage: React.FC<EquipmentImageProps> = ({ name, className 
   }
 
   return (
-    <div className={`overflow-hidden rounded-lg bg-white shrink-0 ${className}`}>
+    <div className={`overflow-hidden rounded-lg shrink-0 ${className}`}>
       <img 
         src={imageUrl} 
         alt={name} 
-        className="w-full h-full object-cover mix-blend-multiply"
+        className="w-full h-full object-contain drop-shadow-md"
         loading="lazy"
         onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';
