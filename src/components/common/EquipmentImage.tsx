@@ -23,6 +23,11 @@ const EQUIPMENT_IMAGES: Record<string, string> = {
   'Adjustable Bench': '/assets/equipment/icon_adjustable_bench.png',
   'Dip Bar': '/assets/equipment/icon_dip_bar.png',
   
+  // Machines - Using custom generated 3D high-quality renders
+  'Single Cable Machine': '/assets/equipment/icon_single_cable_machine.png',
+  'Dual Cable Machine': '/assets/equipment/icon_dual_cable_machine.png',
+  'Leg Press Machine': '/assets/equipment/icon_leg_press_machine.png',
+
   // NOTE: For the remaining machines and cardio, 
   // temporary transparent placeholders or generic images are used until the generation limit resets.
 };
