@@ -1,28 +1,37 @@
 import React, { useState } from 'react';
 import { Program } from '../../types';
 import { useWorkout } from '../../context/WorkoutContext';
-import { Dumbbell, Download, X, Loader2 } from 'lucide-react';
+import { Dumbbell, Download, X, Loader2, Search } from 'lucide-react';
 
 interface ProgramImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sharedCode: string | null;
   onImported: () => void;
 }
 
-export const ProgramImportModal: React.FC<ProgramImportModalProps> = ({ isOpen, onClose, sharedCode, onImported }) => {
+export const ProgramImportModal: React.FC<ProgramImportModalProps> = ({ isOpen, onClose, onImported }) => {
   const { saveGeneratedProgram, language } = useWorkout();
   const [isLoading, setIsLoading] = useState(false);
+  const [codeInputValue, setCodeInputValue] = useState('');
   const [fetchedProgram, setFetchedProgram] = useState<Program | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset state when opened
   React.useEffect(() => {
-    if (isOpen && sharedCode) {
-      fetchProgram(sharedCode);
+    if (isOpen) {
+      setCodeInputValue('');
+      setFetchedProgram(null);
+      setError(null);
     }
-  }, [isOpen, sharedCode]);
+  }, [isOpen]);
 
-  const fetchProgram = async (code: string) => {
+  const handleFetchProgram = async () => {
+    const code = codeInputValue.trim();
+    if (!code) {
+      setError(language === 'ar' ? 'يرجى إدخال الكود أولاً' : 'Please enter a code first');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -40,7 +49,7 @@ export const ProgramImportModal: React.FC<ProgramImportModalProps> = ({ isOpen, 
       setFetchedProgram(data.program_data as Program);
     } catch (err: any) {
       console.error(err);
-      setError(language === 'ar' ? 'تعذر العثور على الجدول المطلوب. تأكد من صحة الرابط.' : 'Could not find the program. Make sure the link is correct.');
+      setError(language === 'ar' ? 'تعذر العثور على الجدول المطلوب. تأكد من صحة الكود.' : 'Could not find the program. Make sure the code is correct.');
     }
     setIsLoading(false);
   };
@@ -82,21 +91,53 @@ export const ProgramImportModal: React.FC<ProgramImportModalProps> = ({ isOpen, 
           </h2>
         </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-4">
-            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-            <p className="text-slate-400 text-sm font-medium">
-              {language === 'ar' ? 'جاري البحث عن الجدول...' : 'Fetching program...'}
+        {!fetchedProgram ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-400">
+              {language === 'ar' 
+                ? 'أدخل الكود القصير الذي شاركه معك صديقك لتحميل الجدول التدريبي.' 
+                : 'Enter the short code shared by your friend to load the workout program.'}
             </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="AZMK-XXXXXX"
+                value={codeInputValue}
+                onChange={(e) => setCodeInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFetchProgram()}
+                className="flex-1 bg-background-elevated border border-border rounded-xl px-4 py-3 text-white font-mono uppercase focus:outline-none focus:border-blue-500 transition-colors"
+                autoFocus
+              />
+              <button
+                onClick={handleFetchProgram}
+                disabled={isLoading}
+                className="px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white font-bold flex items-center gap-2 transition-all active:scale-95"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                <span className="hidden sm:inline">{language === 'ar' ? 'بحث' : 'Search'}</span>
+              </button>
+            </div>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-3 text-center">
+                <p className="text-red-400 text-sm font-bold">{error}</p>
+              </div>
+            )}
           </div>
-        ) : error ? (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center">
-            <p className="text-red-400 text-sm font-bold">{error}</p>
-          </div>
-        ) : fetchedProgram ? (
+        ) : (
           <div className="space-y-6">
             <div className="bg-background-elevated border border-border rounded-2xl p-4">
-              <h3 className="text-lg font-bold text-white mb-2">{fetchedProgram.name}</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold text-white">{fetchedProgram.name}</h3>
+                <button 
+                  onClick={() => {
+                    setFetchedProgram(null);
+                    setCodeInputValue('');
+                  }}
+                  className="text-xs text-slate-400 hover:text-white underline"
+                >
+                  {language === 'ar' ? 'إدخال كود آخر' : 'Enter another code'}
+                </button>
+              </div>
               <p className="text-sm text-slate-400 mb-4">{fetchedProgram.description}</p>
               
               <div className="flex flex-wrap gap-2 text-xs font-mono">
@@ -111,12 +152,13 @@ export const ProgramImportModal: React.FC<ProgramImportModalProps> = ({ isOpen, 
 
             <button
               onClick={handleImport}
-              className="w-full py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-extrabold text-sm uppercase tracking-wider shadow-glow-sm transition-all active:scale-95"
+              className="w-full py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-extrabold text-sm uppercase tracking-wider shadow-glow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
             >
-              {language === 'ar' ? 'استيراد هذا الجدول' : 'Import This Program'}
+              <Download className="w-4 h-4" />
+              <span>{language === 'ar' ? 'استيراد هذا الجدول' : 'Import This Program'}</span>
             </button>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

@@ -22,8 +22,6 @@ import { CalendarView } from './components/calendar/CalendarView';
 import { AdminDashboardView } from './components/admin/AdminDashboardView';
 import { AIWorkoutImportModal } from './components/ai/AIWorkoutImportModal';
 import { AIProgramGeneratorModal } from './components/ai/AIProgramGeneratorModal';
-import { ProgramImportModal } from './components/programs/ProgramImportModal';
-
 import { InitialSetupScreen } from './components/common/InitialSetupScreen';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
 import { FeedbackModal } from './components/common/FeedbackModal';
@@ -38,26 +36,10 @@ const AppContent: React.FC = () => {
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [isInstallPromptOpen, setIsInstallPromptOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  
-  // Program Sharing State
-  const [sharedProgramCode, setSharedProgramCode] = useState<string | null>(null);
-  const [isProgramImportOpen, setIsProgramImportOpen] = useState(false);
 
   React.useEffect(() => {
     trackUserSession(user.name);
   }, [user.name]);
-
-  // Check for shared program code in URL
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const shareCode = params.get('share_code');
-    if (shareCode) {
-      setSharedProgramCode(shareCode);
-      setIsProgramImportOpen(true);
-      // Clean up URL so it doesn't prompt again on refresh
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
 
   // If user hasn't completed setup (first time or factory reset), show setup screen
   if (!user.hasCompletedOnboarding) {
@@ -231,17 +213,6 @@ const AppContent: React.FC = () => {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onProgramGenerated={() => handleNavigate('programs')}
-      />
-
-      {/* Shared Program Import Modal */}
-      <ProgramImportModal
-        isOpen={isProgramImportOpen}
-        onClose={() => setIsProgramImportOpen(false)}
-        sharedCode={sharedProgramCode}
-        onImported={() => {
-          setIsProgramImportOpen(false);
-          handleNavigate('programs');
-        }}
       />
 
       {/* User Feedback Modal */}

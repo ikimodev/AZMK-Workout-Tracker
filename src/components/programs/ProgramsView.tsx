@@ -12,8 +12,10 @@ import {
   Dumbbell,
   Check,
   Share2,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
+import { ProgramImportModal } from './ProgramImportModal';
 import { useWorkout } from '../../context/WorkoutContext';
 import { Program, ProgramWorkout, WorkoutExercise } from '../../types';
 import { getExerciseById } from '../../data/mockExercises';
@@ -30,6 +32,7 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
   const [selectedWeekNum, setSelectedWeekNum] = useState<number>(1);
   const [editingWorkout, setEditingWorkout] = useState<ProgramWorkout | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const currentProgram = programs.find(p => p.id === selectedProgramId) || programs[0];
   const currentWeek = currentProgram?.weeks.find(w => w.weekNumber === selectedWeekNum) || currentProgram?.weeks[0];
@@ -58,9 +61,8 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
         return;
       }
 
-      const shareLink = `${window.location.origin}/?share_code=${shortId}`;
-      await navigator.clipboard.writeText(shareLink);
-      alert(language === 'ar' ? 'تم نسخ الرابط القصير بنجاح!' : 'Short link copied to clipboard!');
+      await navigator.clipboard.writeText(shortId);
+      alert(language === 'ar' ? `تم نسخ كود المشاركة (${shortId}) بنجاح!` : `Share code (${shortId}) copied to clipboard!`);
     } catch (err) {
       console.error(err);
       alert(language === 'ar' ? 'تعذر المشاركة. يرجى التأكد من إعداد Supabase.' : 'Failed to share. Please ensure Supabase is configured.');
@@ -160,7 +162,15 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
             className="px-4 py-3 rounded-2xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/40 text-blue-400 font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
           >
             {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-            <span className="hidden sm:inline">{language === 'ar' ? 'مشاركة' : 'Share'}</span>
+            <span className="hidden sm:inline">{language === 'ar' ? 'نسخ الكود' : 'Copy Code'}</span>
+          </button>
+
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-4 py-3 rounded-2xl bg-slate-500/15 hover:bg-slate-500/25 border border-slate-500/40 text-slate-300 font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">{language === 'ar' ? 'استيراد كود' : 'Import Code'}</span>
           </button>
 
           <button
@@ -293,6 +303,11 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
         </div>
       </div>
 
+      <ProgramImportModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+        onImported={() => setIsImportModalOpen(false)} 
+      />
     </div>
   );
 };
