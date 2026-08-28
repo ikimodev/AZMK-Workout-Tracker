@@ -63,9 +63,11 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
 
       await navigator.clipboard.writeText(shortId);
       alert(language === 'ar' ? `تم نسخ كود المشاركة (${shortId}) بنجاح!` : `Share code (${shortId}) copied to clipboard!`);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert(language === 'ar' ? 'تعذر المشاركة. يرجى التأكد من إعداد Supabase.' : 'Failed to share. Please ensure Supabase is configured.');
+      // Fallback for clipboard or detailed error message
+      const errMsg = err?.message || String(err);
+      alert((language === 'ar' ? 'حدث خطأ غير متوقع: ' : 'Unexpected error: ') + errMsg);
     }
     setIsSharing(false);
   };
