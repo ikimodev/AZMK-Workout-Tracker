@@ -10,7 +10,9 @@ import {
   ChevronDown, 
   ChevronUp, 
   Dumbbell,
-  Check
+  Check,
+  Share2,
+  Loader2
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { Program, ProgramWorkout, WorkoutExercise } from '../../types';
@@ -27,9 +29,44 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
   const [selectedProgramId, setSelectedProgramId] = useState<string>(programs[0]?.id || '');
   const [selectedWeekNum, setSelectedWeekNum] = useState<number>(1);
   const [editingWorkout, setEditingWorkout] = useState<ProgramWorkout | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   const currentProgram = programs.find(p => p.id === selectedProgramId) || programs[0];
   const currentWeek = currentProgram?.weeks.find(w => w.weekNumber === selectedWeekNum) || currentProgram?.weeks[0];
+
+  const handleShareProgram = async () => {
+    if (!currentProgram) return;
+    setIsSharing(true);
+    try {
+      const { supabase } = await import('../../services/supabase');
+      // Generate a short ID
+      const shortId = `AZMK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      const { error } = await supabase
+        .from('shared_programs')
+        .insert([
+          {
+            id: shortId,
+            program_data: currentProgram,
+          }
+        ]);
+
+      if (error) {
+        console.error('Error sharing program:', error);
+        alert(language === 'ar' ? 'حدث خطأ أثناء رفع الجدول.' : 'Failed to upload program.');
+        setIsSharing(false);
+        return;
+      }
+
+      const shareLink = `${window.location.origin}/?share_code=${shortId}`;
+      await navigator.clipboard.writeText(shareLink);
+      alert(language === 'ar' ? 'تم نسخ الرابط القصير بنجاح!' : 'Short link copied to clipboard!');
+    } catch (err) {
+      console.error(err);
+      alert(language === 'ar' ? 'تعذر المشاركة. يرجى التأكد من إعداد Supabase.' : 'Failed to share. Please ensure Supabase is configured.');
+    }
+    setIsSharing(false);
+  };
 
   const handleStartProgramWorkout = (workout: ProgramWorkout) => {
     const workoutExercises: WorkoutExercise[] = workout.exercises.map((item, idx) => {
@@ -114,7 +151,16 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
             className="px-4 py-3 rounded-2xl bg-accent-emerald/15 hover:bg-accent-emerald/25 border border-accent-emerald/40 text-accent-emerald font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>{language === 'ar' ? '+ إضافة تمرين يدوي' : '+ Add Manual Workout'}</span>
+            <span className="hidden sm:inline">{language === 'ar' ? '+ إضافة تمرين' : '+ Add Workout'}</span>
+          </button>
+
+          <button
+            onClick={handleShareProgram}
+            disabled={isSharing}
+            className="px-4 py-3 rounded-2xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/40 text-blue-400 font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{language === 'ar' ? 'مشاركة' : 'Share'}</span>
           </button>
 
           <button
