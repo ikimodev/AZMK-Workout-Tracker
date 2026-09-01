@@ -157,7 +157,7 @@ export interface UserProfile {
   name: string;
   email: string;
   gender?: 'male' | 'female';
-  birthday?: string;
+  age?: number;
   weight?: number; // kg
   height?: number; // cm
   experience: 'Beginner' | 'Intermediate' | 'Advanced';

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Zap, Dumbbell, ShieldCheck, Check, Globe, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, Dumbbell, Zap } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { generateAIProgram } from '../../services/aiProgramGenerator';
 import { FitnessGoal, Equipment } from '../../types';
 import { trackUserSession } from '../../services/analyticsService';
 import { EquipmentImage } from './EquipmentImage';
+import { FITNESS_GOALS_DICT } from '../../i18n/fitnessDictionary';
 
 const EQUIPMENT_CATEGORIES = [
   {
@@ -32,8 +33,6 @@ const EQUIPMENT_CATEGORIES = [
 const DEFAULT_FULL_GYM = EQUIPMENT_CATEGORIES.flatMap(c => c.items);
 const DEFAULT_HOME_GYM = ['Dumbbell', 'Barbell', 'Plate', 'Kettlebell', 'Pull Up Bar', 'Squat Rack', 'Flat Bench', 'Adjustable Bench', 'Dip Bar', 'Resistance Band', 'Jump Rope'];
 const DEFAULT_BODYWEIGHT = ['Pull Up Bar', 'Dip Bar', 'Suspension Band', 'Resistance Band', 'Rings', 'Jump Rope'];
-import { FITNESS_GOALS_DICT, formatUnitDisplay, getFitnessGoalDisplayName } from '../../i18n/fitnessDictionary';
-import { X } from 'lucide-react';
 
 const MUSCLE_GROUPS: string[] = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 
@@ -42,881 +41,617 @@ interface InitialSetupScreenProps {
 }
 
 export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComplete }) => {
-  const { updateUserProfile, saveGeneratedProgram, user, language, t } = useWorkout();
+  const { updateUserProfile, saveGeneratedProgram, user } = useWorkout();
 
   const [step, setStep] = useState(1);
+  const TOTAL_STEPS = 12;
+
+  // Form State
   const [name, setName] = useState(user.name === 'Kareem Al-Otaibi' ? '' : user.name);
-  const [gender, setGender] = useState<'male' | 'female'>(user.gender || 'male');
-  const [birthday, setBirthday] = useState<string>(user.birthday || '');
-  const [weight, setWeight] = useState<number | ''>(user.weight || 75);
-  const [height, setHeight] = useState<number | ''>(user.height || 175);
-  const [primaryGoal, setPrimaryGoal] = useState<FitnessGoal>('Muscle Gain');
-  const [secondaryGoal, setSecondaryGoal] = useState<FitnessGoal>('Strength');
   const [experience, setExperience] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
-  const [days, setDays] = useState(4);
-  const [duration, setDuration] = useState(60);
-  const [equipment, setEquipment] = useState<'Full Gym' | 'Home Gym (Dumbbells & Bench)' | 'Bodyweight Only'>('Full Gym');
-  const [detailedEquipment, setDetailedEquipment] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [baselineOption, setBaselineOption] = useState<'experienced' | 'beginner_rpe'>('beginner_rpe');
-  const [preferredSplit, setPreferredSplit] = useState<string>('AI Recommended');
+  const [primaryGoal, setPrimaryGoal] = useState<FitnessGoal>('Muscle Gain');
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
+  const [heightCm, setHeightCm] = useState<string>('');
+  const [heightFt, setHeightFt] = useState<string>('');
+  const [heightIn, setHeightIn] = useState<string>('');
+
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
+  const [weight, setWeight] = useState<string>('');
+
+  const [age, setAge] = useState<string>('');
+  
+  const [hasPlan, setHasPlan] = useState<boolean | null>(null);
   const [priorityMuscles, setPriorityMuscles] = useState<string[]>([]);
-  const [avoidedExercisesInput, setAvoidedExercisesInput] = useState('');
-  const [avoidedExercises, setAvoidedExercises] = useState<string[]>([]);
+  const [duration, setDuration] = useState(60);
+  const [days, setDays] = useState(4);
+  const [equipmentPreset, setEquipmentPreset] = useState<'Full Gym' | 'Home Gym' | 'Bodyweight' | ''>('');
+  const [detailedEquipment, setDetailedEquipment] = useState<string[]>([]);
+
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const getSplitOptions = (d: number) => {
-    if (d === 2) return ['Full Body', 'Upper / Lower'];
-    if (d === 3) return ['PPL', 'Full Body'];
-    if (d === 4) return ['Upper / Lower', 'PHUL (Powerlifter Recommended)'];
-    if (d === 5) return ['Hybrid (Upper/Lower + PPL)', 'Bro Split'];
-    if (d === 6) return ['PPL x2', 'Arnold Split'];
-    return [];
-  };
-
-  React.useEffect(() => {
-    // 1. If Beginner, they can't do 6 days
-    if (experience === 'Beginner' && days === 6) {
-      setDays(5);
-    }
-    
-    // 2. Adjust duration if out of bounds based on days
-    if (days === 2 && (duration === 45 || duration === 60)) {
-      setDuration(75);
-    } else if (days === 3 && duration === 45) {
-      setDuration(60);
-    } else if (days === 6 && duration === 90) {
-      setDuration(75);
-    }
-
-    // 3. Adjust split
-    if (experience === 'Beginner') {
-      setPreferredSplit('AI Recommended');
-    } else {
-      const options = getSplitOptions(days);
-      if (!options.includes(preferredSplit) && options.length > 0) {
-        setPreferredSplit(options[0]);
-      }
-    }
-  }, [days, duration, experience]);
-
   const goalKeys: FitnessGoal[] = [
-    'General Fitness',
     'Muscle Gain',
-    'Strength',
     'Fat Loss',
+    'Strength',
+    'General Fitness',
     'Endurance',
     'Mobility & Joint Health'
   ];
 
-  // Dynamic helper for split descriptions matching user experience level
-  const getSplitDescription = (numDays: number, exp: 'Beginner' | 'Intermediate' | 'Advanced') => {
-    if (exp === 'Beginner') {
-      if (numDays === 2) return t('splitBeg2');
-      if (numDays === 3) return t('splitBeg3');
-      if (numDays === 4) return t('splitBeg4');
-      return t('splitBegX', { days: numDays });
+  const handleNext = () => {
+    if (step === 1 && !name.trim()) setName('Athlete');
+    
+    // Skip remaining steps if user already has a plan
+    if (step === 8 && hasPlan === true) {
+      handleFinish(true);
+      return;
     }
-    if (exp === 'Advanced') {
-      if (numDays === 2) return t('splitAdv2');
-      if (numDays === 3) return t('splitAdv3');
-      if (numDays === 4) return t('splitAdv4');
-      if (numDays === 5) return t('splitAdv5');
-      return t('splitAdvX', { days: numDays });
+
+    if (step < TOTAL_STEPS) {
+      setStep(prev => prev + 1);
+    } else {
+      handleFinish(false);
     }
-    // Intermediate default
-    if (numDays === 2) return t('splitInt2');
-    if (numDays === 3) return t('splitInt3');
-    if (numDays === 4) return t('splitInt4');
-    if (numDays === 5) return t('splitInt5');
-    return t('splitInt6');
   };
 
-  const handleSelectPrimaryGoal = (goal: FitnessGoal) => {
-    setPrimaryGoal(goal);
-    if (secondaryGoal === goal) {
-      const remaining = goalKeys.filter(id => id !== goal);
-      setSecondaryGoal(remaining[0] || 'Strength');
+  const handleBack = () => {
+    if (step > 1) setStep(prev => prev - 1);
+  };
+
+  const handleFinish = async (skipGeneration: boolean) => {
+    setIsGenerating(true);
+    
+    let finalHeight = undefined;
+    if (heightUnit === 'cm' && heightCm) {
+      finalHeight = Number(heightCm);
+    } else if (heightUnit === 'ft' && heightFt) {
+      finalHeight = Math.round((Number(heightFt) * 30.48) + (Number(heightIn || 0) * 2.54));
     }
+
+    let finalWeight = undefined;
+    if (weight) {
+      finalWeight = weightUnit === 'kg' ? Number(weight) : Math.round(Number(weight) * 0.453592);
+    }
+
+    let finalEquipment = detailedEquipment;
+    if (detailedEquipment.length === 0) {
+      if (equipmentPreset === 'Full Gym') finalEquipment = DEFAULT_FULL_GYM;
+      else if (equipmentPreset === 'Home Gym') finalEquipment = DEFAULT_HOME_GYM;
+      else if (equipmentPreset === 'Bodyweight') finalEquipment = DEFAULT_BODYWEIGHT;
+      else finalEquipment = DEFAULT_FULL_GYM; // fallback
+    }
+
+    const finalName = name.trim() || 'Athlete';
+
+    updateUserProfile({
+      name: finalName,
+      gender: gender as any || undefined,
+      age: age ? Number(age) : undefined,
+      weight: finalWeight,
+      height: finalHeight,
+      experience,
+      primaryGoal,
+      secondaryGoal: 'Strength', // Fallback secondary
+      daysPerWeek: days,
+      preferredDurationMinutes: duration,
+      availableEquipment: finalEquipment as Equipment[],
+      tier: 'free',
+      role: 'user',
+      isDemoUser: false,
+      startingBaselineOption: 'beginner_rpe',
+      streakDays: 0,
+      hasCompletedOnboarding: true,
+      startDayOption: 'today',
+      programStartDate: new Date().toISOString().split('T')[0],
+      email: `${finalName.toLowerCase().replace(/\s+/g, '')}@azmk.fit`,
+    });
+
+    if (!skipGeneration) {
+      try {
+        const generated = await generateAIProgram({
+          goal: primaryGoal,
+          secondaryGoal: 'Strength',
+          experience,
+          daysPerWeek: days,
+          durationMinutes: duration,
+          equipment: equipmentPreset || 'Full Gym',
+          priorityMuscles: priorityMuscles.length > 0 ? (priorityMuscles as any) : 'AZMK_DECIDE',
+          avoidedExercises: []
+        });
+        saveGeneratedProgram(generated);
+      } catch (err) {
+        console.error("Failed to generate AI program:", err);
+      }
+    }
+
+    trackUserSession(finalName);
+    setIsGenerating(false);
+    onComplete();
   };
 
   const toggleMuscle = (m: string) => {
     if (priorityMuscles.includes(m)) {
       setPriorityMuscles(prev => prev.filter(x => x !== m));
-    } else {
-      if (priorityMuscles.length < 3) {
-        setPriorityMuscles(prev => [...prev, m]);
-      }
+    } else if (priorityMuscles.length < 3) {
+      setPriorityMuscles(prev => [...prev, m]);
     }
   };
 
-  const handleAddAvoided = () => {
-    if (avoidedExercisesInput.trim() && !avoidedExercises.includes(avoidedExercisesInput.trim())) {
-      setAvoidedExercises(prev => [...prev, avoidedExercisesInput.trim()]);
-      setAvoidedExercisesInput('');
-    }
-  };
-
-  const equipmentOptions = [
-    {
-      id: 'Full Gym',
-      title: 'Full Gym',
-      desc: 'Access to machines, barbells, and full equipment'
-    },
-    {
-      id: 'Home Gym (Dumbbells & Bench)',
-      title: 'Home Gym',
-      desc: 'Requires dumbbells and a bench'
-    },
-    {
-      id: 'Bodyweight Only',
-      title: 'Calisthenics',
-      desc: 'Bodyweight only, pull-up bar optional'
-    },
-  ];
-
-  const handleFinishAndGenerate = async (skipGeneration = false) => {
-    setIsGenerating(true);
-    await new Promise(r => setTimeout(r, 650));
-
-    const finalName = name.trim() || t('athletePlaceholder');
-
-    updateUserProfile({
-      name: finalName,
-      gender,
-      birthday,
-      weight: typeof weight === 'number' ? weight : 75,
-      height: typeof height === 'number' ? height : 175,
-      email: `${finalName.toLowerCase().replace(/\s+/g, '')}@azmk.fit`,
-      primaryGoal,
-      secondaryGoal,
-      experience,
-      daysPerWeek: days,
-      preferredDurationMinutes: duration,
-      availableEquipment: detailedEquipment.length > 0 ? (detailedEquipment as Equipment[]) : [],
-      tier: 'free',
-      role: 'user',
-      isDemoUser: false,
-      startingBaselineOption: baselineOption,
-      streakDays: 0,
-      hasCompletedOnboarding: true,
-      startDayOption: 'today',
-      programStartDate: startDate,
-      preferredSplit
-    });
-
-    if (!skipGeneration) {
-      const generated = await generateAIProgram({
-        goal: primaryGoal,
-        secondaryGoal,
-        experience,
-        daysPerWeek: days,
-        durationMinutes: duration,
-        equipment,
-        preferredSplit: preferredSplit === 'AI Recommended' ? undefined : preferredSplit,
-        priorityMuscles: priorityMuscles.length > 0 ? (priorityMuscles as any) : 'AZMK_DECIDE',
-        avoidedExercises
-      });
-      saveGeneratedProgram(generated);
-    }
-
-    trackUserSession(finalName);
-
-    setIsGenerating(false);
-    onComplete();
-  };
+  const progressPercentage = (step / TOTAL_STEPS) * 100;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4 relative overflow-hidden py-10">
+    <div className="min-h-screen bg-[#0A0A0B] text-slate-100 flex flex-col font-sans selection:bg-accent-emerald selection:text-black">
       
-      {/* Dynamic Background Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent-emerald/10 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-accent-indigo/10 rounded-full blur-3xl pointer-events-none -z-10" />
-
-      <div className="w-full max-w-xl bg-background-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
-        
-        {/* Header */}
-        <div className="text-center mb-6">
-          {step > 2 && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs font-mono font-bold uppercase tracking-wider mb-2 shadow-glow-sm">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Step {step - 2} of 3</span>
-            </div>
+      {/* Top Progress Bar Area */}
+      <div className="pt-6 px-4 pb-2 sticky top-0 bg-[#0A0A0B] z-20">
+        <div className="flex items-center gap-3">
+          {step > 1 && (
+            <button onClick={handleBack} className="p-2 rounded-full hover:bg-white/5 active:scale-95 transition-all text-slate-300">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
           )}
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            {step === 1 && t('stepPersonalTitle')}
-            {step === 2 && t('step1Title')}
-            {step === 3 && t('step2Title')}
-            {step === 4 && t('step3Title')}
-            {step === 5 && 'Optionally personalize equipment selections'}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
-            {step === 1 && t('stepPersonalSubtitle')}
-            {step === 2 && t('step1Subtitle')}
-            {step === 3 && t('step2Subtitle')}
-            {step === 4 && t('step3Subtitle')}
-            {step === 5 && 'You can customize the selection later'}
-          </p>
-        </div>
-
-        {/* Step Progress Indicators */}
-        {step > 2 && (
-          <div className="flex items-center gap-2 mb-6">
-            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
-            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 4 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
-            <div className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= 5 ? 'bg-accent-emerald shadow-glow-sm' : 'bg-background-elevated'}`} />
+          <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+            <div 
+              className="h-full bg-accent-emerald transition-all duration-500 ease-out shadow-[0_0_10px_rgba(52,211,153,0.5)]" 
+              style={{ width: `${progressPercentage}%` }} 
+            />
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* STEP 1: Personal Profile (Name, Gender, Weight, Height) */}
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col px-6 pt-8 pb-32 max-w-xl mx-auto w-full animate-fade-in">
+        
         {step === 1 && (
-          <div className="space-y-4 relative z-10">
-            {/* Athlete Name (at top) */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
-                  {t('nameLabel')}
-                </label>
-                <span className="text-[10px] text-slate-400">
-                  Optional
-                </span>
+          <div className="space-y-6 animate-slide-up">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-emerald to-emerald-600 flex items-center justify-center shadow-glow-sm">
+                <span className="text-3xl">👋</span>
               </div>
+              <div className="bg-white/10 px-4 py-3 rounded-2xl rounded-tl-none border border-white/5">
+                <p className="text-sm font-bold">What should we call you?</p>
+              </div>
+            </div>
+            
+            <h1 className="text-3xl font-black tracking-tight">What's your name?</h1>
+            
+            <div className="relative mt-8">
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder={t('namePlaceholder')}
-                className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors"
+                placeholder="Enter your name"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-lg font-bold placeholder:text-white/20 focus:outline-none focus:border-accent-emerald focus:bg-white/10 transition-all"
+                autoFocus
               />
             </div>
-
-            {/* Gender */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
-                {t('genderLabel')}
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setGender('male')}
-                  className={`py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                    gender === 'male'
-                      ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm ring-1 ring-accent-emerald'
-                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                  }`}
-                >
-                  <svg className="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="6"/><path d="M14.5 9.5 20 4"/><path d="M16 4h4v4"/></svg>
-                  <span>{t('male')}</span>
-                  {gender === 'male' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setGender('female')}
-                  className={`py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                    gender === 'female'
-                      ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm ring-1 ring-accent-emerald'
-                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                  }`}
-                >
-                  <svg className="w-5 h-5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="6"/><path d="M12 15v7"/><path d="M9 19h6"/></svg>
-                  <span>{t('female')}</span>
-                  {gender === 'female' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Birthday */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
-                {t('birthdayLabel')}
-              </label>
-              <input
-                type="date"
-                value={birthday}
-                onChange={e => setBirthday(e.target.value)}
-                className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
-              />
-            </div>
-
-            {/* Weight & Height */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Weight */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
-                  {t('weightLabel')}
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="30"
-                    max="250"
-                    value={weight}
-                    onChange={e => setWeight(e.target.value ? Number(e.target.value) : '')}
-                    placeholder="75"
-                    className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
-                  />
-                  <span className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
-                    kg
-                  </span>
-                </div>
-              </div>
-
-              {/* Height */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">
-                  {t('heightLabel')}
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="100"
-                    max="230"
-                    value={height}
-                    onChange={e => setHeight(e.target.value ? Number(e.target.value) : '')}
-                    placeholder="175"
-                    className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
-                  />
-                  <span className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
-                    cm
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                if (!name.trim()) setName(language === 'ar' ? 'بطل' : 'Athlete');
-                setStep(2);
-              }}
-              className="w-full mt-4 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
-            >
-              <span>{t('nextGoalsBtn')}</span>
-              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-            </button>
+            <p className="text-sm text-slate-400 mt-4">You can change your name later in your profile</p>
           </div>
         )}
 
-        {/* STEP 2: Goals (Primary + Secondary) */}
         {step === 2 && (
-          <div className="space-y-4 relative z-10">
-            {/* Primary Goal */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-accent-emerald uppercase font-mono tracking-wider">
-                  1. {t('primaryGoalLabel')}
-                </label>
-                <span className="text-[10px] text-slate-400">
-                  {t('primaryGoalHelp')}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {goalKeys.map(key => {
-                  const isSelected = primaryGoal === key;
-                  const term = FITNESS_GOALS_DICT[key];
-                  const displayTitle = key === 'General Fitness' ? 'I just want to start working out' : (language === 'ar' ? term.ar : term.en);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleSelectPrimaryGoal(key)}
-                      className={`p-3 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
-                        isSelected
-                          ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-glow-sm ring-1 ring-accent-emerald'
-                          : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-bold text-xs text-white">{displayTitle}</p>
-                        {isSelected && (
-                          <span className="text-[10px] font-bold text-accent-emerald font-mono flex items-center gap-0.5">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            {t('selectedBadge')}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Experience Level (Moved to Step 2) */}
-            <div className="pt-2 border-t border-border/50 mt-4">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {t('experienceLabel') || 'Experience Level'}
-              </label>
-              <div className="grid grid-cols-1 gap-2">
-                {[
-                  { id: 'Beginner', title: 'Beginner', desc: '0-6 months' },
-                  { id: 'Intermediate', title: 'Intermediate', desc: '6m-3 years' },
-                  { id: 'Advanced', title: 'Advanced', desc: '3+ years' }
-                ].map(lvl => (
-                  <button
-                    key={lvl.id}
-                    type="button"
-                    onClick={() => setExperience(lvl.id as any)}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      experience === lvl.id
-                        ? 'bg-accent-emerald/20 border-accent-emerald text-white shadow-sm ring-1 ring-accent-emerald'
-                        : 'bg-background-elevated border-border text-slate-300 hover:border-slate-500'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-xs text-white">{lvl.title}</p>
-                      {experience === lvl.id && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{lvl.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 mt-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                How do you want to proceed?
-              </label>
-              <div className="grid gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className="w-full p-4 rounded-2xl bg-gradient-to-r from-accent-emerald via-emerald-400 to-accent-cyan hover:from-emerald-400 hover:to-accent-cyan text-black font-black text-sm flex flex-col items-start shadow-glow-sm transition-all active:scale-[0.98]"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span>I want to be guided (AI Program)</span>
-                    <Zap className="w-5 h-5 fill-black" />
-                  </div>
-                  <span className="text-[10px] font-medium opacity-80 mt-1">We will generate a 4-week custom program for you</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleFinishAndGenerate(true)}
-                  className="w-full p-4 rounded-2xl bg-background-elevated border border-border text-slate-300 hover:border-slate-500 font-bold text-sm flex flex-col items-start transition-all active:scale-[0.98]"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span>I want to build my own program</span>
-                    <ArrowRight className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <span className="text-[10px] text-slate-500 mt-1 font-normal">Skip setup and go directly to dashboard</span>
-                </button>
-              </div>
-            </div>
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Experience Level</h1>
+            <p className="text-slate-400 mb-8">How long have you been training consistently?</p>
             
-            <div className="flex gap-3 pt-2">
+            <div className="space-y-3">
+              {[
+                { id: 'Beginner', title: 'Beginner', desc: '0 - 6 months of training' },
+                { id: 'Intermediate', title: 'Intermediate', desc: '6 months - 3 years' },
+                { id: 'Advanced', title: 'Advanced', desc: '3+ years of serious training' }
+              ].map(lvl => (
+                <button
+                  key={lvl.id}
+                  onClick={() => { setExperience(lvl.id as any); handleNext(); }}
+                  className={`w-full p-5 rounded-2xl border text-left transition-all active:scale-[0.98] ${
+                    experience === lvl.id 
+                      ? 'bg-accent-emerald/20 border-accent-emerald ring-1 ring-accent-emerald' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <h3 className={`text-lg font-bold ${experience === lvl.id ? 'text-accent-emerald' : 'text-white'}`}>{lvl.title}</h3>
+                  <p className="text-sm text-slate-400 mt-1">{lvl.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Your Top Fitness Goal</h1>
+            <p className="text-slate-400 mb-8">What are you primarily trying to achieve?</p>
+            
+            <div className="grid gap-3">
+              {goalKeys.map(key => (
+                <button
+                  key={key}
+                  onClick={() => { setPrimaryGoal(key); handleNext(); }}
+                  className={`w-full p-4 rounded-2xl border text-left transition-all active:scale-[0.98] flex items-center justify-between ${
+                    primaryGoal === key 
+                      ? 'bg-accent-emerald/20 border-accent-emerald ring-1 ring-accent-emerald' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <span className={`text-base font-bold ${primaryGoal === key ? 'text-accent-emerald' : 'text-white'}`}>
+                    {FITNESS_GOALS_DICT[key].en}
+                  </span>
+                  {primaryGoal === key && <Check className="w-5 h-5 text-accent-emerald" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Gender</h1>
+            <p className="text-slate-400 mb-8">This helps us calculate your caloric and strength baselines more accurately.</p>
+            
+            <div className="grid grid-cols-2 gap-4">
               <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
+                onClick={() => { setGender('male'); handleNext(); }}
+                className={`p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all active:scale-95 ${
+                  gender === 'male' ? 'bg-[#007AFF]/20 border-[#007AFF] ring-1 ring-[#007AFF]' : 'bg-white/5 border-white/10'
+                }`}
               >
-                {t('backBtn')}
+                <span className="text-4xl">👨</span>
+                <span className="font-bold text-lg">Male</span>
+              </button>
+              <button
+                onClick={() => { setGender('female'); handleNext(); }}
+                className={`p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all active:scale-95 ${
+                  gender === 'female' ? 'bg-[#FF2D55]/20 border-[#FF2D55] ring-1 ring-[#FF2D55]' : 'bg-white/5 border-white/10'
+                }`}
+              >
+                <span className="text-4xl">👩</span>
+                <span className="font-bold text-lg">Female</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Schedule (Days & Duration) */}
-        {step === 3 && (
-          <div className="space-y-5 relative z-10">
+        {step === 5 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-8">Height</h1>
+            
+            <div className="flex bg-white/5 p-1 rounded-xl mb-8">
+              <button 
+                onClick={() => setHeightUnit('cm')} 
+                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${heightUnit === 'cm' ? 'bg-white/20 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                cm
+              </button>
+              <button 
+                onClick={() => setHeightUnit('ft')} 
+                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${heightUnit === 'ft' ? 'bg-white/20 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                ft / in
+              </button>
+            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
-                  {t('daysPerWeekLabel')}: <span className="text-accent-emerald font-mono font-bold">{formatUnitDisplay(days, 'days', language)}</span>
-                </label>
+            {heightUnit === 'cm' ? (
+              <div className="relative">
+                <input
+                  type="number"
+                  value={heightCm}
+                  onChange={e => setHeightCm(e.target.value)}
+                  placeholder="175"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
+                  autoFocus
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">cm</span>
               </div>
-              <p className="text-[11px] text-accent-cyan font-medium mb-2">
-                • {getSplitDescription(days, experience)}
-              </p>
-
-              {/* Beginner Days Guidance Alert */}
-              {experience === 'Beginner' && days >= 4 && (
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] mb-2 leading-relaxed flex items-start gap-2">
-                  <span>💡</span>
-                  <span>{t('beginnerDaysTip')}</span>
+            ) : (
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    value={heightFt}
+                    onChange={e => setHeightFt(e.target.value)}
+                    placeholder="5"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
+                    autoFocus
+                  />
+                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">ft</span>
                 </div>
-              )}
-
-              <div className="flex gap-2">
-                {[2, 3, 4, 5, 6].map(d => {
-                  const isDisabled = experience === 'Beginner' && d === 6;
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() => setDays(d)}
-                      className={`flex-1 py-3 rounded-2xl border font-mono font-black text-sm transition-all active:scale-95 ${
-                        days === d
-                          ? 'bg-accent-emerald text-black border-accent-emerald shadow-glow-sm'
-                          : isDisabled
-                          ? 'opacity-30 bg-background-elevated border-border text-slate-500 cursor-not-allowed'
-                          : 'bg-background-elevated border-border text-slate-300'
-                      }`}
-                    >
-                      {formatUnitDisplay(d, 'days', language)}
-                    </button>
-                  );
-                })}
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    value={heightIn}
+                    onChange={e => setHeightIn(e.target.value)}
+                    placeholder="9"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
+                  />
+                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">in</span>
+                </div>
               </div>
+            )}
+          </div>
+        )}
+
+        {step === 6 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-8">Weight</h1>
+            
+            <div className="flex bg-white/5 p-1 rounded-xl mb-8">
+              <button 
+                onClick={() => setWeightUnit('kg')} 
+                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${weightUnit === 'kg' ? 'bg-white/20 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                kg
+              </button>
+              <button 
+                onClick={() => setWeightUnit('lbs')} 
+                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${weightUnit === 'lbs' ? 'bg-white/20 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                lbs
+              </button>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {t('sessionDurationLabel')}: <span className="text-accent-cyan font-mono font-bold">{formatUnitDisplay(duration, 'minutes', language)}</span>
-              </label>
-              <div className="flex gap-2">
-                {[45, 60, 75, 90].map(m => {
-                  const isTooShortFor2 = days === 2 && (m === 45 || m === 60);
-                  const isTooShortFor3 = days === 3 && m === 45;
-                  const isTooLongFor6 = days === 6 && m === 90;
-                  const isDisabled = isTooShortFor2 || isTooShortFor3 || isTooLongFor6;
+            <div className="relative">
+              <input
+                type="number"
+                value={weight}
+                onChange={e => setWeight(e.target.value)}
+                placeholder={weightUnit === 'kg' ? '75' : '165'}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
+                autoFocus
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{weightUnit}</span>
+            </div>
+          </div>
+        )}
 
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() => setDuration(m)}
-                      className={`flex-1 py-2.5 rounded-2xl border font-mono font-bold text-xs transition-all active:scale-95 ${
-                        duration === m
-                          ? 'bg-accent-cyan text-black border-accent-cyan'
-                          : isDisabled
-                          ? 'opacity-30 bg-background-elevated border-border text-slate-500 cursor-not-allowed'
-                          : 'bg-background-elevated border-border text-slate-300'
-                      }`}
-                    >
-                      {formatUnitDisplay(m, 'minutes', language)}
-                    </button>
-                  );
-                })}
-              </div>
+        {step === 7 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Age</h1>
+            <p className="text-slate-400 mb-8">Used to personalize your progression.</p>
+            
+            <div className="relative">
+              <input
+                type="number"
+                value={age}
+                onChange={e => setAge(e.target.value)}
+                placeholder="e.g. 25"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
+                autoFocus
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Years</span>
+            </div>
+          </div>
+        )}
+
+        {step === 8 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Do you have a workout plan?</h1>
+            <p className="text-slate-400 mb-8">We can build a 4-week custom periodized program for you instantly.</p>
+            
+            <div className="space-y-4">
+              <button
+                onClick={() => { setHasPlan(true); }}
+                className={`w-full p-5 rounded-2xl border text-left transition-all active:scale-[0.98] ${
+                  hasPlan === true ? 'bg-white/20 border-white' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <h3 className="text-lg font-bold text-white">Yes, I have one</h3>
+                <p className="text-sm text-slate-400 mt-1">Skip setup and go directly to the app.</p>
+              </button>
+
+              <button
+                onClick={() => { setHasPlan(false); handleNext(); }}
+                className={`w-full p-5 rounded-2xl border text-left transition-all active:scale-[0.98] flex items-center justify-between ${
+                  hasPlan === false ? 'bg-accent-emerald/20 border-accent-emerald ring-1 ring-accent-emerald' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <h3 className="text-lg font-bold text-white">No, I want one (AI Program)</h3>
+                  <p className="text-sm text-slate-400 mt-1">Answer a few more questions to get a tailored plan.</p>
+                </div>
+                <Zap className="w-6 h-6 text-accent-emerald flex-shrink-0" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 9 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Priority Muscles</h1>
+            <p className="text-slate-400 mb-8">Select up to 3 muscles you want to focus on growing.</p>
+            
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => { setPriorityMuscles([]); handleNext(); }}
+                className={`py-3 px-5 rounded-xl border font-bold transition-all ${priorityMuscles.length === 0 ? 'bg-accent-emerald text-black border-accent-emerald' : 'bg-white/5 border-white/10 text-white'}`}
+              >
+                Balanced
+              </button>
+              {MUSCLE_GROUPS.map(m => (
+                <button
+                  key={m}
+                  onClick={() => toggleMuscle(m)}
+                  className={`py-3 px-5 rounded-xl border font-bold transition-all ${priorityMuscles.includes(m) ? 'bg-accent-emerald text-black border-accent-emerald shadow-glow-sm' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 10 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Session Duration</h1>
+            <p className="text-slate-400 mb-8">How much time do you have per workout?</p>
+            
+            <div className="grid gap-3">
+              {[
+                { val: 45, label: '45 Minutes', desc: 'Fast & Intense' },
+                { val: 60, label: '60 Minutes', desc: 'Standard' },
+                { val: 75, label: '75 Minutes', desc: 'Hypertrophy Focus' },
+                { val: 90, label: '90 Minutes', desc: 'High Volume' }
+              ].map(d => (
+                <button
+                  key={d.val}
+                  onClick={() => { setDuration(d.val); handleNext(); }}
+                  className={`w-full p-4 rounded-2xl border text-left transition-all active:scale-[0.98] ${
+                    duration === d.val 
+                      ? 'bg-accent-emerald/20 border-accent-emerald ring-1 ring-accent-emerald' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <h3 className={`text-lg font-bold ${duration === d.val ? 'text-accent-emerald' : 'text-white'}`}>{d.label}</h3>
+                  <p className="text-sm text-slate-400 mt-1">{d.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 11 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Workout Days Per Week</h1>
+            <p className="text-slate-400 mb-8">How many days can you commit to training?</p>
+            
+            <div className="grid gap-3">
+              {[2, 3, 4, 5, 6].map(d => (
+                <button
+                  key={d}
+                  onClick={() => { setDays(d); handleNext(); }}
+                  className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                    days === d 
+                      ? 'bg-accent-emerald/20 border-accent-emerald ring-1 ring-accent-emerald' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <span className={`text-lg font-bold ${days === d ? 'text-accent-emerald' : 'text-white'}`}>{d} Days</span>
+                  {days === d && <Check className="w-5 h-5 text-accent-emerald" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 12 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Equipment Selection</h1>
+            <p className="text-slate-400 mb-6">Select your primary equipment availability.</p>
+            
+            <div className="space-y-3 mb-8">
+              {[
+                { id: 'Full Gym', title: 'Full Gym', desc: 'Barbells, cables, machines, dumbbells' },
+                { id: 'Home Gym', title: 'Home Gym', desc: 'Dumbbells, bench, pull-up bar' },
+                { id: 'Bodyweight', title: 'Calisthenics', desc: 'Bodyweight only' }
+              ].map(eq => (
+                <button
+                  key={eq.id}
+                  onClick={() => setEquipmentPreset(eq.id as any)}
+                  className={`w-full p-4 rounded-2xl border text-left transition-all active:scale-[0.98] ${
+                    equipmentPreset === eq.id 
+                      ? 'bg-accent-emerald/20 border-accent-emerald ring-1 ring-accent-emerald' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <h3 className={`text-lg font-bold ${equipmentPreset === eq.id ? 'text-accent-emerald' : 'text-white'}`}>{eq.title}</h3>
+                  <p className="text-sm text-slate-400 mt-1">{eq.desc}</p>
+                </button>
+              ))}
             </div>
 
-            {/* Workout Split Selection (Hidden for Beginners) */}
-            {experience !== 'Beginner' && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                  Workout Split
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {getSplitOptions(days).map(split => (
-                    <button
-                      key={split}
-                      type="button"
-                      onClick={() => setPreferredSplit(split)}
-                      className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all ${
-                        preferredSplit === split
-                          ? 'bg-accent-indigo/20 border-accent-indigo text-white shadow-sm'
-                          : 'bg-background-elevated border-border text-slate-400 hover:border-slate-500'
-                      }`}
-                    >
-                      {split}
-                    </button>
+            {equipmentPreset && (
+              <div className="pt-4 border-t border-white/10">
+                <p className="text-sm font-bold text-white mb-4">Optionally personalize equipment selections:</p>
+                <div className="max-h-[30vh] overflow-y-auto pr-2 space-y-6 custom-scrollbar">
+                  {EQUIPMENT_CATEGORIES.map(category => (
+                    <div key={category.title}>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{category.title}</h3>
+                      <div className="space-y-2">
+                        {category.items.map(item => {
+                          const isChecked = detailedEquipment.includes(item) || 
+                            (detailedEquipment.length === 0 && (
+                              (equipmentPreset === 'Full Gym' && DEFAULT_FULL_GYM.includes(item)) ||
+                              (equipmentPreset === 'Home Gym' && DEFAULT_HOME_GYM.includes(item)) ||
+                              (equipmentPreset === 'Bodyweight' && DEFAULT_BODYWEIGHT.includes(item))
+                            ));
+                          
+                          return (
+                            <button
+                              key={item}
+                              onClick={() => {
+                                if (detailedEquipment.length === 0) {
+                                  let base = equipmentPreset === 'Full Gym' ? DEFAULT_FULL_GYM : equipmentPreset === 'Home Gym' ? DEFAULT_HOME_GYM : DEFAULT_BODYWEIGHT;
+                                  if (isChecked) setDetailedEquipment(base.filter(e => e !== item));
+                                  else setDetailedEquipment([...base, item]);
+                                } else {
+                                  if (isChecked) setDetailedEquipment(prev => prev.filter(e => e !== item));
+                                  else setDetailedEquipment(prev => [...prev, item]);
+                                }
+                              }}
+                              className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <EquipmentImage name={item} className="w-10 h-10 shadow-md ring-1 ring-white/10" />
+                                <span className="text-sm font-bold text-slate-200">{item}</span>
+                              </div>
+                              <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                                isChecked ? 'bg-accent-emerald border-accent-emerald' : 'border-slate-500'
+                              }`}>
+                                {isChecked && <Check className="w-3.5 h-3.5 text-black stroke-[3]" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
-              >
-                {t('backBtn')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(4)}
-                className="flex-1 py-3.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-black text-sm flex items-center justify-center gap-2 shadow-glow-sm transition-all active:scale-[0.98]"
-              >
-                <span>{t('nextEquipmentBtn')}</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-              </button>
-            </div>
           </div>
         )}
 
-        {/* STEP 4: Available Equipment, Baseline Weights & 4-Week Routine Generation */}
-        {step === 4 && (
-          <div className="space-y-5 relative z-10">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {t('equipmentLabel')}
-              </label>
-              <div className="space-y-2">
-                {equipmentOptions.map(item => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setEquipment(item.id as any)}
-                    className={`w-full p-3 rounded-2xl border text-left rtl:text-right transition-all active:scale-[0.98] ${
-                      equipment === item.id
-                        ? 'bg-accent-emerald/15 border-accent-emerald text-white shadow-glow-sm'
-                        : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-xs text-white">{item.title}</p>
-                      {equipment === item.id && (
-                        <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />
-                      )}
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{item.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+      </main>
 
-            {/* Starting Weight Baseline Source */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {t('startingBaselineLabel')}
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBaselineOption('beginner_rpe')}
-                  className={`p-3 rounded-2xl border text-left rtl:text-right transition-all relative ${
-                    baselineOption === 'beginner_rpe'
-                      ? 'bg-accent-emerald/15 border-accent-emerald text-white shadow-sm ring-1 ring-accent-emerald'
-                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                  }`}
-                >
-                  {experience === 'Beginner' && (
-                    <span className="absolute -top-2.5 right-3 bg-accent-emerald text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                      Best for Beginners
-                    </span>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-xs text-white">{t('baselineRpeTitle')}</p>
-                    {baselineOption === 'beginner_rpe' && <Check className="w-4 h-4 text-accent-emerald stroke-[3]" />}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                    {t('baselineRpeDesc')}
-                  </p>
-                </button>
+      {/* Fixed Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B] to-transparent z-20 pb-8">
+        <div className="max-w-xl mx-auto flex gap-3">
+          {(step === 1 || step === 4 || step === 5 || step === 6 || step === 7 || step === 9) && (
+             <button
+               onClick={handleNext}
+               className="flex-1 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-lg transition-all active:scale-[0.98]"
+             >
+               Skip
+             </button>
+          )}
 
-                <button
-                  type="button"
-                  onClick={() => setBaselineOption('experienced')}
-                  className={`p-3 rounded-2xl border text-left rtl:text-right transition-all ${
-                    baselineOption === 'experienced'
-                      ? 'bg-accent-cyan/15 border-accent-cyan text-white shadow-sm ring-1 ring-accent-cyan'
-                      : 'bg-background-elevated border-border text-slate-300 hover:border-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-xs text-white">{t('baselineExpTitle')}</p>
-                    {baselineOption === 'experienced' && <Check className="w-4 h-4 text-accent-cyan stroke-[3]" />}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                    {t('baselineExpDesc')}
-                  </p>
-                </button>
-              </div>
-            </div>
-
-            {/* Start Date Option */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                Date to start
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
-              />
-            </div>
-
-            {/* Customization */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {language === 'ar' ? 'العضلات ذات الأولوية (حد أقصى 3)' : 'Priority Muscles (Max 3)'}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPriorityMuscles([])}
-                  className={`py-2 px-4 rounded-xl border text-xs font-bold transition-all ${priorityMuscles.length === 0 ? 'bg-accent-emerald text-black border-accent-emerald' : 'bg-background-elevated border-border text-slate-300'}`}
-                >
-                  {language === 'ar' ? 'متوازن' : 'Balanced'}
-                </button>
-                {MUSCLE_GROUPS.map(m => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => toggleMuscle(m)}
-                    className={`py-2 px-4 rounded-xl border text-xs font-bold transition-all ${priorityMuscles.includes(m) ? 'bg-accent-emerald text-black border-accent-emerald' : 'bg-background-elevated border-border text-slate-300'}`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
-                {language === 'ar' ? 'تمارين تريد تجنبها' : 'Avoided Exercises'}
-              </label>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={avoidedExercisesInput}
-                  onChange={e => setAvoidedExercisesInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddAvoided()}
-                  placeholder={language === 'ar' ? 'مثل: Barbell Squat' : 'e.g. Barbell Squat'}
-                  className="flex-1 bg-background-elevated border border-border rounded-xl px-4 py-3 text-sm text-white focus:border-accent-emerald outline-none"
-                />
-                <button type="button" onClick={handleAddAvoided} className="px-4 rounded-xl bg-background-elevated border border-border text-slate-300 text-sm font-bold">+</button>
-              </div>
-              {avoidedExercises.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {avoidedExercises.map(ex => (
-                    <span key={ex} className="flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold">
-                      {ex} <button onClick={() => setAvoidedExercises(prev => prev.filter(e => e !== ex))}><X className="w-3.5 h-3.5" /></button>
-                    </span>
-                  ))}
-                </div>
+          {step === 12 ? (
+            <button
+              onClick={() => handleFinish(false)}
+              disabled={!equipmentPreset || isGenerating}
+              className="flex-1 py-4 rounded-2xl bg-accent-emerald text-black font-black text-lg transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-2 shadow-glow-sm"
+            >
+              {isGenerating ? (
+                <span>Generating Program...</span>
+              ) : (
+                <>
+                  <span>Create AI Program</span>
+                  <Zap className="w-5 h-5 fill-black" />
+                </>
               )}
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-border/50">
-              <h3 className="text-sm font-bold text-white mb-3">Plan Summary</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setStep(1)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
-                  <span className="block text-[10px] text-slate-400 uppercase">Profile</span>
-                  <span className="block text-xs font-bold text-white mt-0.5 truncate">{name || 'Athlete'} ({gender === 'male' ? 'ذكر' : 'أنثى'})</span>
-                  <span className="block text-[10px] text-slate-400">{weight} kg • {height} cm</span>
-                </button>
-                <button onClick={() => setStep(2)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
-                  <span className="block text-[10px] text-slate-400 uppercase">Goal</span>
-                  <span className="block text-xs font-bold text-white mt-0.5 truncate">{primaryGoal}</span>
-                </button>
-                <button onClick={() => setStep(3)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
-                  <span className="block text-[10px] text-slate-400 uppercase">Schedule & Split</span>
-                  <span className="block text-xs font-bold text-white mt-0.5">{days} days, {duration} mins</span>
-                  {experience !== 'Beginner' && (
-                    <span className="block text-[10px] text-accent-indigo font-bold mt-1">{preferredSplit}</span>
-                  )}
-                </button>
-                <button onClick={() => setStep(4)} className="p-2.5 rounded-xl bg-background-elevated border border-border text-left rtl:text-right hover:border-accent-emerald/50 transition-colors">
-                  <span className="block text-[10px] text-slate-400 uppercase">Equipment</span>
-                  <span className="block text-xs font-bold text-white mt-0.5 truncate">{equipment}</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(3)}
-                className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
-              >
-                {t('backBtn')}
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  let defaults: string[] = [];
-                  if (equipment === 'Full Gym') defaults = DEFAULT_FULL_GYM;
-                  else if (equipment === 'Home Gym (Dumbbells & Bench)') defaults = DEFAULT_HOME_GYM;
-                  else if (equipment === 'Bodyweight Only') defaults = DEFAULT_BODYWEIGHT;
-                  
-                  setDetailedEquipment(defaults);
-                  setStep(5);
-                }}
-                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-accent-emerald via-emerald-400 to-accent-cyan hover:from-emerald-400 hover:to-accent-cyan text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-lg transition-all active:scale-[0.98]"
-              >
-                <span>Personalize Equipment</span>
-                <ArrowRight className="w-5 h-5 rtl:rotate-180" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 5: Detailed Equipment Selection */}
-        {step === 5 && (
-          <div className="space-y-6 relative z-10">
-            <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-6 custom-scrollbar">
-              {EQUIPMENT_CATEGORIES.map(category => (
-                <div key={category.title}>
-                  <h3 className="text-sm font-bold text-white mb-3">{category.title}</h3>
-                  <div className="space-y-2">
-                    {category.items.map(item => {
-                      const isChecked = detailedEquipment.includes(item);
-                      return (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => {
-                            if (isChecked) {
-                              setDetailedEquipment(prev => prev.filter(e => e !== item));
-                            } else {
-                              setDetailedEquipment(prev => [...prev, item]);
-                            }
-                          }}
-                          className="w-full flex items-center justify-between p-3 rounded-xl bg-background-elevated border border-border hover:border-slate-500 transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <EquipmentImage name={item} className="w-12 h-12 shadow-md ring-1 ring-white/10 group-hover:ring-accent-emerald/50 transition-all" />
-                            <span className="text-sm font-bold text-slate-200">{item}</span>
-                          </div>
-                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all shrink-0 ${
-                            isChecked ? 'bg-[#007AFF] border-[#007AFF]' : 'border-slate-500'
-                          }`}>
-                            {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(4)}
-                className="py-3 px-5 rounded-2xl bg-background-elevated text-slate-300 text-xs font-bold border border-border"
-              >
-                {t('backBtn')}
-              </button>
-              
-              <button
-                type="button"
-                disabled={isGenerating}
-                onClick={() => handleFinishAndGenerate(false)}
-                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-accent-emerald via-emerald-400 to-accent-cyan hover:from-emerald-400 hover:to-accent-cyan text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-lg transition-all active:scale-[0.98] disabled:opacity-50"
-              >
-                {isGenerating ? (
-                  <>
-                    <Sparkles className="w-5 h-5 animate-spin" />
-                    <span>Calibrating Periodization Plan...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-5 h-5 fill-black" />
-                    <span>Generate Plan</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
+            </button>
+          ) : (
+            <button
+              onClick={handleNext}
+              className="flex-[2] py-4 rounded-2xl bg-white text-black font-black text-lg transition-all active:scale-[0.98] shadow-lg"
+            >
+              Next
+            </button>
+          )}
+        </div>
       </div>
-
-      {/* Security & Guarantee Tag */}
-      <div className="mt-4 flex items-center gap-2 text-slate-500 text-xs">
-        <ShieldCheck className="w-4 h-4 text-accent-emerald" />
-        <span>{t('saudiBadge')} • {t('tagline')}</span>
-      </div>
-
+      
     </div>
   );
 };
