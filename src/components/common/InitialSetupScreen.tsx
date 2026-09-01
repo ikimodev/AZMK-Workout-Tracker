@@ -33,6 +33,9 @@ const DEFAULT_FULL_GYM = EQUIPMENT_CATEGORIES.flatMap(c => c.items);
 const DEFAULT_HOME_GYM = ['Dumbbell', 'Barbell', 'Plate', 'Kettlebell', 'Pull Up Bar', 'Squat Rack', 'Flat Bench', 'Adjustable Bench', 'Dip Bar', 'Resistance Band', 'Jump Rope'];
 const DEFAULT_BODYWEIGHT = ['Pull Up Bar', 'Dip Bar', 'Suspension Band', 'Resistance Band', 'Rings', 'Jump Rope'];
 import { FITNESS_GOALS_DICT, formatUnitDisplay, getFitnessGoalDisplayName } from '../../i18n/fitnessDictionary';
+import { X } from 'lucide-react';
+
+const MUSCLE_GROUPS: string[] = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 
 interface InitialSetupScreenProps {
   onComplete: () => void;
@@ -57,6 +60,9 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [baselineOption, setBaselineOption] = useState<'experienced' | 'beginner_rpe'>('beginner_rpe');
   const [preferredSplit, setPreferredSplit] = useState<string>('AI Recommended');
+  const [priorityMuscles, setPriorityMuscles] = useState<string[]>([]);
+  const [avoidedExercisesInput, setAvoidedExercisesInput] = useState('');
+  const [avoidedExercises, setAvoidedExercises] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const getSplitOptions = (d: number) => {
@@ -134,6 +140,23 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     }
   };
 
+  const toggleMuscle = (m: string) => {
+    if (priorityMuscles.includes(m)) {
+      setPriorityMuscles(prev => prev.filter(x => x !== m));
+    } else {
+      if (priorityMuscles.length < 3) {
+        setPriorityMuscles(prev => [...prev, m]);
+      }
+    }
+  };
+
+  const handleAddAvoided = () => {
+    if (avoidedExercisesInput.trim() && !avoidedExercises.includes(avoidedExercisesInput.trim())) {
+      setAvoidedExercises(prev => [...prev, avoidedExercisesInput.trim()]);
+      setAvoidedExercisesInput('');
+    }
+  };
+
   const equipmentOptions = [
     {
       id: 'Full Gym',
@@ -190,7 +213,9 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         daysPerWeek: days,
         durationMinutes: duration,
         equipment,
-        preferredSplit
+        preferredSplit: preferredSplit === 'AI Recommended' ? undefined : preferredSplit,
+        priorityMuscles: priorityMuscles.length > 0 ? (priorityMuscles as any) : 'AZMK_DECIDE',
+        avoidedExercises
       });
       saveGeneratedProgram(generated);
     }
@@ -704,6 +729,58 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 onChange={e => setStartDate(e.target.value)}
                 className="w-full px-4 py-3 bg-background-elevated border border-border rounded-2xl text-white text-sm focus:outline-none focus:border-accent-emerald transition-colors font-mono font-bold"
               />
+            </div>
+
+            {/* Customization */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                {language === 'ar' ? 'العضلات ذات الأولوية (حد أقصى 3)' : 'Priority Muscles (Max 3)'}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPriorityMuscles([])}
+                  className={`py-2 px-4 rounded-xl border text-xs font-bold transition-all ${priorityMuscles.length === 0 ? 'bg-accent-emerald text-black border-accent-emerald' : 'bg-background-elevated border-border text-slate-300'}`}
+                >
+                  {language === 'ar' ? 'متوازن' : 'Balanced'}
+                </button>
+                {MUSCLE_GROUPS.map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => toggleMuscle(m)}
+                    className={`py-2 px-4 rounded-xl border text-xs font-bold transition-all ${priorityMuscles.includes(m) ? 'bg-accent-emerald text-black border-accent-emerald' : 'bg-background-elevated border-border text-slate-300'}`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                {language === 'ar' ? 'تمارين تريد تجنبها' : 'Avoided Exercises'}
+              </label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={avoidedExercisesInput}
+                  onChange={e => setAvoidedExercisesInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddAvoided()}
+                  placeholder={language === 'ar' ? 'مثل: Barbell Squat' : 'e.g. Barbell Squat'}
+                  className="flex-1 bg-background-elevated border border-border rounded-xl px-4 py-3 text-sm text-white focus:border-accent-emerald outline-none"
+                />
+                <button type="button" onClick={handleAddAvoided} className="px-4 rounded-xl bg-background-elevated border border-border text-slate-300 text-sm font-bold">+</button>
+              </div>
+              {avoidedExercises.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {avoidedExercises.map(ex => (
+                    <span key={ex} className="flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold">
+                      {ex} <button onClick={() => setAvoidedExercises(prev => prev.filter(e => e !== ex))}><X className="w-3.5 h-3.5" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-6 pt-4 border-t border-border/50">
