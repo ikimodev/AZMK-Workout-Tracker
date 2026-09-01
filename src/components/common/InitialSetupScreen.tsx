@@ -44,7 +44,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const { updateUserProfile, saveGeneratedProgram, user } = useWorkout();
 
   const [step, setStep] = useState(1);
-  const TOTAL_STEPS = 12;
+  const TOTAL_STEPS = 13;
 
   // Form State
   const [name, setName] = useState(user.name === 'Kareem Al-Otaibi' ? '' : user.name);
@@ -559,56 +559,58 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                 </button>
               ))}
             </div>
+          </div>
+        )}
 
-            {equipmentPreset && (
-              <div className="pt-4 border-t border-white/10">
-                <p className="text-sm font-bold text-white mb-4">Optionally personalize equipment selections:</p>
-                <div className="max-h-[30vh] overflow-y-auto pr-2 space-y-6 custom-scrollbar">
-                  {EQUIPMENT_CATEGORIES.map(category => (
-                    <div key={category.title}>
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{category.title}</h3>
-                      <div className="space-y-2">
-                        {category.items.map(item => {
-                          const isChecked = detailedEquipment.includes(item) || 
-                            (detailedEquipment.length === 0 && (
-                              (equipmentPreset === 'Full Gym' && DEFAULT_FULL_GYM.includes(item)) ||
-                              (equipmentPreset === 'Home Gym' && DEFAULT_HOME_GYM.includes(item)) ||
-                              (equipmentPreset === 'Bodyweight' && DEFAULT_BODYWEIGHT.includes(item))
-                            ));
-                          
-                          return (
-                            <button
-                              key={item}
-                              onClick={() => {
-                                if (detailedEquipment.length === 0) {
-                                  let base = equipmentPreset === 'Full Gym' ? DEFAULT_FULL_GYM : equipmentPreset === 'Home Gym' ? DEFAULT_HOME_GYM : DEFAULT_BODYWEIGHT;
-                                  if (isChecked) setDetailedEquipment(base.filter(e => e !== item));
-                                  else setDetailedEquipment([...base, item]);
-                                } else {
-                                  if (isChecked) setDetailedEquipment(prev => prev.filter(e => e !== item));
-                                  else setDetailedEquipment(prev => [...prev, item]);
-                                }
-                              }}
-                              className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <EquipmentImage name={item} className="w-10 h-10 shadow-md ring-1 ring-white/10" />
-                                <span className="text-sm font-bold text-slate-200">{item}</span>
-                              </div>
-                              <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
-                                isChecked ? 'bg-accent-emerald border-accent-emerald' : 'border-slate-500'
-                              }`}>
-                                {isChecked && <Check className="w-3.5 h-3.5 text-black stroke-[3]" />}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+        {step === 13 && (
+          <div className="space-y-6 animate-slide-up">
+            <h1 className="text-3xl font-black tracking-tight mb-2">Personalize Equipment</h1>
+            <p className="text-slate-400 mb-6">Select the exact equipment you have access to.</p>
+            
+            <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-6 custom-scrollbar">
+              {EQUIPMENT_CATEGORIES.map(category => (
+                <div key={category.title}>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{category.title}</h3>
+                  <div className="space-y-2">
+                    {category.items.map(item => {
+                      const isChecked = detailedEquipment.includes(item) || 
+                        (detailedEquipment.length === 0 && (
+                          (equipmentPreset === 'Full Gym' && DEFAULT_FULL_GYM.includes(item)) ||
+                          (equipmentPreset === 'Home Gym' && DEFAULT_HOME_GYM.includes(item)) ||
+                          (equipmentPreset === 'Bodyweight' && DEFAULT_BODYWEIGHT.includes(item))
+                        ));
+                      
+                      return (
+                        <button
+                          key={item}
+                          onClick={() => {
+                            if (detailedEquipment.length === 0) {
+                              let base = equipmentPreset === 'Full Gym' ? DEFAULT_FULL_GYM : equipmentPreset === 'Home Gym' ? DEFAULT_HOME_GYM : DEFAULT_BODYWEIGHT;
+                              if (isChecked) setDetailedEquipment(base.filter(e => e !== item));
+                              else setDetailedEquipment([...base, item]);
+                            } else {
+                              if (isChecked) setDetailedEquipment(prev => prev.filter(e => e !== item));
+                              else setDetailedEquipment(prev => [...prev, item]);
+                            }
+                          }}
+                          className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <EquipmentImage name={item} className="w-10 h-10 shadow-md ring-1 ring-white/10" />
+                            <span className="text-sm font-bold text-slate-200">{item}</span>
+                          </div>
+                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                            isChecked ? 'bg-accent-emerald border-accent-emerald' : 'border-slate-500'
+                          }`}>
+                            {isChecked && <Check className="w-3.5 h-3.5 text-black stroke-[3]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         )}
 
@@ -617,7 +619,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       {/* Fixed Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B] to-transparent z-20 pb-8">
         <div className="max-w-xl mx-auto flex gap-3">
-          {(step === 1 || step === 4 || step === 5 || step === 6 || step === 7 || step === 9) && (
+          {(step === 1 || step === 4 || step === 5 || step === 6 || step === 7 || step === 9 || step === 12) && (
              <button
                onClick={handleNext}
                className="flex-1 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-lg transition-all active:scale-[0.98]"
@@ -626,10 +628,10 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
              </button>
           )}
 
-          {step === 12 ? (
+          {step === 13 ? (
             <button
               onClick={() => handleFinish(false)}
-              disabled={!equipmentPreset || isGenerating}
+              disabled={isGenerating}
               className="flex-1 py-4 rounded-2xl bg-accent-emerald text-black font-black text-lg transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-2 shadow-glow-sm"
             >
               {isGenerating ? (
@@ -644,10 +646,12 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
           ) : (
             <button
               onClick={handleNext}
-              className="flex-[2] py-4 rounded-2xl bg-white text-black font-black text-lg transition-all active:scale-[0.98] shadow-lg"
+              disabled={step === 12 && !equipmentPreset}
+              className="flex-[2] py-4 rounded-2xl bg-white text-black font-black text-lg transition-all active:scale-[0.98] shadow-lg disabled:opacity-50"
             >
               Next
             </button>
+
           )}
         </div>
       </div>
