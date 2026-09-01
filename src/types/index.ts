@@ -132,6 +132,11 @@ export interface Program {
   daysPerWeek: number;
   weeks: ProgramWeek[];
   isCustom?: boolean;
+  aiReasoning?: {
+    split: string;
+    priority: string;
+    volume: string;
+  };
 }
 
 export interface PRRecord {

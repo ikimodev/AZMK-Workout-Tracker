@@ -134,6 +134,31 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
           </div>
           <h1 className="text-2xl font-black text-white mt-1">{currentProgram?.name}</h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">{currentProgram?.description}</p>
+          
+          {currentProgram?.aiReasoning && (
+            <div className="mt-4 p-4 rounded-2xl bg-accent-indigo/10 border border-accent-indigo/20 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-4 h-4 text-accent-indigo" />
+                <span className="text-xs font-bold text-accent-indigo uppercase tracking-wider">
+                  {language === 'ar' ? 'رؤية كابتن عزام الذكية' : 'AI Coach Reasoning'}
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'نظام التقسيم' : 'Split'}</span>
+                  <p className="text-xs text-slate-200 mt-0.5">{currentProgram.aiReasoning.split}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'الأولويات' : 'Priority'}</span>
+                  <p className="text-xs text-slate-200 mt-0.5">{currentProgram.aiReasoning.priority}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'الجهد (Volume)' : 'Volume'}</span>
+                  <p className="text-xs text-slate-200 mt-0.5">{currentProgram.aiReasoning.volume}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">

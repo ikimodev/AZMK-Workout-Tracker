@@ -183,7 +183,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     });
 
     if (!skipGeneration) {
-      const generated = generateAIProgram({
+      const generated = await generateAIProgram({
         goal: primaryGoal,
         secondaryGoal,
         experience,
