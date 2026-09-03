@@ -5,6 +5,7 @@ import { generateAIProgram } from '../../services/aiProgramGenerator';
 import { FitnessGoal, Equipment } from '../../types';
 import { trackUserSession } from '../../services/analyticsService';
 import { EquipmentImage } from './EquipmentImage';
+import { ScrollPicker } from './ScrollPicker';
 import { FITNESS_GOALS_DICT } from '../../i18n/fitnessDictionary';
 
 const EQUIPMENT_CATEGORIES = [
@@ -53,12 +54,12 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [gender, setGender] = useState<'male' | 'female' | ''>('');
   
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
-  const [heightCm, setHeightCm] = useState<string>('');
-  const [heightFt, setHeightFt] = useState<string>('');
-  const [heightIn, setHeightIn] = useState<string>('');
+  const [heightCm, setHeightCm] = useState<number>(175);
+  const [heightInches, setHeightInches] = useState<number>(69);
 
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
-  const [weight, setWeight] = useState<string>('');
+  const [weightKg, setWeightKg] = useState<number>(75);
+  const [weightLbs, setWeightLbs] = useState<number>(165);
 
   const [age, setAge] = useState<string>('');
   
@@ -104,15 +105,17 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
     setIsGenerating(true);
     
     let finalHeight = undefined;
-    if (heightUnit === 'cm' && heightCm) {
-      finalHeight = Number(heightCm);
-    } else if (heightUnit === 'ft' && heightFt) {
-      finalHeight = Math.round((Number(heightFt) * 30.48) + (Number(heightIn || 0) * 2.54));
+    if (heightUnit === 'cm') {
+      finalHeight = heightCm;
+    } else if (heightUnit === 'ft') {
+      finalHeight = Math.round(heightInches * 2.54);
     }
 
     let finalWeight = undefined;
-    if (weight) {
-      finalWeight = weightUnit === 'kg' ? Number(weight) : Math.round(Number(weight) * 0.453592);
+    if (weightUnit === 'kg') {
+      finalWeight = weightKg;
+    } else {
+      finalWeight = Math.round(weightLbs * 0.453592);
     }
 
     let finalEquipment = detailedEquipment;
@@ -333,39 +336,42 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
             </div>
 
             {heightUnit === 'cm' ? (
-              <div className="relative">
-                <input
-                  type="number"
-                  value={heightCm}
-                  onChange={e => setHeightCm(e.target.value)}
-                  placeholder="175"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
-                  autoFocus
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">cm</span>
+              <div className="flex items-center justify-between mt-8 relative bg-white/5 rounded-3xl border border-white/10 p-6 overflow-hidden">
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                  <div className="text-[80px] font-black tracking-tighter leading-none text-white">
+                    {heightCm}<span className="text-2xl text-slate-400 font-bold ml-2">cm</span>
+                  </div>
+                </div>
+                <div className="w-24">
+                  <ScrollPicker
+                    min={90}
+                    max={230}
+                    value={heightCm}
+                    onChange={setHeightCm}
+                    orientation="vertical"
+                    majorTickInterval={10}
+                    mediumTickInterval={5}
+                  />
+                </div>
               </div>
             ) : (
-              <div className="flex gap-4">
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    value={heightFt}
-                    onChange={e => setHeightFt(e.target.value)}
-                    placeholder="5"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
-                    autoFocus
-                  />
-                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">ft</span>
+              <div className="flex items-center justify-between mt-8 relative bg-white/5 rounded-3xl border border-white/10 p-6 overflow-hidden">
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                  <div className="text-[80px] font-black tracking-tighter leading-none text-white flex items-baseline">
+                    {Math.floor(heightInches / 12)}<span className="text-4xl text-slate-400 ml-1 mr-3">'</span>
+                    {heightInches % 12}<span className="text-4xl text-slate-400 ml-1">"</span>
+                  </div>
                 </div>
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    value={heightIn}
-                    onChange={e => setHeightIn(e.target.value)}
-                    placeholder="9"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
+                <div className="w-24">
+                  <ScrollPicker
+                    min={36}
+                    max={90}
+                    value={heightInches}
+                    onChange={setHeightInches}
+                    orientation="vertical"
+                    majorTickInterval={12}
+                    mediumTickInterval={6}
                   />
-                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">in</span>
                 </div>
               </div>
             )}
@@ -391,17 +397,41 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
               </button>
             </div>
 
-            <div className="relative">
-              <input
-                type="number"
-                value={weight}
-                onChange={e => setWeight(e.target.value)}
-                placeholder={weightUnit === 'kg' ? '75' : '165'}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
-                autoFocus
-              />
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{weightUnit}</span>
-            </div>
+            {weightUnit === 'kg' ? (
+              <div className="flex flex-col items-center mt-8 space-y-12 relative bg-white/5 rounded-3xl border border-white/10 pt-12 pb-6 overflow-hidden">
+                <div className="text-[80px] font-black tracking-tighter leading-none text-white relative z-10">
+                  {weightKg}<span className="text-2xl text-slate-400 font-bold ml-2">kg</span>
+                </div>
+                <div className="w-full">
+                  <ScrollPicker
+                    min={30}
+                    max={200}
+                    value={weightKg}
+                    onChange={setWeightKg}
+                    orientation="horizontal"
+                    majorTickInterval={10}
+                    mediumTickInterval={5}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center mt-8 space-y-12 relative bg-white/5 rounded-3xl border border-white/10 pt-12 pb-6 overflow-hidden">
+                <div className="text-[80px] font-black tracking-tighter leading-none text-white relative z-10">
+                  {weightLbs}<span className="text-2xl text-slate-400 font-bold ml-2">lbs</span>
+                </div>
+                <div className="w-full">
+                  <ScrollPicker
+                    min={60}
+                    max={400}
+                    value={weightLbs}
+                    onChange={setWeightLbs}
+                    orientation="horizontal"
+                    majorTickInterval={10}
+                    mediumTickInterval={5}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
