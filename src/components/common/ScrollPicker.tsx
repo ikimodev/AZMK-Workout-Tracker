@@ -17,6 +17,9 @@ export const ScrollPicker: React.FC<ScrollPickerProps> = ({
   const items = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDraggingRef = useRef(false);
+  const startPosRef = useRef(0);
+  const startScrollRef = useRef(0);
 
   const itemSize = 12; // pixels per tick
 
@@ -78,15 +81,50 @@ export const ScrollPicker: React.FC<ScrollPickerProps> = ({
     }, 150);
   };
 
+  // Pointer drag support for effortless desktop & mobile scrubbing
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    isDraggingRef.current = true;
+    startPosRef.current = orientation === 'vertical' ? e.clientY : e.clientX;
+    startScrollRef.current = orientation === 'vertical' ? containerRef.current.scrollTop : containerRef.current.scrollLeft;
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !containerRef.current) return;
+    const currentPos = orientation === 'vertical' ? e.clientY : e.clientX;
+    const delta = startPosRef.current - currentPos;
+    if (orientation === 'vertical') {
+      containerRef.current.scrollTop = startScrollRef.current + delta;
+    } else {
+      containerRef.current.scrollLeft = startScrollRef.current + delta;
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      try {
+        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+      } catch {}
+    }
+  };
+
   return (
-    <div className="relative w-full overflow-hidden select-none">
+    <div className="relative w-full overflow-hidden select-none cursor-grab active:cursor-grabbing">
       {orientation === 'vertical' ? (
-        <div className="relative w-full h-[300px] flex items-center">
+        <div 
+          className="relative w-full h-[300px] flex items-center touch-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           {/* Fading Gradients */}
           <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-[#0A0A0B] to-transparent z-10 pointer-events-none" />
           <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#0A0A0B] to-transparent z-10 pointer-events-none" />
           
-          {/* Center Blue Line */}
+          {/* Center Green Line */}
           <div className="absolute left-0 right-0 flex items-center justify-end pointer-events-none z-20">
             <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-[#34D399] to-[#34D399] shadow-[0_0_8px_#34D399]" />
           </div>
@@ -95,7 +133,7 @@ export const ScrollPicker: React.FC<ScrollPickerProps> = ({
           <div
             ref={containerRef}
             onScroll={handleScroll}
-            className="w-full h-full overflow-auto scrollbar-hide relative z-0"
+            className="w-full h-full overflow-y-auto overflow-x-hidden scrollbar-hide relative z-0"
             style={{
               paddingTop: `calc(150px - ${itemSize / 2}px)`,
               paddingBottom: `calc(150px - ${itemSize / 2}px)`,
@@ -123,12 +161,18 @@ export const ScrollPicker: React.FC<ScrollPickerProps> = ({
           </div>
         </div>
       ) : (
-        <div className="relative w-full h-[120px] flex flex-col justify-end">
+        <div 
+          className="relative w-full h-[120px] flex flex-col justify-end touch-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           {/* Fading Gradients */}
           <div className="absolute top-0 bottom-0 left-0 w-1/3 bg-gradient-to-r from-[#0A0A0B] to-transparent z-10 pointer-events-none" />
           <div className="absolute top-0 bottom-0 right-0 w-1/3 bg-gradient-to-l from-[#0A0A0B] to-transparent z-10 pointer-events-none" />
           
-          {/* Center Blue Line */}
+          {/* Center Green Line */}
           <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 flex flex-col justify-start pointer-events-none z-20">
             <div className="w-[2px] h-full bg-gradient-to-b from-transparent via-[#34D399] to-[#34D399] shadow-[0_0_8px_#34D399]" />
           </div>
@@ -137,7 +181,7 @@ export const ScrollPicker: React.FC<ScrollPickerProps> = ({
           <div
             ref={containerRef}
             onScroll={handleScroll}
-            className="w-full h-full overflow-auto scrollbar-hide flex items-center relative z-0"
+            className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hide flex items-center relative z-0"
             style={{
               paddingLeft: `calc(50% - ${itemSize / 2}px)`,
               paddingRight: `calc(50% - ${itemSize / 2}px)`,
@@ -168,4 +212,3 @@ export const ScrollPicker: React.FC<ScrollPickerProps> = ({
     </div>
   );
 };
-

@@ -341,6 +341,22 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                   <div className="text-[80px] font-black tracking-tighter leading-none text-white">
                     {heightCm}<span className="text-2xl text-slate-400 font-bold ml-2">cm</span>
                   </div>
+                  <div className="flex items-center gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setHeightCm(prev => Math.max(90, prev - 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeightCm(prev => Math.min(230, prev + 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div className="w-24">
                   <ScrollPicker
@@ -360,6 +376,22 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
                   <div className="text-[80px] font-black tracking-tighter leading-none text-white flex items-baseline">
                     {Math.floor(heightInches / 12)}<span className="text-4xl text-slate-400 ml-1 mr-3">'</span>
                     {heightInches % 12}<span className="text-4xl text-slate-400 ml-1">"</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setHeightInches(prev => Math.max(36, prev - 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeightInches(prev => Math.min(90, prev + 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
                 <div className="w-24">
@@ -398,34 +430,70 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
             </div>
 
             {weightUnit === 'kg' ? (
-              <div className="flex flex-col items-center mt-8 space-y-12 relative bg-white/5 rounded-3xl border border-white/10 pt-12 pb-6 overflow-hidden">
-                <div className="text-[80px] font-black tracking-tighter leading-none text-white relative z-10">
-                  {weightKg}<span className="text-2xl text-slate-400 font-bold ml-2">kg</span>
+              <div className="flex items-center justify-between mt-8 relative bg-white/5 rounded-3xl border border-white/10 p-6 overflow-hidden">
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                  <div className="text-[80px] font-black tracking-tighter leading-none text-white">
+                    {weightKg}<span className="text-2xl text-slate-400 font-bold ml-2">kg</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setWeightKg(prev => Math.max(30, prev - 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWeightKg(prev => Math.min(200, prev + 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <div className="w-full">
+                <div className="w-24">
                   <ScrollPicker
                     min={30}
                     max={200}
                     value={weightKg}
                     onChange={setWeightKg}
-                    orientation="horizontal"
+                    orientation="vertical"
                     majorTickInterval={10}
                     mediumTickInterval={5}
                   />
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center mt-8 space-y-12 relative bg-white/5 rounded-3xl border border-white/10 pt-12 pb-6 overflow-hidden">
-                <div className="text-[80px] font-black tracking-tighter leading-none text-white relative z-10">
-                  {weightLbs}<span className="text-2xl text-slate-400 font-bold ml-2">lbs</span>
+              <div className="flex items-center justify-between mt-8 relative bg-white/5 rounded-3xl border border-white/10 p-6 overflow-hidden">
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                  <div className="text-[80px] font-black tracking-tighter leading-none text-white">
+                    {weightLbs}<span className="text-2xl text-slate-400 font-bold ml-2">lbs</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setWeightLbs(prev => Math.max(60, prev - 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWeightLbs(prev => Math.min(400, prev + 1))}
+                      className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold flex items-center justify-center transition-all text-xl"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <div className="w-full">
+                <div className="w-24">
                   <ScrollPicker
                     min={60}
                     max={400}
                     value={weightLbs}
                     onChange={setWeightLbs}
-                    orientation="horizontal"
+                    orientation="vertical"
                     majorTickInterval={10}
                     mediumTickInterval={5}
                   />
