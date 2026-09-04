@@ -6,6 +6,7 @@ import { FitnessGoal, Equipment } from '../../types';
 import { trackUserSession } from '../../services/analyticsService';
 import { EquipmentImage } from './EquipmentImage';
 import { ScrollPicker } from './ScrollPicker';
+import { AgeWheelPicker } from './AgeWheelPicker';
 import { FITNESS_GOALS_DICT } from '../../i18n/fitnessDictionary';
 
 const EQUIPMENT_CATEGORIES = [
@@ -42,7 +43,7 @@ interface InitialSetupScreenProps {
 }
 
 export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComplete }) => {
-  const { updateUserProfile, saveGeneratedProgram, user } = useWorkout();
+  const { updateUserProfile, saveGeneratedProgram, user, language } = useWorkout();
 
   const [step, setStep] = useState(1);
   const TOTAL_STEPS = 13;
@@ -61,7 +62,7 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
   const [weightKg, setWeightKg] = useState<number>(75);
   const [weightLbs, setWeightLbs] = useState<number>(165);
 
-  const [age, setAge] = useState<string>('');
+  const [age, setAge] = useState<number>(user.age || 24);
   
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
   const [priorityMuscles, setPriorityMuscles] = useState<string[]>([]);
@@ -436,20 +437,25 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
         )}
 
         {step === 7 && (
-          <div className="space-y-6 animate-slide-up">
-            <h1 className="text-3xl font-black tracking-tight mb-2">Age</h1>
-            <p className="text-slate-400 mb-8">Used to personalize your progression.</p>
+          <div className="space-y-6 animate-slide-up flex flex-col items-center">
+            <div className="w-full text-center">
+              <h1 className="text-3xl font-black tracking-tight mb-2">
+                {language === 'ar' ? 'كم عمرك؟' : 'How old are you?'}
+              </h1>
+              <p className="text-slate-400 mb-6 text-sm">
+                {language === 'ar' 
+                  ? 'يُستخدم لتخصيص خطتك التدريبية ومعدل الاستشفاء' 
+                  : 'Used to personalize your progression & recovery.'}
+              </p>
+            </div>
             
-            <div className="relative">
-              <input
-                type="number"
+            <div className="w-full py-2 flex justify-center">
+              <AgeWheelPicker
                 value={age}
-                onChange={e => setAge(e.target.value)}
-                placeholder="e.g. 25"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-2xl font-bold focus:outline-none focus:border-accent-emerald transition-all"
-                autoFocus
+                onChange={setAge}
+                min={12}
+                max={99}
               />
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Years</span>
             </div>
           </div>
         )}
