@@ -60,6 +60,7 @@ export interface Exercise {
   alternatives: string[]; // Exercise IDs
   youtubeQuery: string;
   trackingType?: ExerciseTrackingType;
+  thumbnail?: string;
 }
 
 export interface LoggedSet {

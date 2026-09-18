@@ -256,6 +256,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                 >
                   <ExerciseThumbnail 
                     exerciseName={getExerciseDisplayName(workoutEx.exerciseId, 'en')} 
+                    thumbnailUrl={exerciseInfo?.thumbnail}
                     equipment={exerciseInfo?.equipment}
                     className="w-12 h-12 transition-transform group-hover:scale-105" 
                   />
