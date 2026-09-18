@@ -78,10 +78,19 @@ export const findOrCreateExercise = (rawName: string): Exercise => {
   const cleanLower = clean.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g, '');
 
   // 1. Direct match in built-in exercises
-  const foundMock = MOCK_EXERCISES.find(ex => {
+  let foundMock = MOCK_EXERCISES.find(ex => {
     const exLower = ex.name.toLowerCase();
     return exLower === cleanLower || exLower.replace(/[^a-z0-9\s]/g, '') === cleanLower;
   });
+
+  if (!foundMock) {
+    const names = MOCK_EXERCISES.map(ex => ex.name.toLowerCase());
+    const match = stringSimilarity.findBestMatch(cleanLower, names);
+    if (match.bestMatch.rating > 0.60) {
+      foundMock = MOCK_EXERCISES[match.bestMatchIndex];
+    }
+  }
+
   if (foundMock) return foundMock;
 
   // 2. Direct match in dynamic custom exercises

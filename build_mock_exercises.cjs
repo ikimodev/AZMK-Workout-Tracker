@@ -3,6 +3,7 @@ const tail = fs.readFileSync('temp_tail.ts', 'utf-8');
 
 const head = `import { Exercise, MuscleGroup, Equipment, MovementPattern, ExerciseTrackingType } from '../types';
 import externalData from './exercises.json';
+import stringSimilarity from 'string-similarity';
 
 // In-memory cache for custom exercises added during runtime
 export const DYNAMIC_EXERCISES_MAP = new Map<string, Exercise>();
