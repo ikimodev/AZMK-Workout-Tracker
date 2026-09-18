@@ -4,6 +4,7 @@ import { Dumbbell } from 'lucide-react';
 
 interface ExerciseThumbnailProps {
   exerciseName: string;
+  equipment?: string;
   className?: string;
 }
 
@@ -17,7 +18,9 @@ interface ExerciseDetails {
 let globalExercisesCache: ExerciseDetails[] | null = null;
 let fetchPromise: Promise<ExerciseDetails[]> | null = null;
 
-export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({ exerciseName, className = "w-10 h-10" }) => {
+import { EquipmentImage } from '../common/EquipmentImage';
+
+export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({ exerciseName, equipment, className = "w-10 h-10" }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -94,6 +97,14 @@ export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({ exerciseNa
   }
 
   if (!imageUrl) {
+    if (equipment) {
+      return (
+        <div className={`overflow-hidden shrink-0 flex items-center justify-center ${className}`}>
+          <EquipmentImage name={equipment} className="w-full h-full object-contain" />
+        </div>
+      );
+    }
+    
     return (
       <div className={`overflow-hidden rounded-xl shrink-0 bg-background-elevated border border-border flex items-center justify-center ${className}`}>
         <Dumbbell className="w-1/2 h-1/2 text-slate-500" />

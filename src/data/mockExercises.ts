@@ -1,4 +1,4 @@
-import { Exercise, MuscleGroup, Equipment, MovementPattern } from '../types';
+import { Exercise, MuscleGroup, Equipment, MovementPattern, ExerciseTrackingType } from '../types';
 
 export const MOCK_EXERCISES: Exercise[] = [
   // ==========================================
@@ -907,12 +907,22 @@ export const inferExerciseAttributes = (name: string): {
   muscleGroup: MuscleGroup; 
   equipment: Equipment; 
   movementPattern: MovementPattern;
+  trackingType: ExerciseTrackingType;
 } => {
   const clean = name.toLowerCase();
 
   let muscleGroup: MuscleGroup = 'Full Body';
   let equipment: Equipment = 'Barbell';
   let movementPattern: MovementPattern = 'Horizontal Push';
+  let trackingType: ExerciseTrackingType = 'weight_reps';
+
+  // Tracking Type Inference
+  if (clean.includes('plank')) trackingType = 'time_only';
+  else if (clean.includes('bodyweight') || clean.includes('pull-up') || clean.includes('pull up') || clean.includes('pullup') || clean.includes('chin-up') || clean.includes('chin up') || clean.includes('chinup') || clean.includes('push-up') || clean.includes('push up') || clean.includes('pushup') || clean.includes('dip') || clean.includes('hanging') || clean.includes('ab wheel')) {
+    if (!clean.includes('weighted')) {
+      trackingType = 'reps_only';
+    }
+  }
 
   // Equipment inference
   if (clean.includes('dumbbell') || clean.includes('دامبل')) equipment = 'Dumbbell';
@@ -957,7 +967,7 @@ export const inferExerciseAttributes = (name: string): {
     movementPattern = 'Core / Anti-Extension';
   }
 
-  return { muscleGroup, equipment, movementPattern };
+  return { muscleGroup, equipment, movementPattern, trackingType };
 };
 
 /**
@@ -998,7 +1008,7 @@ export const findOrCreateExercise = (rawName: string): Exercise => {
   }
 
   // Infer attributes
-  const { muscleGroup, equipment, movementPattern } = inferExerciseAttributes(clean);
+  const { muscleGroup, equipment, movementPattern, trackingType } = inferExerciseAttributes(clean);
 
   // Capitalize properly
   const formattedName = clean
@@ -1013,6 +1023,7 @@ export const findOrCreateExercise = (rawName: string): Exercise => {
     secondaryMuscles: [],
     equipment,
     movementPattern,
+    trackingType,
     difficulty: 'Intermediate',
     instructions: `Perform ${formattedName} with controlled form, steady cadence, and progressive overload.`,
     instructionsAr: `تمرين ${formattedName}: أدِّ الحركة بتحكم كامل مع المحافظة على التكنيك السليم وتطبيق الزيادة التدريجية.`,

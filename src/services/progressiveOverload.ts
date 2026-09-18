@@ -114,6 +114,8 @@ export const getExerciseSummary = (
   // Calculate Progressive Overload Recommendation
   const isLowerBody = exercise?.muscleGroup === 'Quads' || exercise?.muscleGroup === 'Hamstrings' || exercise?.muscleGroup === 'Glutes';
   const weightIncrement = isLowerBody ? 5 : 2.5;
+  const isTimeOnly = exercise?.trackingType === 'time_only';
+  const isRepsOnly = exercise?.trackingType === 'reps_only';
 
   let recommendedWeight = lastWeight;
   let recommendedRepsMin = 8;
@@ -123,41 +125,54 @@ export const getExerciseSummary = (
   let deltaPercent = 0;
 
   // Logic tree based on user's performance & RPE
-  if (lastAvgRpe !== undefined && lastAvgRpe <= 8 && lastReps >= 8) {
-    // Solid RPE <= 8 with full reps -> Add weight!
-    recommendedWeight = lastWeight + weightIncrement;
-    recommendedRepsMin = 6;
-    recommendedRepsMax = 8;
-    rationale = `Your previous ${lastWeight}kg set hit ${lastReps} reps at comfortable RPE ${lastAvgRpe}. Progressive overload unlocked: +${weightIncrement}kg for 6-8 reps.`;
-    deltaPercent = Math.round(((recommendedWeight - lastWeight) / lastWeight) * 1000) / 10;
-  } else if (lastAvgRpe !== undefined && lastAvgRpe >= 9.5) {
-    // High fatigue / near failure -> consolidate volume
-    recommendedWeight = lastWeight;
-    recommendedRepsMin = Math.max(6, lastReps - 1);
-    recommendedRepsMax = lastReps + 1;
-    rationale = `High fatigue detected on previous session (RPE ${lastAvgRpe}). Maintain ${lastWeight}kg and prioritize clean bar path and tempo.`;
-    deltaPercent = 0;
-  } else if (lastReps >= 10) {
-    // Hit top of rep target -> increase weight
-    recommendedWeight = lastWeight + weightIncrement;
-    recommendedRepsMin = 6;
-    recommendedRepsMax = 8;
-    rationale = `Completed top of rep range (${lastReps} reps). Increase load by +${weightIncrement}kg next workout.`;
-    deltaPercent = Math.round(((recommendedWeight - lastWeight) / lastWeight) * 1000) / 10;
-  } else if (lastReps < 6) {
-    // Struggled or missed rep target -> step back slightly
-    recommendedWeight = Math.max(20, lastWeight - weightIncrement);
-    recommendedRepsMin = 8;
-    recommendedRepsMax = 10;
-    rationale = `Previous set reached only ${lastReps} reps. Reset load to ${recommendedWeight}kg for hypertrophy volume (8-10 reps).`;
-    deltaPercent = Math.round(((recommendedWeight - lastWeight) / lastWeight) * 1000) / 10;
+  if (isTimeOnly) {
+    recommendedWeight = 0;
+    recommendedRepsMin = lastReps >= 60 ? lastReps + 10 : lastReps + 5; // Use reps as seconds
+    recommendedRepsMax = recommendedRepsMin + 15;
+    rationale = `Last plank/hold was ${lastReps}s. Aim for ${recommendedRepsMin}s next time.`;
+  } else if (isRepsOnly) {
+    recommendedWeight = 0;
+    if (lastAvgRpe !== undefined && lastAvgRpe <= 8 && lastReps >= 8) {
+      recommendedRepsMin = lastReps + 1;
+      recommendedRepsMax = lastReps + 3;
+      rationale = `Solid RPE ${lastAvgRpe} on bodyweight exercise. Aim for ${recommendedRepsMin}-${recommendedRepsMax} reps.`;
+    } else {
+      recommendedRepsMin = lastReps;
+      recommendedRepsMax = lastReps + 1;
+      rationale = `Push for 1 more rep on your bodyweight exercise.`;
+    }
   } else {
-    // Steady state -> attempt +1 rep or +2.5kg
-    recommendedWeight = lastWeight + (lastReps >= 8 ? weightIncrement : 0);
-    recommendedRepsMin = 8;
-    recommendedRepsMax = 10;
-    rationale = `Last workout achieved ${lastWeight}kg × ${lastReps}. Target ${recommendedWeight}kg × 8 reps with strict tempo.`;
-    deltaPercent = Math.round(((recommendedWeight - lastWeight) / (lastWeight || 1)) * 1000) / 10;
+    if (lastAvgRpe !== undefined && lastAvgRpe <= 8 && lastReps >= 8) {
+      recommendedWeight = lastWeight + weightIncrement;
+      recommendedRepsMin = 6;
+      recommendedRepsMax = 8;
+      rationale = `Your previous ${lastWeight}kg set hit ${lastReps} reps at comfortable RPE ${lastAvgRpe}. Progressive overload unlocked: +${weightIncrement}kg for 6-8 reps.`;
+      deltaPercent = Math.round(((recommendedWeight - lastWeight) / lastWeight) * 1000) / 10;
+    } else if (lastAvgRpe !== undefined && lastAvgRpe >= 9.5) {
+      recommendedWeight = lastWeight;
+      recommendedRepsMin = Math.max(6, lastReps - 1);
+      recommendedRepsMax = lastReps + 1;
+      rationale = `High fatigue detected on previous session (RPE ${lastAvgRpe}). Maintain ${lastWeight}kg and prioritize clean bar path and tempo.`;
+      deltaPercent = 0;
+    } else if (lastReps >= 10) {
+      recommendedWeight = lastWeight + weightIncrement;
+      recommendedRepsMin = 6;
+      recommendedRepsMax = 8;
+      rationale = `Completed top of rep range (${lastReps} reps). Increase load by +${weightIncrement}kg next workout.`;
+      deltaPercent = Math.round(((recommendedWeight - lastWeight) / lastWeight) * 1000) / 10;
+    } else if (lastReps < 6) {
+      recommendedWeight = Math.max(20, lastWeight - weightIncrement);
+      recommendedRepsMin = 8;
+      recommendedRepsMax = 10;
+      rationale = `Previous set reached only ${lastReps} reps. Reset load to ${recommendedWeight}kg for hypertrophy volume (8-10 reps).`;
+      deltaPercent = Math.round(((recommendedWeight - lastWeight) / lastWeight) * 1000) / 10;
+    } else {
+      recommendedWeight = lastWeight + (lastReps >= 8 ? weightIncrement : 0);
+      recommendedRepsMin = 8;
+      recommendedRepsMax = 10;
+      rationale = `Last workout achieved ${lastWeight}kg × ${lastReps}. Target ${recommendedWeight}kg × 8 reps with strict tempo.`;
+      deltaPercent = Math.round(((recommendedWeight - lastWeight) / (lastWeight || 1)) * 1000) / 10;
+    }
   }
 
   const recommendation: NextWorkoutRecommendation = {
@@ -168,7 +183,7 @@ export const getExerciseSummary = (
     recommendedRepsMax,
     rationale,
     confidence,
-    previousPerformance: `${lastWeight} kg × ${lastReps}`,
+    previousPerformance: isTimeOnly ? `${lastReps}s` : (isRepsOnly ? `${lastReps} reps` : `${lastWeight} kg × ${lastReps}`),
     deltaPercent
   };
 
@@ -248,7 +263,7 @@ export const getNextSetRecommendation = (
   return {
     recommendedWeight: weight,
     recommendedReps: `${reps - 1}–${reps}`,
-    note: 'Repeat load with equal intensity.'
+    note: 'Maintain load and aim for same reps.'
   };
 };
 

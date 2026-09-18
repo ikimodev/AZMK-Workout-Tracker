@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { YoutubeIcon } from '../common/YoutubeIcon';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
+import { SetTimer } from './SetTimer';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById, getAllExercises } from '../../data/mockExercises';
 import { getExerciseSummary, getNextSetRecommendation } from '../../services/progressiveOverload';
@@ -231,6 +232,8 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
           const exSummary = getExerciseSummary(workoutEx.exerciseId, history);
           const completedSets = workoutEx.sets.filter(s => s.isCompleted);
           const nextSetRec = getNextSetRecommendation(completedSets, exerciseInfo?.defaultReps || 8);
+          const isTimeOnly = exerciseInfo?.trackingType === 'time_only';
+          const isRepsOnly = exerciseInfo?.trackingType === 'reps_only';
 
           return (
             <div 
@@ -251,6 +254,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                 >
                   <ExerciseThumbnail 
                     exerciseName={getExerciseDisplayName(workoutEx.exerciseId, 'en')} 
+                    equipment={exerciseInfo?.equipment}
                     className="w-12 h-12 transition-transform group-hover:scale-105" 
                   />
                   <div>
@@ -459,8 +463,14 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                 <div className="grid grid-cols-12 gap-2 text-center text-[11px] font-mono uppercase font-bold text-slate-400 px-2 pb-1 border-b border-border/60">
                   <div className="col-span-1">{t('setCol')}</div>
                   <div className="col-span-3">{t('previousCol')}</div>
-                  <div className="col-span-3">{t('weightKgCol')}</div>
-                  <div className="col-span-2">{t('repsCol')}</div>
+                  {!isTimeOnly && !isRepsOnly && <div className="col-span-3">{t('weightKgCol')}</div>}
+                  {!isTimeOnly && !isRepsOnly && <div className="col-span-2">{t('repsCol')}</div>}
+                  
+                  {isRepsOnly && <div className="col-span-2"></div>}
+                  {isRepsOnly && <div className="col-span-3">{t('repsCol')}</div>}
+                  
+                  {isTimeOnly && <div className="col-span-5">Time (s)</div>}
+                  
                   <div className="col-span-2">{t('rpeCol')}</div>
                   <div className="col-span-1">{t('doneCol')}</div>
                 </div>
@@ -483,39 +493,88 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
 
                       {/* Previous Performance */}
                       <div className="col-span-3 text-center text-xs font-mono text-slate-400">
-                        {set.previousWeight ? `${set.previousWeight} × ${set.previousReps}` : '—'}
+                        {set.previousWeight || set.previousReps ? 
+                          (isTimeOnly ? `${set.previousReps}s` : (isRepsOnly ? `${set.previousReps} reps` : `${set.previousWeight} × ${set.previousReps}`))
+                          : '—'}
                       </div>
 
-                      {/* Weight Input (Trigger for Modal) */}
-                      <div className="col-span-3 flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => setActiveWeightEditor({ exIdx, setIdx, initialWeight: set.weight || 0 })}
-                          className={`w-full max-w-[80px] py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all ${
-                            set.isCompleted 
-                              ? 'border-accent-emerald/40 text-accent-emerald' 
-                              : 'border-border text-white hover:border-slate-400'
-                          }`}
-                        >
-                          {set.weight || 0}
-                        </button>
-                      </div>
+                      {/* Weight & Reps for Normal */}
+                      {!isTimeOnly && !isRepsOnly && (
+                        <>
+                          {/* Weight Input */}
+                          <div className="col-span-3 flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => setActiveWeightEditor({ exIdx, setIdx, initialWeight: set.weight || 0 })}
+                              className={`w-full max-w-[80px] py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all ${
+                                set.isCompleted 
+                                  ? 'border-accent-emerald/40 text-accent-emerald' 
+                                  : 'border-border text-white hover:border-slate-400'
+                              }`}
+                            >
+                              {set.weight || 0}
+                            </button>
+                          </div>
+                          
+                          {/* Reps Input */}
+                          <div className="col-span-2 flex items-center justify-center">
+                            <div className="relative w-full max-w-[70px]">
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                value={set.reps || ''}
+                                onChange={(e) => updateSet(exIdx, setIdx, { reps: parseInt(e.target.value, 10) || 0 })}
+                                className={`w-full py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
+                                  set.isCompleted ? 'border-accent-emerald/40 text-accent-emerald' : 'border-border text-white'
+                                }`}
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
 
-                      {/* Reps Input */}
-                      <div className="col-span-2 flex items-center justify-center">
-                        <div className="relative w-full max-w-[70px]">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            value={set.reps || ''}
-                            onChange={(e) => updateSet(exIdx, setIdx, { reps: parseInt(e.target.value, 10) || 0 })}
-                            className={`w-full py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
-                              set.isCompleted ? 'border-accent-emerald/40 text-accent-emerald' : 'border-border text-white'
-                            }`}
-                            placeholder="0"
+                      {/* Reps Only */}
+                      {isRepsOnly && (
+                        <>
+                          <div className="col-span-2"></div>
+                          <div className="col-span-3 flex items-center justify-center">
+                            <div className="relative w-full max-w-[70px]">
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                value={set.reps || ''}
+                                onChange={(e) => updateSet(exIdx, setIdx, { reps: parseInt(e.target.value, 10) || 0 })}
+                                className={`w-full py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
+                                  set.isCompleted ? 'border-accent-emerald/40 text-accent-emerald' : 'border-border text-white'
+                                }`}
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Time Only */}
+                      {isTimeOnly && (
+                        <div className="col-span-5 flex items-center justify-center">
+                          <SetTimer
+                            initialSeconds={set.reps || 60}
+                            isCompleted={set.isCompleted}
+                            onUpdateSeconds={(seconds) => {
+                              updateSet(exIdx, setIdx, { reps: seconds });
+                              // Auto-propagate time to subsequent uncompleted sets if this is the first set
+                              if (setIdx === 0) {
+                                workoutEx.sets.forEach((s, idx) => {
+                                  if (idx > 0 && !s.isCompleted) {
+                                    updateSet(exIdx, idx, { reps: seconds });
+                                  }
+                                });
+                              }
+                            }}
                           />
                         </div>
-                      </div>
+                      )}
 
                       {/* Optional RPE Selector (Speed-First: Click to pick or keep default) */}
                       <div className="col-span-2 flex items-center justify-center relative">

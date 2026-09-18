@@ -43,6 +43,8 @@ export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
 
 export type FitnessGoal = 'Muscle Gain' | 'Strength' | 'Fat Loss' | 'General Fitness' | 'Endurance' | 'Mobility & Joint Health';
 
+export type ExerciseTrackingType = 'weight_reps' | 'reps_only' | 'time_only';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -57,6 +59,7 @@ export interface Exercise {
   defaultReps: number;
   alternatives: string[]; // Exercise IDs
   youtubeQuery: string;
+  trackingType?: ExerciseTrackingType;
 }
 
 export interface LoggedSet {
@@ -72,6 +75,8 @@ export interface LoggedSet {
   targetWeight?: number;
   targetRepsMin?: number;
   targetRepsMax?: number;
+  timeSeconds?: number;
+  targetTimeSeconds?: number;
   isPR?: boolean;
 }
 

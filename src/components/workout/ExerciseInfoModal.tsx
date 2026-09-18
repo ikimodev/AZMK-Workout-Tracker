@@ -147,6 +147,14 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            drag="y"
+            dragConstraints={{ top: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(e, { offset, velocity }) => {
+              if (offset.y > 100 || velocity.y > 300) {
+                onClose();
+              }
+            }}
             className="fixed inset-x-0 bottom-0 z-50 bg-gray-950 border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
           >
             <div className="sticky top-0 bg-gray-950/95 backdrop-blur-md pt-4 pb-3 px-6 border-b border-gray-800/50 flex justify-between items-center z-10">

@@ -927,7 +927,8 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
       });
     });
 
-    const durationMin = Math.max(1, Math.round(workoutDuration / 60));
+    const actualDurationSeconds = Math.floor((Date.now() - new Date(activeWorkout.startedAt).getTime()) / 1000);
+    const durationMin = Math.max(1, Math.round(actualDurationSeconds / 60));
     
     // Compare volume with previous matching session
     const prevSimilar = history.find(s => s.name === activeWorkout.name);
