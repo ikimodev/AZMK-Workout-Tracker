@@ -53,6 +53,7 @@ interface WorkoutContextType {
   // Set & Exercise Management in Active Workout
   addSetToExercise: (exerciseIndex: number) => void;
   updateSet: (exerciseIndex: number, setIndex: number, fields: Partial<LoggedSet>) => void;
+  updateExercise: (exerciseIndex: number, fields: Partial<WorkoutExercise>) => void;
   deleteSet: (exerciseIndex: number, setIndex: number) => void;
   duplicateSet: (exerciseIndex: number, setIndex: number) => void;
   toggleSetCompleted: (exerciseIndex: number, setIndex: number) => void;
@@ -102,21 +103,32 @@ interface WorkoutContextType {
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 // Web Audio API Beep Generator
-const playTimerBeep = () => {
+const playTimerBeep = (type: 'warning' | 'finish' = 'finish') => {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch A5
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.5);
+    osc.type = type === 'warning' ? 'triangle' : 'sine';
+    
+    if (type === 'warning') {
+      osc.frequency.setValueAtTime(600, ctx.currentTime); // Lower pitch for warning
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    } else {
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch A5 for finish
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.8);
+    }
   } catch (e) {
     // Silently ignore audio block
   }
@@ -367,12 +379,18 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
 
   // Workout live timer ticker
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (activeWorkout) {
       interval = setInterval(() => {
         const start = new Date(activeWorkout.startedAt).getTime();
         const now = Date.now();
-        setWorkoutDuration(Math.floor((now - start) / 1000));
+        const durationSeconds = Math.floor((now - start) / 1000);
+        setWorkoutDuration(durationSeconds);
+        
+        // Auto-finish after 360 minutes (21600 seconds)
+        if (durationSeconds >= 21600) {
+          finishActiveWorkout();
+        }
       }, 1000);
     } else {
       setWorkoutDuration(0);
@@ -386,9 +404,20 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     if (isRestTimerActive && restTimerRemaining > 0) {
       interval = setInterval(() => {
         setRestTimerRemaining(prev => {
+          if (prev === 6) {
+            // Exactly 5 seconds remaining on next tick
+            playTimerBeep('warning');
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              navigator.vibrate([100, 50, 100]); // Short double burst
+            }
+          }
+
           if (prev <= 1) {
             setIsRestTimerActive(false);
-            playTimerBeep();
+            playTimerBeep('finish');
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              navigator.vibrate([300, 100, 300, 100, 500]); // Long triumphant burst
+            }
             return 0;
           }
           return prev - 1;
@@ -629,25 +658,46 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
   };
 
   const updateSet = (exerciseIndex: number, setIndex: number, fields: Partial<LoggedSet>) => {
-    if (!activeWorkout) return;
-    const updatedExercises = [...activeWorkout.exercises];
-    const exercise = updatedExercises[exerciseIndex];
-    if (!exercise) return;
+    setActiveWorkout((prev) => {
+      if (!prev) return prev;
+      const updatedExercises = [...prev.exercises];
+      const exercise = updatedExercises[exerciseIndex];
+      if (!exercise) return prev;
 
-    const updatedSets = [...exercise.sets];
-    updatedSets[setIndex] = {
-      ...updatedSets[setIndex],
-      ...fields
-    };
+      const updatedSets = [...exercise.sets];
+      updatedSets[setIndex] = {
+        ...updatedSets[setIndex],
+        ...fields
+      };
 
-    updatedExercises[exerciseIndex] = {
-      ...exercise,
-      sets: updatedSets
-    };
+      updatedExercises[exerciseIndex] = {
+        ...exercise,
+        sets: updatedSets
+      };
 
-    setActiveWorkout({
-      ...activeWorkout,
-      exercises: updatedExercises
+      return {
+        ...prev,
+        exercises: updatedExercises
+      };
+    });
+  };
+
+  const updateExercise = (exerciseIndex: number, fields: Partial<WorkoutExercise>) => {
+    setActiveWorkout((prev) => {
+      if (!prev) return prev;
+      const updatedExercises = [...prev.exercises];
+      const exercise = updatedExercises[exerciseIndex];
+      if (!exercise) return prev;
+
+      updatedExercises[exerciseIndex] = {
+        ...exercise,
+        ...fields
+      };
+
+      return {
+        ...prev,
+        exercises: updatedExercises
+      };
     });
   };
 
@@ -1124,6 +1174,7 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
         clearLastCompletedSession,
         addSetToExercise,
         updateSet,
+        updateExercise,
         deleteSet,
         duplicateSet,
         toggleSetCompleted,

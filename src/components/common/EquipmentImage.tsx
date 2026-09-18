@@ -51,11 +51,30 @@ const EQUIPMENT_IMAGES: Record<string, string> = {
 };
 
 export const EquipmentImage: React.FC<EquipmentImageProps> = ({ name, className = "w-12 h-12" }) => {
-  const imageUrl = EQUIPMENT_IMAGES[name];
   const [error, setError] = React.useState(false);
 
+  // Normalize the incoming name
+  const safeName = (name || '').toLowerCase().trim();
+  
+  // Find match in our map (case-insensitive)
+  let imageUrl = null;
+  const matchKey = Object.keys(EQUIPMENT_IMAGES).find(k => k.toLowerCase() === safeName);
+  
+  if (matchKey) {
+    imageUrl = EQUIPMENT_IMAGES[matchKey];
+  } else {
+    // Fallback heuristic matching for generic terms from external DBs
+    if (safeName.includes('cable')) imageUrl = EQUIPMENT_IMAGES['Dual Cable Machine'];
+    else if (safeName.includes('barbell')) imageUrl = EQUIPMENT_IMAGES['Barbell'];
+    else if (safeName.includes('dumbbell')) imageUrl = EQUIPMENT_IMAGES['Dumbbell'];
+    else if (safeName.includes('kettlebell')) imageUrl = EQUIPMENT_IMAGES['Kettlebell'];
+    else if (safeName.includes('band')) imageUrl = EQUIPMENT_IMAGES['Resistance Band'];
+    else if (safeName.includes('machine')) imageUrl = EQUIPMENT_IMAGES['Stack Machines'];
+    else if (safeName.includes('body')) imageUrl = null; // Let it fallback to Dumbbell or maybe add a bodyweight icon later
+  }
+
   if (!imageUrl || error) {
-    // Fallback for ungenerated 3D icons
+    // Fallback for ungenerated 3D icons or unmatched equipment
     return (
       <div className={`overflow-hidden rounded-lg bg-slate-800/50 border border-white/5 shrink-0 flex items-center justify-center ${className}`}>
         <Dumbbell className="w-1/2 h-1/2 text-slate-500" />

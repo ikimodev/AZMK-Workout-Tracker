@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Plus, 
+  Play, 
   Check, 
   Trash2, 
   Copy, 
@@ -16,15 +16,21 @@ import {
   MoreVertical,
   Flame,
   Dumbbell,
-  X
+  Plus,
+  X,
+  MoreHorizontal,
+  FileText
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { YoutubeIcon } from '../common/YoutubeIcon';
+import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById, getAllExercises } from '../../data/mockExercises';
 import { getExerciseSummary, getNextSetRecommendation } from '../../services/progressiveOverload';
 import { getExerciseDisplayName, getMuscleGroupDisplayName } from '../../i18n/fitnessDictionary';
 import { ExerciseReplaceModal } from './ExerciseReplaceModal';
 import ExerciseInfoModal from './ExerciseInfoModal';
+import { WeightEditModal } from './WeightEditModal';
 
 interface ActiveWorkoutLoggerProps {
   onNavigate: (tab: string) => void;
@@ -37,6 +43,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     history,
     addSetToExercise, 
     updateSet, 
+    updateExercise,
     deleteSet, 
     duplicateSet, 
     toggleSetCompleted, 
@@ -55,8 +62,29 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
   const [replacingExerciseIndex, setReplacingExerciseIndex] = useState<number | null>(null);
   const [replacingExerciseId, setReplacingExerciseId] = useState<string | null>(null);
   const [addExerciseModalOpen, setAddExerciseModalOpen] = useState(false);
+  const [showBenchmarkFor, setShowBenchmarkFor] = useState<Record<string, boolean>>({});
+  const [showNotesFor, setShowNotesFor] = useState<Record<string, boolean>>({});
+  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+
+  const toggleBenchmark = (exerciseId: string) => {
+    setShowBenchmarkFor(prev => ({
+      ...prev,
+      [exerciseId]: !prev[exerciseId]
+    }));
+  };
+
+  const toggleNotes = (exerciseId: string) => {
+    setShowNotesFor(prev => ({
+      ...prev,
+      [exerciseId]: !prev[exerciseId]
+    }));
+  };
+
   const [searchExQuery, setSearchExQuery] = useState('');
   const [activeRpeSelector, setActiveRpeSelector] = useState<{ exIdx: number; setIdx: number } | null>(null);
+  
+  // State for Weight Modal
+  const [activeWeightEditor, setActiveWeightEditor] = useState<{ exIdx: number; setIdx: number; initialWeight: number } | null>(null);
 
   // Exercise Info Modal State
   const [infoModalOpen, setInfoModalOpen] = useState(false);
@@ -110,52 +138,89 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     setInfoModalOpen(true);
   };
 
+  const handleSaveWeight = (exIdx: number, setIdx: number, newWeight: number) => {
+    if (!activeWorkout) return;
+    const exercise = activeWorkout.exercises[exIdx];
+    if (!exercise) return;
+    
+    const targetSet = exercise.sets[setIdx];
+    const oldWeight = targetSet.weight || 0;
+
+    // Update the specific set
+    updateSet(exIdx, setIdx, { weight: newWeight });
+
+    // Auto-propagate logic: If this is the FIRST set, update subsequent uncompleted sets 
+    // IF their current weight matches the old weight of the first set (meaning user hasn't diverged them).
+    if (setIdx === 0) {
+      exercise.sets.forEach((set, idx) => {
+        if (idx > 0 && !set.isCompleted) {
+          // If the subsequent set has the exact same weight as the first set's old weight,
+          // it means they are linked in the user's mind (or default). Update it!
+          if ((set.weight || 0) === oldWeight) {
+            updateSet(exIdx, idx, { weight: newWeight });
+          }
+        }
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-20 animate-fade-in max-w-4xl mx-auto">
       
-      {/* Top Header & Sticky Action Bar */}
-      <div className="bg-background-card border border-border rounded-3xl p-5 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-[65px] z-30 backdrop-blur-md">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald animate-ping" />
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-accent-emerald">{t('liveLoggingMode')}</span>
+      {/* Top Header & Sticky Action Bar - Highly compact for mobile */}
+      <div className="bg-background-card/85 border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 sticky top-2 sm:top-6 z-40 backdrop-blur-xl">
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-accent-emerald animate-ping" />
+              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-accent-emerald leading-none">{t('liveLoggingMode')}</span>
+            </div>
+            <h1 className="text-base sm:text-2xl font-black text-white mt-1 line-clamp-1">{activeWorkout.name}</h1>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-white mt-0.5">{activeWorkout.name}</h1>
+          
+          {/* Mobile Timer (Shown next to title to save vertical space) */}
+          <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-background-elevated border border-border text-white font-mono font-bold text-[11px]">
+            <Clock className="w-3 h-3 text-accent-emerald" />
+            <span>{formatTimer(workoutDuration)}</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {/* Timer Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background-elevated border border-border text-white font-mono font-bold text-sm">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+          {/* Desktop Timer */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background-elevated border border-border text-white font-mono font-bold text-sm">
             <Clock className="w-4 h-4 text-accent-emerald" />
             <span>{formatTimer(workoutDuration)}</span>
           </div>
 
-          {/* Discard Workout */}
-          <button
-            onClick={() => {
-              if (confirm(t('discardConfirm'))) {
-                cancelActiveWorkout();
-                onNavigate('dashboard');
-              }
-            }}
-            className="px-3 py-1.5 rounded-xl bg-background-elevated hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 text-xs font-bold border border-border transition-all"
-          >
-            {t('discard')}
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Discard Workout */}
+            <button
+              onClick={() => {
+                if (confirm(t('discardConfirm'))) {
+                  cancelActiveWorkout();
+                  onNavigate('dashboard');
+                }
+              }}
+              className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 rounded-xl bg-background-elevated hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 text-[11px] sm:text-xs font-bold border border-border transition-all flex items-center justify-center gap-1"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>{t('discard')}</span>
+            </button>
 
-          {/* Finish Workout CTA */}
-          <button
-            onClick={() => {
-              const res = finishActiveWorkout();
-              if (res) {
-                // finished! Context will hold lastCompletedSession which triggers modal
-              }
-            }}
-            className="px-5 py-2 rounded-xl bg-gradient-to-r from-accent-emerald to-emerald-400 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-glow-sm transition-all"
-          >
-            <Check className="w-4 h-4 stroke-[3]" />
-            <span>{t('finishWorkout')}</span>
-          </button>
+            {/* Finish Workout CTA */}
+            <button
+              onClick={() => {
+                const res = finishActiveWorkout();
+                if (res) {
+                  // finished! Context will hold lastCompletedSession which triggers modal
+                }
+              }}
+              className="flex-[2] sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-accent-emerald to-emerald-400 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-glow-sm transition-all"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>{t('finishWorkout')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -175,25 +240,23 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
               
               {/* Exercise Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-background-elevated border border-border text-accent-emerald font-mono font-black text-xs flex items-center justify-center">
-                    {exIdx + 1}
-                  </div>
+                <div 
+                  className="flex items-center gap-3 cursor-pointer group"
+                  onClick={() => openInfoModal(
+                    getExerciseDisplayName(workoutEx.exerciseId, 'en'),
+                    exerciseInfo?.equipment,
+                    exerciseInfo?.muscleGroup
+                  )}
+                  title={t('learnMore')}
+                >
+                  <ExerciseThumbnail 
+                    exerciseName={getExerciseDisplayName(workoutEx.exerciseId, 'en')} 
+                    className="w-12 h-12 transition-transform group-hover:scale-105" 
+                  />
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-base sm:text-lg text-white font-mono flex items-center gap-2">
+                      <h3 className="font-extrabold text-base sm:text-lg text-white font-mono flex items-center gap-2 group-hover:text-accent-emerald transition-colors">
                         {getExerciseDisplayName(workoutEx.exerciseId, language)}
-                        <button 
-                          onClick={() => openInfoModal(
-                            getExerciseDisplayName(workoutEx.exerciseId, 'en'), // Use EN for backend search
-                            exerciseInfo?.equipment,
-                            exerciseInfo?.muscleGroup
-                          )}
-                          className="text-slate-400 hover:text-indigo-400 transition-colors"
-                          title="Learn this exercise"
-                        >
-                          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
                       </h3>
                       {exerciseInfo?.muscleGroup && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-background-elevated border border-border text-slate-300">
@@ -202,34 +265,74 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                       )}
                     </div>
 
-                    {/* Previous vs Target Benchmark Line */}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mt-1">
-                      {exSummary.lastWeight > 0 ? (
-                        <>
-                          <span className="text-slate-400">
-                            {t('last')}: <strong className="text-slate-200 font-mono">{exSummary.lastWeight}kg × {exSummary.lastReps}</strong>
-                          </span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-slate-400">
-                            {t('best')}: <strong className="text-slate-200 font-mono">{exSummary.allTimeBestWeight}kg × {exSummary.allTimeBestReps}</strong>
-                          </span>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-accent-emerald flex items-center gap-1 font-bold font-mono" title="Suggested from last session (+2.5kg progressive overload)">
-                            {t('target')}: {exSummary.targetWeight}kg × {exSummary.targetRepsMin}–{exSummary.targetRepsMax}
-                            <span className="text-[10px] bg-accent-emerald/10 px-1 py-0.2 rounded">↑ +{exSummary.improvementPercentage}%</span>
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-accent-cyan flex items-center gap-1 font-bold font-mono text-[11px]">
-                          {t('starterTargetRpe')}
-                        </span>
+                    {/* Previous vs Target Benchmark Line - Collapsible */}
+                    <AnimatePresence>
+                      {showBenchmarkFor[workoutEx.id] && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mt-2 overflow-hidden"
+                        >
+                          {exSummary.lastWeight > 0 ? (
+                            <>
+                              <span className="text-slate-400">
+                                {t('last')}: <strong className="text-slate-200 font-mono">{exSummary.lastWeight}kg × {exSummary.lastReps}</strong>
+                              </span>
+                              <span className="text-slate-500">•</span>
+                              <span className="text-slate-400">
+                                {t('best')}: <strong className="text-slate-200 font-mono">{exSummary.allTimeBestWeight}kg × {exSummary.allTimeBestReps}</strong>
+                              </span>
+                              <span className="text-slate-500">•</span>
+                              <span className="text-accent-emerald flex items-center gap-1 font-bold font-mono" title="Suggested from last session (+2.5kg progressive overload)">
+                                {t('target')}: {exSummary.targetWeight}kg × {exSummary.targetRepsMin}–{exSummary.targetRepsMax}
+                                <span className="text-[10px] bg-accent-emerald/10 px-1 py-0.2 rounded">↑ +{exSummary.improvementPercentage}%</span>
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-accent-cyan flex items-center gap-1 font-bold font-mono text-[11px]">
+                              {t('starterTargetRpe')}
+                            </span>
+                          )}
+                        </motion.div>
                       )}
-                    </div>
+                    </AnimatePresence>
                   </div>
                 </div>
 
                 {/* Exercise Action Tools */}
                 <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  {/* Notes Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleNotes(workoutEx.id);
+                    }}
+                    title="Add Notes"
+                    className={`p-2 rounded-xl transition-all flex items-center justify-center border ${
+                      showNotesFor[workoutEx.id] || workoutEx.notes
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
+                        : 'bg-background-elevated hover:bg-background-hover text-slate-400 border-border'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+
+                  {/* Benchmark Toggle (?) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBenchmark(workoutEx.id);
+                    }}
+                    title="View Targets & History"
+                    className={`p-2 rounded-xl transition-all flex items-center justify-center border ${
+                      showBenchmarkFor[workoutEx.id] 
+                        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+                        : 'bg-background-elevated hover:bg-background-hover text-slate-400 border-border'
+                    }`}
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                  </button>
                   {/* Tutorial Search */}
                   {exerciseInfo?.youtubeQuery && (
                     <button
@@ -242,50 +345,116 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                     </button>
                   )}
 
-                  {/* Replace Exercise */}
-                  <button
-                    onClick={() => openReplaceModal(exIdx, workoutEx.exerciseId)}
-                    title="Replace Exercise"
-                    className="p-2 rounded-xl bg-background-elevated hover:bg-background-hover text-slate-300 border border-border transition-all flex items-center gap-1 text-xs font-semibold"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-accent-cyan" />
-                    <span className="hidden md:inline">{t('swap')}</span>
-                  </button>
-
-                  {/* Reorder Up/Down */}
-                  {exIdx > 0 && (
+                  {/* Options Dropdown Menu */}
+                  <div className="relative">
                     <button
-                      onClick={() => reorderExercisesInActiveWorkout(exIdx, exIdx - 1)}
-                      className="p-2 rounded-xl bg-background-elevated hover:bg-background-hover text-slate-400 hover:text-white border border-border"
-                      title="Move Up"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuFor(openMenuFor === workoutEx.id ? null : workoutEx.id);
+                      }}
+                      className={`p-2 rounded-xl transition-all flex items-center justify-center border ${
+                        openMenuFor === workoutEx.id 
+                          ? 'bg-slate-700/50 text-white border-slate-600' 
+                          : 'bg-background-elevated hover:bg-background-hover text-slate-400 border-border'
+                      }`}
+                      title="More Options"
                     >
-                      <ArrowUp className="w-3.5 h-3.5" />
+                      <MoreHorizontal className="w-4 h-4" />
                     </button>
-                  )}
-                  {exIdx < activeWorkout.exercises.length - 1 && (
-                    <button
-                      onClick={() => reorderExercisesInActiveWorkout(exIdx, exIdx + 1)}
-                      className="p-2 rounded-xl bg-background-elevated hover:bg-background-hover text-slate-400 hover:text-white border border-border"
-                      title="Move Down"
-                    >
-                      <ArrowDown className="w-3.5 h-3.5" />
-                    </button>
-                  )}
 
-                  {/* Delete Exercise */}
-                  <button
-                    onClick={() => removeExerciseFromActiveWorkout(exIdx)}
-                    className="p-2 rounded-xl bg-background-elevated hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-border"
-                    title="Remove Exercise"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    <AnimatePresence>
+                      {openMenuFor === workoutEx.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40"
+                            onClick={() => setOpenMenuFor(null)}
+                          />
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="absolute right-0 top-full mt-2 w-40 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col p-1"
+                          >
+                            <button
+                              onClick={() => {
+                                openReplaceModal(exIdx, workoutEx.exerciseId);
+                                setOpenMenuFor(null);
+                              }}
+                              className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-800 text-slate-300 transition-colors flex items-center gap-2 text-xs font-semibold"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-accent-cyan" />
+                              {t('swap')}
+                            </button>
+
+                            {exIdx > 0 && (
+                              <button
+                                onClick={() => {
+                                  reorderExercisesInActiveWorkout(exIdx, exIdx - 1);
+                                  setOpenMenuFor(null);
+                                }}
+                                className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-800 text-slate-300 transition-colors flex items-center gap-2 text-xs font-semibold"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5 text-slate-400" />
+                                Move Up
+                              </button>
+                            )}
+
+                            {exIdx < activeWorkout.exercises.length - 1 && (
+                              <button
+                                onClick={() => {
+                                  reorderExercisesInActiveWorkout(exIdx, exIdx + 1);
+                                  setOpenMenuFor(null);
+                                }}
+                                className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-800 text-slate-300 transition-colors flex items-center gap-2 text-xs font-semibold"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5 text-slate-400" />
+                                Move Down
+                              </button>
+                            )}
+
+                            <div className="h-px w-full bg-gray-800 my-1" />
+
+                            <button
+                              onClick={() => {
+                                removeExerciseFromActiveWorkout(exIdx);
+                                setOpenMenuFor(null);
+                              }}
+                              className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-rose-500/20 text-rose-400 transition-colors flex items-center gap-2 text-xs font-semibold"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Remove
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
 
               {/* Sets Table */}
               <div className="p-4 sm:p-5 space-y-2.5">
                 
+                {/* Exercise Notes - Toggled */}
+                <AnimatePresence>
+                  {(showNotesFor[workoutEx.id] || workoutEx.notes) && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-1 pb-2 overflow-hidden"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Add notes here..."
+                        value={workoutEx.notes || ''}
+                        onChange={(e) => updateExercise(exIdx, { notes: e.target.value })}
+                        className="w-full bg-background-elevated border border-border rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/50 transition-colors"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Sets Header */}
                 <div className="grid grid-cols-12 gap-2 text-center text-[11px] font-mono uppercase font-bold text-slate-400 px-2 pb-1 border-b border-border/60">
                   <div className="col-span-1">{t('setCol')}</div>
@@ -301,9 +470,9 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                   return (
                     <div 
                       key={set.id}
-                      className={`grid grid-cols-12 gap-2 p-2 rounded-2xl items-center transition-all ${
+                      className={`grid grid-cols-12 gap-2 p-2 rounded-2xl items-center transition-all duration-300 ${
                         set.isCompleted 
-                          ? 'bg-emerald-950/20 border border-accent-emerald/30' 
+                          ? 'bg-green-950/40 border border-green-500/40' 
                           : 'bg-background-elevated/60 border border-border/60 hover:bg-background-elevated'
                       }`}
                     >
@@ -317,36 +486,18 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                         {set.previousWeight ? `${set.previousWeight} × ${set.previousReps}` : '—'}
                       </div>
 
-                      {/* Weight Input (kg) with quick +/- buttons */}
-                      <div className="col-span-3 flex items-center justify-center gap-1">
+                      {/* Weight Input (Trigger for Modal) */}
+                      <div className="col-span-3 flex items-center justify-center">
                         <button
                           type="button"
-                          onClick={() => updateSet(exIdx, setIdx, { weight: Math.max(0, (set.weight || 0) - 2.5) })}
-                          className="w-5 h-6 rounded bg-background-card hover:bg-background-elevated border border-border text-[10px] text-slate-400 font-bold"
-                          title="-2.5kg"
+                          onClick={() => setActiveWeightEditor({ exIdx, setIdx, initialWeight: set.weight || 0 })}
+                          className={`w-full max-w-[80px] py-1.5 px-2 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all ${
+                            set.isCompleted 
+                              ? 'border-accent-emerald/40 text-accent-emerald' 
+                              : 'border-border text-white hover:border-slate-400'
+                          }`}
                         >
-                          -
-                        </button>
-                        <div className="relative w-full max-w-[65px]">
-                          <input
-                            type="number"
-                            step="0.5"
-                            inputMode="decimal"
-                            value={set.weight || ''}
-                            onChange={(e) => updateSet(exIdx, setIdx, { weight: parseFloat(e.target.value) || 0 })}
-                            className={`w-full py-1.5 px-1 rounded-xl text-center font-mono font-bold text-sm bg-background-card border transition-all focus:outline-none focus:ring-1 focus:ring-accent-emerald ${
-                              set.isCompleted ? 'border-accent-emerald/40 text-accent-emerald' : 'border-border text-white'
-                            }`}
-                            placeholder="0"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => updateSet(exIdx, setIdx, { weight: (set.weight || 0) + 2.5 })}
-                          className="w-5 h-6 rounded bg-background-card hover:bg-background-elevated border border-border text-[10px] text-slate-400 font-bold"
-                          title="+2.5kg"
-                        >
-                          +
+                          {set.weight || 0}
                         </button>
                       </div>
 
@@ -424,17 +575,17 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                           type="button"
                           onClick={() => {
                             if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                              navigator.vibrate(35);
+                              navigator.vibrate(50);
                             }
                             toggleSetCompleted(exIdx, setIdx);
                           }}
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
                             set.isCompleted
-                              ? 'bg-accent-emerald text-black shadow-glow-sm active:scale-90'
-                              : 'bg-background-card hover:bg-background-hover text-slate-400 border border-border active:scale-95'
+                              ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-105 border border-green-400'
+                              : 'bg-background-card hover:bg-background-hover text-slate-500 border border-border active:scale-95'
                           }`}
                         >
-                          <Check className={`w-4 h-4 ${set.isCompleted ? 'stroke-[3]' : ''}`} />
+                          <Check className={`w-4 h-4 ${set.isCompleted ? 'stroke-[4]' : ''}`} />
                         </button>
                       </div>
 
@@ -510,10 +661,23 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
       {/* MODAL: Replace Exercise */}
       <ExerciseReplaceModal
         isOpen={replaceModalOpen}
-        exerciseIndex={replacingExerciseIndex}
+        onClose={() => {
+          setReplaceModalOpen(false);
+          setReplacingExerciseIndex(null);
+          setReplacingExerciseId(null);
+        }}
         currentExerciseId={replacingExerciseId}
-        onClose={() => setReplaceModalOpen(false)}
+        exerciseIndex={replacingExerciseIndex}
         onSelectAlternative={replaceExerciseInActiveWorkout}
+      />
+
+      <WeightEditModal
+        isOpen={activeWeightEditor !== null}
+        initialWeight={activeWeightEditor?.initialWeight || 0}
+        exerciseIndex={activeWeightEditor?.exIdx ?? 0}
+        setIndex={activeWeightEditor?.setIdx ?? 0}
+        onClose={() => setActiveWeightEditor(null)}
+        onSave={handleSaveWeight}
       />
 
       {/* Learn Exercise Info Modal */}
