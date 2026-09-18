@@ -4,13 +4,14 @@ import { EquipmentImage } from '../common/EquipmentImage';
 
 interface ExerciseThumbnailProps {
   exerciseName: string;
-  thumbnailUrl?: string;
+  images?: string[];
   equipment?: string;
   className?: string;
 }
 
-export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({ exerciseName, thumbnailUrl, equipment, className = "w-10 h-10" }) => {
+export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({ exerciseName, images, equipment, className = "w-10 h-10" }) => {
   const [imageError, setImageError] = useState(false);
+  const thumbnailUrl = images && images.length > 0 ? images[0] : undefined;
 
   if (!thumbnailUrl || imageError) {
     if (equipment) {

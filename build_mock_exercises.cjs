@@ -66,7 +66,7 @@ const mapExternalToExercise = (ext: any): Exercise => {
   else if (ext.level === 'expert') difficulty = 'Advanced';
 
   const instructions = ext.instructions && Array.isArray(ext.instructions) 
-    ? ext.instructions.join(' ') 
+    ? ext.instructions.join('\\n') 
     : \`Perform \${ext.name} with controlled form, steady cadence, and progressive overload.\`;
 
   return {
@@ -83,7 +83,9 @@ const mapExternalToExercise = (ext: any): Exercise => {
     alternatives: [],
     youtubeQuery: \`\${ext.name} proper form\`,
     trackingType,
-    thumbnail: ext.images && ext.images.length > 0 ? \`https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\${ext.images[0]}\` : undefined
+    images: ext.images && ext.images.length > 0 
+      ? ext.images.map((img: string) => \`https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\${img}\`) 
+      : undefined
   };
 };
 

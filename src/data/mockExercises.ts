@@ -267,7 +267,9 @@ const mapExternalToExercise = (ext: any): Exercise => {
     alternatives: [],
     youtubeQuery: `${ext.name} proper form`,
     trackingType,
-    thumbnail: ext.images && ext.images.length > 0 ? `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${ext.images[0]}` : undefined
+    images: ext.images && ext.images.length > 0 
+      ? ext.images.map((img: string) => `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${img}`) 
+      : undefined
   };
 };
 

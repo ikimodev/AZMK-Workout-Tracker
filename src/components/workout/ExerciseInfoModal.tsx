@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import stringSimilarity from 'string-similarity';
+import { X, Target } from 'lucide-react';
 import { EquipmentImage } from '../common/EquipmentImage';
+import { getExerciseById } from '../../data/mockExercises';
+import { Exercise } from '../../types';
 
 interface ExerciseInfoModalProps {
   isOpen: boolean;
@@ -12,19 +13,6 @@ interface ExerciseInfoModalProps {
   fallbackTargetMuscle?: string;
 }
 
-interface ExerciseDetails {
-  id: string;
-  name: string;
-  primaryMuscles: string[];
-  secondaryMuscles: string[];
-  equipment: string;
-  instructions: string[];
-  images: string[];
-}
-
-// Module-level cache so we don't refetch the ~1MB json every time
-let globalExercisesCache: ExerciseDetails[] | null = null;
-
 const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({  
   isOpen, 
   onClose, 
@@ -32,72 +20,14 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
   fallbackEquipment,
   fallbackTargetMuscle
 }) => {
-  const [details, setDetails] = useState<ExerciseDetails | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [details, setDetails] = useState<Exercise | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     if (isOpen && exerciseName) {
-      setLoading(true);
-      setError(false);
-      setDetails(null);
+      const found = getExerciseById(exerciseName);
+      setDetails(found || null);
       setCurrentImageIndex(0);
-
-      const fetchAndMatch = async () => {
-        try {
-          // 1. Fetch or use cached exercises dictionary
-          let exercises = globalExercisesCache;
-          if (!exercises) {
-            const res = await fetch('/exercises.json');
-            if (!res.ok) throw new Error('Failed to fetch exercises dictionary');
-            exercises = await res.json() as ExerciseDetails[];
-            globalExercisesCache = exercises;
-          }
-
-          // Preprocess string: remove text in parentheses e.g. "Lat Pulldown (Cable)" -> "Lat Pulldown"
-          const cleanName = exerciseName.replace(/\(.*?\)/g, '').trim().toLowerCase();
-
-          // 2. Exact match
-          let matchedEx = exercises.find(ex => ex.name.toLowerCase() === cleanName || ex.name.toLowerCase() === exerciseName.toLowerCase());
-          
-          // 3. Fuzzy Match on clean name
-          if (!matchedEx) {
-            const names = exercises.map(ex => ex.name.toLowerCase());
-            const match = stringSimilarity.findBestMatch(cleanName, names);
-            
-            // If confidence > 60%
-            if (match.bestMatch.rating > 0.60) {
-              matchedEx = exercises[match.bestMatchIndex];
-            }
-          }
-
-          // 4. Fallback: Subset / Keyword Match
-          if (!matchedEx) {
-            const cleanWords = cleanName.split(' ').filter(w => w.length > 2); // get meaningful words
-            if (cleanWords.length > 0) {
-              matchedEx = exercises.find(ex => {
-                const exNameLower = ex.name.toLowerCase();
-                // Check if all major words in our cleanName exist in the target name
-                return cleanWords.every(word => exNameLower.includes(word));
-              });
-            }
-          }
-
-          if (matchedEx) {
-            setDetails(matchedEx);
-          } else {
-            setError(true);
-          }
-        } catch (err) {
-          console.error(err);
-          setError(true);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchAndMatch();
     }
   }, [isOpen, exerciseName]);
 
@@ -114,8 +44,7 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
 
   const renderImage = () => {
     if (!details || !details.images || details.images.length === 0) return null;
-    const imagePath = details.images[currentImageIndex];
-    const imageUrl = `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${imagePath}`;
+    const imageUrl = details.images[currentImageIndex];
     
     return (
       <div className="w-full h-48 sm:h-64 bg-gray-900 rounded-xl overflow-hidden mb-6 relative border border-gray-800 shadow-inner flex items-center justify-center">
@@ -171,12 +100,7 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
             </div>
 
             <div className="p-6">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                  <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-gray-400 text-sm animate-pulse">Loading exercise data...</p>
-                </div>
-              ) : error || !details ? (
+              {!details ? (
                 // Fallback UI
                 <div className="space-y-6">
                   <div className="bg-amber-900/20 border border-amber-900/50 rounded-lg p-4 text-amber-200 text-sm">
@@ -207,16 +131,19 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
                 // Success UI
                 <div className="space-y-6">
                   {renderImage()}
+                  {(!details.images || details.images.length === 0) && (
+                    <div className="bg-amber-900/20 border border-amber-900/50 rounded-lg p-4 text-amber-200 text-sm mb-6">
+                      Visual demonstration is currently unavailable for this exercise, but you can still view the generated details below.
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800/50">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Target Muscles</p>
                       <div className="flex flex-wrap gap-2">
-                        {details.primaryMuscles.map(m => (
-                          <span key={m} className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs rounded-full capitalize flex items-center">
-                            🎯 {m}
-                          </span>
-                        ))}
+                        <span className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs rounded-full capitalize flex items-center">
+                          <Target size={12} className="mr-1" /> {details.muscleGroup}
+                        </span>
                         {details.secondaryMuscles.map(m => (
                           <span key={m} className="px-2.5 py-1 bg-gray-800 border border-gray-700 text-gray-400 text-xs rounded-full capitalize">
                             {m}
@@ -238,21 +165,12 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
                     </div>
                   </div>
 
-                  {details.instructions && details.instructions.length > 0 && (
+                  {details.instructions && (
                     <div className="mt-8">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">How to perform</p>
-                      <ul className="space-y-4">
-                        {details.instructions.map((step, idx) => (
-                          <li key={idx} className="flex space-x-4">
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">
-                              {idx + 1}
-                            </span>
-                            <span className="text-gray-300 text-sm leading-relaxed">
-                              {step}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="text-gray-300 text-sm leading-relaxed space-y-4">
+                        {details.instructions.split('\\n').map((para, i) => para.trim() && <p key={i}>{para}</p>)}
+                      </div>
                     </div>
                   )}
                 </div>
