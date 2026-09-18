@@ -79,20 +79,7 @@ export const parseNaturalLanguageWorkout = (input: string): ParsedWorkoutResult 
     // Calculate suggested weight if not specified
     let suggestedWeight = weight;
     if (!hasExplicitWeight) {
-      if (exerciseObj.equipment === 'Bodyweight') suggestedWeight = 0;
-      else if (exerciseObj.id === 'barbell_bench_press') suggestedWeight = 60;
-      else if (exerciseObj.id === 'smith_bench_press') suggestedWeight = 50;
-      else if (exerciseObj.id === 'incline_dumbbell_press') suggestedWeight = 24;
-      else if (exerciseObj.id === 'dumbbell_lateral_raise') suggestedWeight = 10;
-      else if (exerciseObj.id === 'tricep_rope_pushdown') suggestedWeight = 22.5;
-      else if (exerciseObj.id === 'barbell_back_squat') suggestedWeight = 80;
-      else if (exerciseObj.id === 'barbell_deadlift') suggestedWeight = 100;
-      else if (exerciseObj.id === 'lat_pulldown') suggestedWeight = 50;
-      else if (exerciseObj.equipment === 'Barbell') suggestedWeight = 40;
-      else if (exerciseObj.equipment === 'Dumbbell') suggestedWeight = 16;
-      else if (exerciseObj.equipment === 'Cable') suggestedWeight = 25;
-      else if (exerciseObj.equipment === 'Machine') suggestedWeight = 45;
-      else suggestedWeight = 20;
+      suggestedWeight = 0;
     }
 
     return {

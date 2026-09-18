@@ -240,7 +240,8 @@ CRITICAL RULES:
 3. "exercises" must ONLY contain actual physical movements (e.g. Smith Machine Bench Press, Pull-ups, Dumbbell Overhead Press, Seated Cable Row, Face Pull, Cable Crunch, Leg Press, Hip Thrust, Leg Extension, Prone Leg Curl, Standing Calf Raise, Plank).
 4. Preserve exact exercise names as provided by the user.
 5. If it is only 1 workout session, return isMultiDaySplit: false with 1 day in "days".
-6. Return valid JSON only.
+6. If the user does NOT explicitly state a weight in kg or lbs for an exercise, you MUST output 0 for "suggestedWeightKg". DO NOT invent or guess weights.
+7. Return valid JSON only.
 
 JSON Output Schema:
 {
@@ -444,7 +445,7 @@ export const fallbackLocalSplitParser = (rawText: string): ParsedMultiDaySplit =
             matchedExerciseId: 'barbell_back_squat',
             targetSets: 4,
             targetReps: '8',
-            suggestedWeightKg: 60,
+            suggestedWeightKg: 0,
             restSeconds: 90
           }
         ]

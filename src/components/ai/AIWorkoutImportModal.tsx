@@ -258,6 +258,14 @@ Lying Leg Curls 3x12 40kg`
     }
   };
 
+  const handleUpdateWeight = (dayIndex: number, exIndex: number, delta: number) => {
+    if (!parsedSplit) return;
+    const newSplit = { ...parsedSplit };
+    const currentWeight = newSplit.days[dayIndex].exercises[exIndex].suggestedWeightKg || 0;
+    newSplit.days[dayIndex].exercises[exIndex].suggestedWeightKg = Math.max(0, currentWeight + delta);
+    setParsedSplit(newSplit);
+  };
+
   const handleStartDayWorkout = (dayIdx: number) => {
     if (!parsedSplit) return;
     const targetDay = parsedSplit.days[dayIdx];
@@ -617,13 +625,35 @@ Lying Leg Curls 3x12 40kg`
                       <div>
                         <p className="font-bold text-xs sm:text-sm text-white">{ex.exerciseName}</p>
                         <p className="text-[11px] text-slate-400">
-                          {ex.targetSets} {language === 'ar' ? 'جولات' : 'sets'} × {ex.targetReps} {language === 'ar' ? 'عدات' : 'reps'} @ {ex.suggestedWeightKg}kg
+                          {ex.targetSets} {language === 'ar' ? 'جولات' : 'sets'} × {ex.targetReps} {language === 'ar' ? 'عدات' : 'reps'}
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-slate-400">
-                      {ex.restSeconds}s rest
-                    </span>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateWeight(activePreviewDayIndex, exIdx, -2.5)}
+                          className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                        >
+                          -
+                        </button>
+                        <div className="w-12 text-center text-sm font-mono font-bold text-accent-cyan">
+                          {ex.suggestedWeightKg}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateWeight(activePreviewDayIndex, exIdx, 2.5)}
+                          className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-slate-400 min-w-[45px] text-center">
+                        {ex.restSeconds}s
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
