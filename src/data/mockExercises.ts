@@ -1061,11 +1061,9 @@ export const getExerciseById = (id: string): Exercise => {
   }
   
   if (found) {
-    if (!found.trackingType) {
-      const inferred = inferExerciseAttributes(found.name);
-      return { ...found, trackingType: inferred.trackingType };
-    }
-    return found;
+    // Always re-infer trackingType to automatically upgrade stale exercises from localStorage
+    const inferred = inferExerciseAttributes(found.name);
+    return { ...found, trackingType: inferred.trackingType };
   }
 
   // If ID has custom prefix or is an unformatted name, create/format it dynamically

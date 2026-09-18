@@ -566,7 +566,12 @@ export function getExerciseDisplayName(exerciseIdOrName: string, language: Langu
   }
 
   // Fallback: If no match found, format cleanly
-  return exerciseIdOrName;
+  return exerciseIdOrName
+    .replace(/^custom_/, '')
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 /**

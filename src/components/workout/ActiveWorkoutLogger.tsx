@@ -235,6 +235,8 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
           const isTimeOnly = exerciseInfo?.trackingType === 'time_only';
           const isRepsOnly = exerciseInfo?.trackingType === 'reps_only';
 
+          console.log(`[DEBUG] Exercise: ${workoutEx.exerciseId}, Info:`, exerciseInfo, `isTimeOnly: ${isTimeOnly}, isRepsOnly: ${isRepsOnly}`);
+
           return (
             <div 
               key={workoutEx.id}
