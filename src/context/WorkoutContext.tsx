@@ -61,6 +61,7 @@ interface WorkoutContextType {
   replaceExerciseInActiveWorkout: (exerciseIndex: number, newExerciseId: string) => void;
   removeExerciseFromActiveWorkout: (exerciseIndex: number) => void;
   reorderExercisesInActiveWorkout: (startIndex: number, endIndex: number) => void;
+  playTimerBeep: (type: 'warning' | 'finish') => void;
 
   // Rest Timer
   restTimerRemaining: number;
@@ -1183,6 +1184,7 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
         replaceExerciseInActiveWorkout,
         removeExerciseFromActiveWorkout,
         reorderExercisesInActiveWorkout,
+        playTimerBeep,
         restTimerRemaining,
         restTimerTotal,
         isRestTimerActive,

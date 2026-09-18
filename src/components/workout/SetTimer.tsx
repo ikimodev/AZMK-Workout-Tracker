@@ -14,7 +14,7 @@ export const SetTimer: React.FC<SetTimerProps> = ({ initialSeconds, onUpdateSeco
   const [isEditing, setIsEditing] = useState(false);
   const { playTimerBeep } = useWorkout();
   
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasBeepedZero = useRef(false);
   const hasBeepedMinus60 = useRef(false);
 
