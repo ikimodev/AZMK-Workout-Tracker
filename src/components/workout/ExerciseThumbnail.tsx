@@ -45,7 +45,15 @@ export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({ exerciseNa
 
         if (!isMounted) return;
 
-        const cleanName = exerciseName.replace(/\(.*?\)/g, '').trim().toLowerCase();
+        const ALIAS_MAP: Record<string, string> = {
+          'plank core hold': 'plank',
+          'ab wheel rollout': 'ab roller',
+          'chin-ups': 'chin-up',
+          'pull-ups': 'pull up'
+        };
+
+        const rawCleanName = exerciseName.replace(/\(.*?\)/g, '').trim().toLowerCase();
+        const cleanName = ALIAS_MAP[rawCleanName] || rawCleanName;
         
         let matchedEx = exercises!.find(ex => ex.name.toLowerCase() === cleanName || ex.name.toLowerCase() === exerciseName.toLowerCase());
         
