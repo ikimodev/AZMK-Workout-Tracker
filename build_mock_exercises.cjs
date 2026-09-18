@@ -7,23 +7,6 @@ import stringSimilarity from 'string-similarity';
 
 // In-memory cache for custom exercises added during runtime
 export const DYNAMIC_EXERCISES_MAP = new Map<string, Exercise>();
-
-// Load from localStorage if available
-if (typeof window !== 'undefined') {
-  try {
-    const saved = localStorage.getItem('azmk_custom_exercises');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(ex => {
-          DYNAMIC_EXERCISES_MAP.set(ex.id, ex);
-        });
-      }
-    }
-  } catch (e) {
-    // Ignore storage errors
-  }
-}
 `;
 
 const inferPart = tail; 
@@ -114,5 +97,32 @@ export const getAlternativeExercises = (exerciseId: string): Exercise[] => {
 // Extract findOrCreateExercise, getExerciseById, getAllExercises from tail and insert before mapper
 const tailParts = tail.split('export const getAlternativeExercises');
 const partBeforeAlternatives = tailParts[0];
+const partAfterAlternatives = 'export const getAlternativeExercises' + tailParts[1];
 
-fs.writeFileSync('src/data/mockExercises.ts', head + '\n\n' + partBeforeAlternatives + '\n\n' + mapper);
+const localStorageBlock = `
+// Load from localStorage if available, filtering out legacy duplicates
+if (typeof window !== 'undefined') {
+  try {
+    const saved = localStorage.getItem('azmk_custom_exercises');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const names = MOCK_EXERCISES.map(ex => ex.name.toLowerCase());
+        parsed.forEach(ex => {
+          // If the custom exercise maps to a built-in one, ignore it so we don't pollute the directory!
+          const cleanLower = ex.name.toLowerCase().replace(/[^a-z0-9\\s]/g, '');
+          const match = stringSimilarity.findBestMatch(cleanLower, names);
+          if (match.bestMatch.rating > 0.60) {
+            return;
+          }
+          DYNAMIC_EXERCISES_MAP.set(ex.id, ex);
+        });
+      }
+    }
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+`;
+
+fs.writeFileSync('src/data/mockExercises.ts', head + '\n\n' + partBeforeAlternatives + '\n\n' + mapper + '\n\n' + localStorageBlock + '\n\n' + partAfterAlternatives);

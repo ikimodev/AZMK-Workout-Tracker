@@ -5,23 +5,6 @@ import stringSimilarity from 'string-similarity';
 // In-memory cache for custom exercises added during runtime
 export const DYNAMIC_EXERCISES_MAP = new Map<string, Exercise>();
 
-// Load from localStorage if available
-if (typeof window !== 'undefined') {
-  try {
-    const saved = localStorage.getItem('azmk_custom_exercises');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(ex => {
-          DYNAMIC_EXERCISES_MAP.set(ex.id, ex);
-        });
-      }
-    }
-  } catch (e) {
-    // Ignore storage errors
-  }
-}
-
 
 export const inferExerciseAttributes = (name: string): {
   muscleGroup: MuscleGroup;
@@ -250,7 +233,7 @@ const mapExternalToExercise = (ext: any): Exercise => {
   else if (ext.level === 'expert') difficulty = 'Advanced';
 
   const instructions = ext.instructions && Array.isArray(ext.instructions) 
-    ? ext.instructions.join(' ') 
+    ? ext.instructions.join('\n') 
     : `Perform ${ext.name} with controlled form, steady cadence, and progressive overload.`;
 
   return {
@@ -274,6 +257,52 @@ const mapExternalToExercise = (ext: any): Exercise => {
 };
 
 export const MOCK_EXERCISES: Exercise[] = (externalData as any[]).map(mapExternalToExercise);
+
+export const getAlternativeExercises = (exerciseId: string): Exercise[] => {
+  const current = getExerciseById(exerciseId);
+  if (!current) return [];
+
+  const directAlts = (current.alternatives || [])
+    .map(altId => getExerciseById(altId))
+    .filter((ex): ex is Exercise => ex !== undefined);
+
+  if (directAlts.length >= 3) return directAlts;
+
+  const fallback = MOCK_EXERCISES.filter(ex =>
+    ex.id !== exerciseId &&
+    (ex.muscleGroup === current.muscleGroup || ex.movementPattern === current.movementPattern) &&
+    !(current.alternatives || []).includes(ex.id)
+  );
+
+  return [...directAlts, ...fallback].slice(0, 5);
+};
+
+
+
+// Load from localStorage if available, filtering out legacy duplicates
+if (typeof window !== 'undefined') {
+  try {
+    const saved = localStorage.getItem('azmk_custom_exercises');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const names = MOCK_EXERCISES.map(ex => ex.name.toLowerCase());
+        parsed.forEach(ex => {
+          // If the custom exercise maps to a built-in one, ignore it so we don't pollute the directory!
+          const cleanLower = ex.name.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+          const match = stringSimilarity.findBestMatch(cleanLower, names);
+          if (match.bestMatch.rating > 0.60) {
+            return;
+          }
+          DYNAMIC_EXERCISES_MAP.set(ex.id, ex);
+        });
+      }
+    }
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
 
 export const getAlternativeExercises = (exerciseId: string): Exercise[] => {
   const current = getExerciseById(exerciseId);
