@@ -44,7 +44,7 @@ const mapExternalToExercise = (ext: any): Exercise => {
     else if (extM === 'triceps') finalMuscleGroup = 'Triceps';
     else if (extM === 'biceps') finalMuscleGroup = 'Biceps';
     else if (extM === 'calves') finalMuscleGroup = 'Calves';
-    else if (extM === 'glutes') finalMuscleGroup = 'Legs';
+    else if (extM === 'glutes') finalMuscleGroup = 'Glutes';
     else if (extM === 'shoulders') finalMuscleGroup = 'Shoulders';
   }
 
