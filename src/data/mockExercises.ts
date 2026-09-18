@@ -1055,13 +1055,17 @@ export const findOrCreateExercise = (rawName: string): Exercise => {
 export const getExerciseById = (id: string): Exercise => {
   if (!id) return MOCK_EXERCISES[0];
 
-  // Check built-in mock exercises
-  const found = MOCK_EXERCISES.find(ex => ex.id === id);
-  if (found) return found;
-
-  // Check dynamic registry
-  if (DYNAMIC_EXERCISES_MAP.has(id)) {
-    return DYNAMIC_EXERCISES_MAP.get(id)!;
+  let found = MOCK_EXERCISES.find(ex => ex.id === id);
+  if (!found && DYNAMIC_EXERCISES_MAP.has(id)) {
+    found = DYNAMIC_EXERCISES_MAP.get(id);
+  }
+  
+  if (found) {
+    if (!found.trackingType) {
+      const inferred = inferExerciseAttributes(found.name);
+      return { ...found, trackingType: inferred.trackingType };
+    }
+    return found;
   }
 
   // If ID has custom prefix or is an unformatted name, create/format it dynamically
