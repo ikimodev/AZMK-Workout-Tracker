@@ -24,6 +24,7 @@ import { getExerciseById, getAllExercises } from '../../data/mockExercises';
 import { getExerciseSummary, getNextSetRecommendation } from '../../services/progressiveOverload';
 import { getExerciseDisplayName, getMuscleGroupDisplayName } from '../../i18n/fitnessDictionary';
 import { ExerciseReplaceModal } from './ExerciseReplaceModal';
+import ExerciseInfoModal from './ExerciseInfoModal';
 
 interface ActiveWorkoutLoggerProps {
   onNavigate: (tab: string) => void;
@@ -56,6 +57,12 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
   const [addExerciseModalOpen, setAddExerciseModalOpen] = useState(false);
   const [searchExQuery, setSearchExQuery] = useState('');
   const [activeRpeSelector, setActiveRpeSelector] = useState<{ exIdx: number; setIdx: number } | null>(null);
+
+  // Exercise Info Modal State
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [infoExerciseName, setInfoExerciseName] = useState('');
+  const [infoExerciseEquipment, setInfoExerciseEquipment] = useState('');
+  const [infoExerciseMuscle, setInfoExerciseMuscle] = useState('');
 
   if (!activeWorkout) {
     return (
@@ -95,6 +102,13 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     ex.name.toLowerCase().includes(searchExQuery.toLowerCase()) ||
     ex.muscleGroup.toLowerCase().includes(searchExQuery.toLowerCase())
   );
+
+  const openInfoModal = (name: string, equipment?: string, muscle?: string) => {
+    setInfoExerciseName(name);
+    setInfoExerciseEquipment(equipment || '');
+    setInfoExerciseMuscle(muscle || '');
+    setInfoModalOpen(true);
+  };
 
   return (
     <div className="space-y-6 pb-20 animate-fade-in max-w-4xl mx-auto">
@@ -167,8 +181,19 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-base sm:text-lg text-white font-mono">
+                      <h3 className="font-extrabold text-base sm:text-lg text-white font-mono flex items-center gap-2">
                         {getExerciseDisplayName(workoutEx.exerciseId, language)}
+                        <button 
+                          onClick={() => openInfoModal(
+                            getExerciseDisplayName(workoutEx.exerciseId, 'en'), // Use EN for backend search
+                            exerciseInfo?.equipment,
+                            exerciseInfo?.muscleGroup
+                          )}
+                          className="text-slate-400 hover:text-indigo-400 transition-colors"
+                          title="Learn this exercise"
+                        >
+                          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
                       </h3>
                       {exerciseInfo?.muscleGroup && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-background-elevated border border-border text-slate-300">
@@ -489,6 +514,15 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
         currentExerciseId={replacingExerciseId}
         onClose={() => setReplaceModalOpen(false)}
         onSelectAlternative={replaceExerciseInActiveWorkout}
+      />
+
+      {/* Learn Exercise Info Modal */}
+      <ExerciseInfoModal 
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
+        exerciseName={infoExerciseName}
+        fallbackEquipment={infoExerciseEquipment}
+        fallbackTargetMuscle={infoExerciseMuscle}
       />
 
       {/* MODAL: Add Exercise from Library */}
