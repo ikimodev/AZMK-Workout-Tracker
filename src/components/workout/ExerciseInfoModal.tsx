@@ -183,7 +183,7 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
 
                   {details.youtubeQuery && (
                     <a
-                      href={\`https://www.youtube.com/results?search_query=\${encodeURIComponent(details.youtubeQuery)}\`}
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(details.youtubeQuery)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-6 w-full py-3.5 rounded-xl bg-[#282828] hover:bg-[#3f3f3f] border border-gray-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all"

@@ -258,24 +258,7 @@ const mapExternalToExercise = (ext: any): Exercise => {
 
 export const MOCK_EXERCISES: Exercise[] = (externalData as any[]).map(mapExternalToExercise);
 
-export const getAlternativeExercises = (exerciseId: string): Exercise[] => {
-  const current = getExerciseById(exerciseId);
-  if (!current) return [];
 
-  const directAlts = (current.alternatives || [])
-    .map(altId => getExerciseById(altId))
-    .filter((ex): ex is Exercise => ex !== undefined);
-
-  if (directAlts.length >= 3) return directAlts;
-
-  const fallback = MOCK_EXERCISES.filter(ex =>
-    ex.id !== exerciseId &&
-    (ex.muscleGroup === current.muscleGroup || ex.movementPattern === current.movementPattern) &&
-    !(current.alternatives || []).includes(ex.id)
-  );
-
-  return [...directAlts, ...fallback].slice(0, 5);
-};
 
 
 
