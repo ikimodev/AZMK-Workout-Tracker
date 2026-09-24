@@ -2,6 +2,7 @@ import React from 'react';
 import { X, RefreshCw, ChevronRight } from 'lucide-react';
 import { Exercise } from '../../types';
 import { getExerciseById, getAlternativeExercises } from '../../data/mockExercises';
+import { ExerciseThumbnail } from './ExerciseThumbnail';
 
 interface ExerciseReplaceModalProps {
   currentExerciseId: string | null;
@@ -64,19 +65,24 @@ export const ExerciseReplaceModal: React.FC<ExerciseReplaceModalProps> = ({
               }}
               className="p-3.5 rounded-2xl bg-background-elevated hover:bg-background-hover border border-border hover:border-accent-cyan/50 cursor-pointer transition-all flex items-center justify-between group"
             >
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-sm text-white group-hover:text-accent-cyan transition-colors">
-                    {alt.name}
-                  </p>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-background-card border border-border text-slate-300">
-                    {alt.equipment}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 flex-shrink-0">
+                    <ExerciseThumbnail exerciseName={alt.name} images={alt.images} equipment={alt.equipment} className="w-full h-full" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-sm text-white group-hover:text-accent-cyan transition-colors">
+                        {alt.name}
+                      </p>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-background-card border border-border text-slate-300">
+                        {alt.equipment}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">
+                      {alt.instructions}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-1">
-                  {alt.instructions}
-                </p>
-              </div>
 
               <div className="flex items-center gap-2 text-slate-400 group-hover:text-accent-cyan transition-colors shrink-0 ml-3">
                 <span className="text-xs font-semibold hidden sm:inline">Swap</span>

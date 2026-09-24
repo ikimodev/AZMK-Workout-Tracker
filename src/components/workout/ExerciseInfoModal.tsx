@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Target } from 'lucide-react';
+import { X, Target, Play, RefreshCw, ChevronRight } from 'lucide-react';
 import { EquipmentImage } from '../common/EquipmentImage';
-import { getExerciseById } from '../../data/mockExercises';
+import { getExerciseById, getAlternativeExercises } from '../../data/mockExercises';
 import { Exercise } from '../../types';
+import { ExerciseThumbnail } from './ExerciseThumbnail';
 
 interface ExerciseInfoModalProps {
   isOpen: boolean;
@@ -22,12 +23,18 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
 }) => {
   const [details, setDetails] = useState<Exercise | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [alternatives, setAlternatives] = useState<Exercise[]>([]);
 
   useEffect(() => {
     if (isOpen && exerciseName) {
       const found = getExerciseById(exerciseName);
       setDetails(found || null);
       setCurrentImageIndex(0);
+      if (found) {
+        setAlternatives(getAlternativeExercises(found.id));
+      } else {
+        setAlternatives([]);
+      }
     }
   }, [isOpen, exerciseName]);
 
@@ -170,6 +177,53 @@ const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">How to perform</p>
                       <div className="text-gray-300 text-sm leading-relaxed space-y-4">
                         {details.instructions.split('\\n').map((para, i) => para.trim() && <p key={i}>{para}</p>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {details.youtubeQuery && (
+                    <a
+                      href={\`https://www.youtube.com/results?search_query=\${encodeURIComponent(details.youtubeQuery)}\`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-6 w-full py-3.5 rounded-xl bg-[#282828] hover:bg-[#3f3f3f] border border-gray-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Play className="w-4 h-4 text-red-500 fill-red-500" />
+                      <span>Watch Form Tutorial on YouTube</span>
+                    </a>
+                  )}
+
+                  {alternatives.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-gray-800/50">
+                      <div className="flex items-center gap-2 mb-4">
+                        <RefreshCw className="w-4 h-4 text-accent-cyan" />
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wide">Smart Biomechanical Alternatives</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {alternatives.map((alt) => (
+                          <div
+                            key={alt.id}
+                            onClick={() => {
+                              // If they want to browse through alternatives
+                              const newFound = getExerciseById(alt.name);
+                              setDetails(newFound || null);
+                              setAlternatives(getAlternativeExercises(newFound.id));
+                              setCurrentImageIndex(0);
+                            }}
+                            className="p-3 rounded-2xl bg-gray-900/50 hover:bg-gray-800 border border-gray-800 hover:border-accent-cyan/50 cursor-pointer flex items-center justify-between group transition-all"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 flex-shrink-0">
+                                <ExerciseThumbnail exerciseName={alt.name} images={alt.images} equipment={alt.equipment} className="w-full h-full" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-white group-hover:text-accent-cyan transition-colors">{alt.name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{alt.equipment}</p>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-accent-cyan transition-colors" />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

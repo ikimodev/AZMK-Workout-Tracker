@@ -787,19 +787,33 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
                 <div
                   key={ex.id}
                   onClick={() => {
-                    addExerciseToActiveWorkout(ex.id);
-                    setAddExerciseModalOpen(false);
-                    setSearchExQuery('');
+                    setInfoExerciseName(ex.name);
+                    setInfoExerciseEquipment(ex.equipment);
+                    setInfoExerciseMuscle(ex.muscleGroup);
+                    setInfoModalOpen(true);
                   }}
                   className="p-3 rounded-2xl bg-background-elevated hover:bg-background-hover border border-border hover:border-accent-emerald/40 cursor-pointer flex items-center justify-between transition-all"
                 >
-                  <div>
-                    <p className="font-bold text-sm text-white">{ex.name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{ex.muscleGroup} • {ex.equipment}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex-shrink-0">
+                      <ExerciseThumbnail exerciseName={ex.name} images={ex.images} equipment={ex.equipment} className="w-full h-full" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-white">{ex.name}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{ex.muscleGroup} • {ex.equipment}</p>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-accent-emerald bg-accent-emerald/10 px-2.5 py-1 rounded-xl">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addExerciseToActiveWorkout(ex.id);
+                      setAddExerciseModalOpen(false);
+                      setSearchExQuery('');
+                    }}
+                    className="text-xs font-bold text-accent-emerald bg-accent-emerald/10 hover:bg-accent-emerald/20 px-3 py-1.5 rounded-xl transition-colors shrink-0 ml-2"
+                  >
                     + Add
-                  </span>
+                  </button>
                 </div>
               ))}
             </div>
