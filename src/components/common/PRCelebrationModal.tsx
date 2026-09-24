@@ -1,76 +1,81 @@
-import React from 'react';
-import { Trophy, Sparkles, X, ArrowUpRight, Flame } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Trophy, X, ArrowUpRight, Flame } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const PRCelebrationModal: React.FC = () => {
   const { celebrationPR, dismissCelebrationPR } = useWorkout();
 
-  if (!celebrationPR) return null;
+  // Auto-dismiss after 5 seconds. Dependency array only includes celebrationPR.id 
+  // to avoid resetting the timer if context re-renders.
+  useEffect(() => {
+    if (celebrationPR) {
+      const timer = setTimeout(() => {
+        dismissCelebrationPR();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [celebrationPR?.id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-background-card border-2 border-accent-emerald/60 rounded-3xl max-w-sm w-full p-6 text-center relative shadow-2xl shadow-emerald-500/20 animate-slide-up">
-        
-        {/* Close Button */}
-        <button
-          onClick={dismissCelebrationPR}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full bg-background-elevated"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <AnimatePresence>
+      {celebrationPR && (
+        <div className="fixed top-6 left-4 right-4 z-[100] flex items-center justify-center pointer-events-none">
+          <motion.div 
+            initial={{ opacity: 0, y: -50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.95 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0.8, bottom: 0 }}
+            onDragEnd={(e, { offset, velocity }) => {
+              // Dismiss if swiped up significantly
+              if (offset.y < -40 || velocity.y < -200) {
+                dismissCelebrationPR();
+              }
+            }}
+            className="bg-background-card/95 backdrop-blur-md border border-amber-500/40 rounded-2xl p-3 shadow-2xl shadow-amber-500/10 pointer-events-auto w-full max-w-sm flex items-center gap-3 relative cursor-grab active:cursor-grabbing"
+          >
+            {/* Swipe Indicator */}
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-slate-500/30" />
 
-        {/* Big Trophy Glow */}
-        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center shadow-glow-md">
-          <Trophy className="w-10 h-10 text-black fill-black" />
-        </div>
-
-        {/* Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold uppercase tracking-widest mb-2">
-          <Flame className="w-3.5 h-3.5 fill-amber-400" />
-          <span>NEW PERSONAL RECORD!</span>
-        </div>
-
-        {/* Exercise Name */}
-        <h3 className="text-xl font-bold text-white mb-1">
-          {celebrationPR.exerciseName}
-        </h3>
-
-        {/* Numbers */}
-        <div className="my-4 py-4 px-3 bg-background-elevated/70 rounded-2xl border border-border flex items-center justify-around">
-          <div>
-            <p className="text-[11px] text-slate-400 font-medium">New Record</p>
-            <p className="text-2xl font-black font-mono text-accent-emerald">
-              {celebrationPR.value} kg
-            </p>
-            {celebrationPR.reps && (
-              <p className="text-xs text-slate-300 font-mono">× {celebrationPR.reps} reps</p>
-            )}
-          </div>
-
-          <div className="h-10 w-px bg-border" />
-
-          <div>
-            <p className="text-[11px] text-slate-400 font-medium">Progression</p>
-            <div className="flex items-center gap-1 text-emerald-400 font-bold font-mono text-lg">
-              <ArrowUpRight className="w-5 h-5" />
-              <span>+{celebrationPR.improvementPercentage}%</span>
+            {/* Trophy Icon */}
+            <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center shadow-glow-sm">
+              <Trophy className="w-6 h-6 text-black fill-black" />
             </div>
-            <p className="text-[10px] text-slate-400">vs {celebrationPR.previousBest} kg</p>
-          </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0 pr-6">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Flame className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest">New PR!</span>
+              </div>
+              <h3 className="text-sm font-bold text-white truncate">
+                {celebrationPR.exerciseName}
+              </h3>
+              <div className="flex items-center gap-3 text-xs mt-0.5">
+                <span className="text-accent-emerald font-mono font-bold">
+                  {celebrationPR.value} kg {celebrationPR.reps ? `x ${celebrationPR.reps}` : ''}
+                </span>
+                <span className="text-emerald-400 font-mono font-medium flex items-center">
+                  <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                  +{celebrationPR.improvementPercentage}%
+                </span>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={dismissCelebrationPR}
+              className="absolute top-2 right-2 text-slate-400 hover:text-white p-1 rounded-full bg-background-elevated transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
         </div>
-
-        <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-          AI progressive overload model will recalibrate your future set targets automatically.
-        </p>
-
-        <button
-          onClick={dismissCelebrationPR}
-          className="w-full py-3 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-sm shadow-glow-sm transition-all"
-        >
-          Keep Lifting 🔥
-        </button>
-
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };
+

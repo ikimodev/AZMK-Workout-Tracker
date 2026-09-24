@@ -65,27 +65,33 @@ const AppContent: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isZenMode = activeWorkout !== null && (activeTab === 'workouts' || activeTab === 'active_workout');
+
   return (
     <div className="min-h-screen bg-background text-slate-100 flex flex-col font-sans selection:bg-accent-emerald selection:text-black">
       
       {/* Top Navbar */}
-      <Navbar 
-        activeTab={activeTab}
-        onNavigate={handleNavigate}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
-        onOpenInstallPrompt={() => setIsInstallPromptOpen(true)}
-      />
+      {!isZenMode && (
+        <Navbar 
+          activeTab={activeTab}
+          onNavigate={handleNavigate}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onOpenInstallPrompt={() => setIsInstallPromptOpen(true)}
+        />
+      )}
 
       {/* Main Body Shell */}
       <div className="flex-1 flex max-w-7xl w-full mx-auto">
         
         {/* Desktop Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          onNavigate={handleNavigate}
-          onOpenAIImport={() => setIsAIImportOpen(true)}
-          onOpenAIGenerator={() => setIsAIGeneratorOpen(true)}
-        />
+        {!isZenMode && (
+          <Sidebar
+            activeTab={activeTab}
+            onNavigate={handleNavigate}
+            onOpenAIImport={() => setIsAIImportOpen(true)}
+            onOpenAIGenerator={() => setIsAIGeneratorOpen(true)}
+          />
+        )}
 
         {/* Content Container */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl w-full overflow-x-hidden">
@@ -161,12 +167,14 @@ const AppContent: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onNavigate={handleNavigate}
-        onOpenAIImport={() => setIsAIImportOpen(true)}
-        onOpenAIGenerator={() => setIsAIGeneratorOpen(true)}
-      />
+      {!isZenMode && (
+        <BottomNav
+          activeTab={activeTab}
+          onNavigate={handleNavigate}
+          onOpenAIImport={() => setIsAIImportOpen(true)}
+          onOpenAIGenerator={() => setIsAIGeneratorOpen(true)}
+        />
+      )}
 
       {/* Floating Rest Timer */}
       <RestTimerFloat />

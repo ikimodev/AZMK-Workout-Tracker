@@ -767,7 +767,17 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     let isNewPR = false;
     if (newStatus && targetSet.weight > 0) {
       const summary = getExerciseSummary(exercise.exerciseId, history);
-      if (targetSet.weight > summary.allTimeBestWeight) {
+      
+      // Calculate max weight achieved in the CURRENT workout (excluding the current set being completed)
+      const currentWorkoutMaxWeight = activeWorkout.exercises
+        .filter(ex => ex.exerciseId === exercise.exerciseId)
+        .flatMap(ex => ex.sets)
+        .filter((s, idx, arr) => s.isCompleted && s.id !== targetSet.id)
+        .reduce((max, s) => Math.max(max, s.weight || 0), 0);
+
+      const truePreviousBest = Math.max(summary.allTimeBestWeight, currentWorkoutMaxWeight);
+
+      if (targetSet.weight > truePreviousBest) {
         isNewPR = true;
         const newPrRecord: PRRecord = {
           id: `pr_${Date.now()}`,
@@ -778,8 +788,10 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
           weight: targetSet.weight,
           reps: targetSet.reps,
           date: new Date().toISOString().split('T')[0],
-          previousBest: summary.allTimeBestWeight,
-          improvementPercentage: Math.round(((targetSet.weight - summary.allTimeBestWeight) / summary.allTimeBestWeight) * 1000) / 10
+          previousBest: truePreviousBest,
+          improvementPercentage: truePreviousBest > 0 
+            ? Math.round(((targetSet.weight - truePreviousBest) / truePreviousBest) * 1000) / 10
+            : 100
         };
 
         setCelebrationPR(newPrRecord);
