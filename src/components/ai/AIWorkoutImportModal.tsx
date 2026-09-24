@@ -175,6 +175,10 @@ Lying Leg Curls 3x12 40kg`
   };
 
   const handleToggleRestDay = (index: number) => {
+    if (index === 0) {
+      alert(language === 'ar' ? 'لا يمكن جعل اليوم الأول يوم راحة!' : 'Day 1 cannot be a rest day!');
+      return;
+    }
     setSplitDays(prev => prev.map((d, i) => i === index ? { ...d, isRest: !d.isRest, dayName: '', rawExercisesText: '' } : d));
   };
 
@@ -468,7 +472,10 @@ Lying Leg Curls 3x12 40kg`
                       } ${d.isRest ? 'opacity-60' : ''}`}
                     >
                       {d.isRest && <Calendar className="w-3 h-3" />}
-                      {d.dayName.split(':')[0].split('-')[0] || (language === 'ar' ? `يوم ${idx + 1}` : `Day ${idx + 1}`)}
+                      {d.isRest 
+                        ? (language === 'ar' ? 'راحة' : 'Rest')
+                        : (d.dayName.split(':')[0].split('-')[0] || (language === 'ar' ? `يوم ${idx + 1}` : `Day ${idx + 1}`))
+                      }
                     </button>
                   ))}
                 </div>
