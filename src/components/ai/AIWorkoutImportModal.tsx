@@ -174,7 +174,7 @@ export const AIWorkoutImportModal: React.FC<AIWorkoutImportModalProps> = ({ isOp
     if (!fullRawText.trim()) return;
     setIsParsing(true);
     try {
-      const res = await parseWorkoutTextWithGemini(fullRawText, language, user);
+      const res = await parseWorkoutTextWithGemini(fullRawText);
       if (res && res.days && res.days.length > 0) {
         setParsedSplit(res);
         setDaysCount(res.days.length);
