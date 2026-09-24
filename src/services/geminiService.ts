@@ -375,7 +375,7 @@ export const parseSingleDayText = (dayText: string) => {
     }
 
     const matchedId = matchExerciseId(cleanName);
-    const suggestedWeight = hasExplicitWeight ? weight : estimateDefaultWeight(matchedId, cleanName);
+    const suggestedWeight = hasExplicitWeight ? weight : 0;
 
     return {
       exerciseName: cleanName,

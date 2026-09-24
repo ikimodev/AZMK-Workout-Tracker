@@ -183,6 +183,7 @@ export interface UserProfile {
   aiQuestionsUsedToday?: number;
   startDayOption?: 'today' | 'tomorrow';
   programStartDate?: string;
+  scheduledDays?: string[];
   calendarCustomizations?: Record<string, { type: 'workout' | 'rest'; workoutIndex?: number; customName?: string }>;
   preferredSplit?: string;
 }

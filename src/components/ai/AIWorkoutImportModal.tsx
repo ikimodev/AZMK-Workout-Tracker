@@ -31,101 +31,97 @@ interface AIWorkoutImportModalProps {
 }
 
 interface SplitDayDraft {
+  isRest: boolean;
   dayName: string;
   rawExercisesText: string;
 }
 
-const DEFAULT_SPLIT_SAMPLES: Record<number, SplitDayDraft[]> = {
+const PLACEHOLDER_SAMPLES_EN: Record<number, { dayName: string, text: string }[]> = {
   2: [
-    {
-      dayName: 'Day 1 - Upper Body (الجزء العلوي)',
-      rawExercisesText: `Barbell Bench Press 4x8 80kg\nBarbell Row 4x8 70kg\nOverhead Barbell Press 3x10 45kg\nLat Pulldown 3x10 60kg\nBarbell Bicep Curl 3x12 30kg\nTricep Rope Pushdown 3x12 25kg`
-    },
-    {
-      dayName: 'Day 2 - Lower Body (الجزء السفلي)',
-      rawExercisesText: `Barbell Back Squat 4x8 100kg\nRomanian Deadlift 3x8 80kg\nLeg Press 3x10 160kg\nLying Leg Curls 3x12 40kg\nStanding Calf Raises 4x15 50kg`
-    }
+    { dayName: "Day 1 - Upper Body", text: "Barbell Bench Press 4x8 80kg\nBarbell Row 4x8 70kg\nOverhead Press 3x10 45kg" },
+    { dayName: "Day 2 - Lower Body", text: "Barbell Back Squat 4x8 100kg\nRomanian Deadlift 3x8 80kg\nLeg Press 3x10 160kg" }
   ],
   3: [
-    {
-      dayName: 'Day 1 - Push (صدر وتراي وأكتاف)',
-      rawExercisesText: `Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg\nTricep Rope Pushdown 3x12 25kg`
-    },
-    {
-      dayName: 'Day 2 - Pull (ظهر وباي)',
-      rawExercisesText: `Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg\nBarbell Bicep Curl 3x10 30kg`
-    },
-    {
-      dayName: 'Day 3 - Legs (أرجل وبطات)',
-      rawExercisesText: `Barbell Back Squat 4x6 100kg\nRomanian Deadlift 3x8 80kg\nLeg Press 3x10 160kg\nLying Leg Curls 3x12 40kg`
-    }
+    { dayName: "Day 1 - Push", text: "Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg" },
+    { dayName: "Day 2 - Pull", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg" },
+    { dayName: "Day 3 - Legs", text: "Barbell Back Squat 4x6 100kg\nLeg Press 3x10 160kg\nLying Leg Curls 3x12 40kg" }
   ],
   4: [
-    {
-      dayName: 'Day 1 - Upper Power (علوي قوة)',
-      rawExercisesText: `Barbell Bench Press 4x5 85kg\nBarbell Row 4x6 75kg\nOverhead Barbell Press 3x6 50kg\nPull Ups 3x8 0kg`
-    },
-    {
-      dayName: 'Day 2 - Lower Power (سفلي قوة)',
-      rawExercisesText: `Barbell Back Squat 4x5 110kg\nRomanian Deadlift 3x6 90kg\nLeg Press 3x8 180kg\nStanding Calf Raises 4x12 60kg`
-    },
-    {
-      dayName: 'Day 3 - Upper Hypertrophy (علوي ضخامة)',
-      rawExercisesText: `Incline Dumbbell Press 3x10 32kg\nLat Pulldown 3x10 65kg\nDumbbell Lateral Raises 4x12 14kg\nBarbell Bicep Curl 3x12 30kg\nTricep Rope Pushdown 3x12 25kg`
-    },
-    {
-      dayName: 'Day 4 - Lower Hypertrophy (سفلي ضخامة)',
-      rawExercisesText: `Barbell Back Squat 3x10 90kg\nLeg Press 3x12 150kg\nLying Leg Curls 3x12 45kg\nLeg Extensions 3x12 50kg`
-    }
+    { dayName: "Day 1 - Upper", text: "Barbell Bench Press 4x8 80kg\nBarbell Row 4x8 70kg\nOverhead Press 3x10 45kg" },
+    { dayName: "Day 2 - Lower", text: "Barbell Back Squat 4x8 100kg\nRomanian Deadlift 3x8 80kg\nLeg Press 3x10 160kg" },
+    { dayName: "Day 3 - Push", text: "Incline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg\nTricep Pushdown 3x12 25kg" },
+    { dayName: "Day 4 - Pull & Legs", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nLying Leg Curls 3x12 40kg" }
   ],
   5: [
-    {
-      dayName: 'Day 1 - Chest (صدر)',
-      rawExercisesText: `Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Chest Fly 3x12 16kg\nDips 3x10 0kg`
-    },
-    {
-      dayName: 'Day 2 - Back (ظهر)',
-      rawExercisesText: `Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg\nSeated Cable Row 3x12 55kg`
-    },
-    {
-      dayName: 'Day 3 - Shoulders & Traps (أكتاف وترابيس)',
-      rawExercisesText: `Overhead Barbell Press 4x8 50kg\nDumbbell Lateral Raises 4x15 12kg\nFace Pulls 3x15 25kg\nDumbbell Shrugs 3x12 30kg`
-    },
-    {
-      dayName: 'Day 4 - Legs (أرجل)',
-      rawExercisesText: `Barbell Back Squat 4x8 100kg\nLeg Press 3x10 160kg\nRomanian Deadlift 3x8 80kg\nLying Leg Curls 3x12 40kg`
-    },
-    {
-      dayName: 'Day 5 - Arms (ذراعين باي وتراي)',
-      rawExercisesText: `Barbell Bicep Curl 3x10 30kg\nIncline Dumbbell Curl 3x12 14kg\nClose Grip Bench Press 3x8 60kg\nTricep Rope Pushdown 3x12 25kg`
-    }
+    { dayName: "Day 1 - Chest", text: "Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Chest Fly 3x12 16kg" },
+    { dayName: "Day 2 - Back", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg" },
+    { dayName: "Day 3 - Shoulders", text: "Overhead Press 4x8 50kg\nDumbbell Lateral Raises 4x15 12kg\nFace Pulls 3x15 25kg" },
+    { dayName: "Day 4 - Legs", text: "Barbell Back Squat 4x8 100kg\nLeg Press 3x10 160kg\nRomanian Deadlift 3x8 80kg" },
+    { dayName: "Day 5 - Arms", text: "Barbell Bicep Curl 3x10 30kg\nIncline Dumbbell Curl 3x12 14kg\nTricep Pushdown 3x12 25kg" }
   ],
   6: [
-    {
-      dayName: 'Day 1 - Push 1 (صدر وتراي)',
-      rawExercisesText: `Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg\nTricep Rope Pushdown 3x12 25kg`
-    },
-    {
-      dayName: 'Day 2 - Pull 1 (ظهر وباي)',
-      rawExercisesText: `Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg\nBarbell Bicep Curl 3x10 30kg`
-    },
-    {
-      dayName: 'Day 3 - Legs 1 (سكوات)',
-      rawExercisesText: `Barbell Back Squat 4x6 100kg\nLeg Press 3x10 160kg\nRomanian Deadlift 3x8 80kg\nLying Leg Curls 3x12 40kg`
-    },
-    {
-      dayName: 'Day 4 - Push 2 (أكتاف وصدر علوي)',
-      rawExercisesText: `Overhead Barbell Press 4x8 50kg\nIncline Barbell Press 3x8 65kg\nDumbbell Lateral Raises 4x12 14kg\nTricep Rope Pushdown 3x12 25kg`
-    },
-    {
-      dayName: 'Day 5 - Pull 2 (سحب وعرض ظهر)',
-      rawExercisesText: `Pull Ups 4x8 0kg\nSeated Cable Row 3x10 60kg\nLat Pulldown 3x12 55kg\nIncline Dumbbell Curl 3x12 14kg`
-    },
-    {
-      dayName: 'Day 6 - Legs 2 (ديدلفت ورومانيان)',
-      rawExercisesText: `Romanian Deadlift 4x8 85kg\nLeg Extensions 3x15 50kg\nLying Leg Curls 3x12 45kg\nStanding Calf Raises 4x15 50kg`
-    }
+    { dayName: "Day 1 - Push 1", text: "Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg" },
+    { dayName: "Day 2 - Pull 1", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg" },
+    { dayName: "Day 3 - Legs 1", text: "Barbell Back Squat 4x6 100kg\nLeg Press 3x10 160kg\nRomanian Deadlift 3x8 80kg" },
+    { dayName: "Day 4 - Push 2", text: "Overhead Press 4x8 50kg\nIncline Barbell Press 3x8 65kg\nDumbbell Lateral Raises 4x12 14kg" },
+    { dayName: "Day 5 - Pull 2", text: "Pull Ups 4x8 0kg\nSeated Cable Row 3x10 60kg\nLat Pulldown 3x12 55kg" },
+    { dayName: "Day 6 - Legs 2", text: "Romanian Deadlift 4x8 85kg\nLeg Extensions 3x15 50kg\nLying Leg Curls 3x12 45kg" }
   ]
+};
+
+const PLACEHOLDER_SAMPLES_AR: Record<number, { dayName: string, text: string }[]> = {
+  2: [
+    { dayName: "Day 1 - Upper (الجزء العلوي)", text: "Barbell Bench Press 4x8 80kg\nBarbell Row 4x8 70kg\nOverhead Press 3x10 45kg" },
+    { dayName: "Day 2 - Lower (الجزء السفلي)", text: "Barbell Back Squat 4x8 100kg\nRomanian Deadlift 3x8 80kg\nLeg Press 3x10 160kg" }
+  ],
+  3: [
+    { dayName: "Day 1 - Push (صدر وتراي)", text: "Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg" },
+    { dayName: "Day 2 - Pull (ظهر وباي)", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg" },
+    { dayName: "Day 3 - Legs (أرجل)", text: "Barbell Back Squat 4x6 100kg\nLeg Press 3x10 160kg\nLying Leg Curls 3x12 40kg" }
+  ],
+  4: [
+    { dayName: "Day 1 - Upper (علوي)", text: "Barbell Bench Press 4x8 80kg\nBarbell Row 4x8 70kg\nOverhead Press 3x10 45kg" },
+    { dayName: "Day 2 - Lower (سفلي)", text: "Barbell Back Squat 4x8 100kg\nRomanian Deadlift 3x8 80kg\nLeg Press 3x10 160kg" },
+    { dayName: "Day 3 - Push (دفع)", text: "Incline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg\nTricep Pushdown 3x12 25kg" },
+    { dayName: "Day 4 - Pull & Legs", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nLying Leg Curls 3x12 40kg" }
+  ],
+  5: [
+    { dayName: "Day 1 - Chest (صدر)", text: "Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Chest Fly 3x12 16kg" },
+    { dayName: "Day 2 - Back (ظهر)", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg" },
+    { dayName: "Day 3 - Shoulders (أكتاف)", text: "Overhead Press 4x8 50kg\nDumbbell Lateral Raises 4x15 12kg\nFace Pulls 3x15 25kg" },
+    { dayName: "Day 4 - Legs (أرجل)", text: "Barbell Back Squat 4x8 100kg\nLeg Press 3x10 160kg\nRomanian Deadlift 3x8 80kg" },
+    { dayName: "Day 5 - Arms (أذرع)", text: "Barbell Bicep Curl 3x10 30kg\nIncline Dumbbell Curl 3x12 14kg\nTricep Pushdown 3x12 25kg" }
+  ],
+  6: [
+    { dayName: "Day 1 - Push 1", text: "Barbell Bench Press 4x8 80kg\nIncline Dumbbell Press 3x10 30kg\nDumbbell Lateral Raises 3x15 12kg" },
+    { dayName: "Day 2 - Pull 1", text: "Barbell Deadlift 4x5 120kg\nLat Pulldown 3x10 60kg\nBarbell Row 3x8 70kg" },
+    { dayName: "Day 3 - Legs 1", text: "Barbell Back Squat 4x6 100kg\nLeg Press 3x10 160kg\nRomanian Deadlift 3x8 80kg" },
+    { dayName: "Day 4 - Push 2", text: "Overhead Press 4x8 50kg\nIncline Barbell Press 3x8 65kg\nDumbbell Lateral Raises 4x12 14kg" },
+    { dayName: "Day 5 - Pull 2", text: "Pull Ups 4x8 0kg\nSeated Cable Row 3x10 60kg\nLat Pulldown 3x12 55kg" },
+    { dayName: "Day 6 - Legs 2", text: "Romanian Deadlift 4x8 85kg\nLeg Extensions 3x15 50kg\nLying Leg Curls 3x12 45kg" }
+  ]
+};
+
+const generate7DaySplit = (activeDaysCount: number): SplitDayDraft[] => {
+  const arr: SplitDayDraft[] = [];
+  const isRestMap: Record<number, boolean[]> = {
+    2: [false, true, true, false, true, true, true],
+    3: [false, true, false, true, false, true, true],
+    4: [false, false, true, false, false, true, true],
+    5: [false, false, false, true, false, false, true],
+    6: [false, false, false, false, false, false, true],
+  };
+  
+  const pattern = isRestMap[activeDaysCount] || [false, false, false, false, false, false, false];
+  
+  for (let i = 0; i < 7; i++) {
+    arr.push({
+      isRest: pattern[i],
+      dayName: "",
+      rawExercisesText: ""
+    });
+  }
+  return arr;
 };
 
 export const AIWorkoutImportModal: React.FC<AIWorkoutImportModalProps> = ({ 
@@ -140,8 +136,8 @@ export const AIWorkoutImportModal: React.FC<AIWorkoutImportModalProps> = ({
   const [inputMode, setInputMode] = useState<'split_builder' | 'raw_full_text'>('split_builder');
 
   // Multi-day split builder state
-  const [daysCount, setDaysCount] = useState<number>(3);
-  const [splitDays, setSplitDays] = useState<SplitDayDraft[]>(DEFAULT_SPLIT_SAMPLES[3]);
+  const [daysCount, setDaysCount] = useState<number>(4);
+  const [splitDays, setSplitDays] = useState<SplitDayDraft[]>(generate7DaySplit(4));
   const [activeTabDay, setActiveTabDay] = useState<number>(0);
 
   // Single raw full text state
@@ -174,17 +170,12 @@ Lying Leg Curls 3x12 40kg`
   // Handle changing day count in split builder
   const handleSetDaysCount = (count: number) => {
     setDaysCount(count);
-    const sample = DEFAULT_SPLIT_SAMPLES[count] || DEFAULT_SPLIT_SAMPLES[3];
-    // Preserve existing days or pad
-    const updated: SplitDayDraft[] = Array.from({ length: count }).map((_, idx) => {
-      if (splitDays[idx]) return splitDays[idx];
-      return sample[idx] || {
-        dayName: `Day ${idx + 1} - Workout`,
-        rawExercisesText: `Barbell Bench Press 3x8 60kg\nLat Pulldown 3x10 50kg\nBarbell Back Squat 3x8 80kg`
-      };
-    });
-    setSplitDays(updated);
-    if (activeTabDay >= count) setActiveTabDay(0);
+    setSplitDays(generate7DaySplit(count));
+    setActiveTabDay(0);
+  };
+
+  const handleToggleRestDay = (index: number) => {
+    setSplitDays(prev => prev.map((d, i) => i === index ? { ...d, isRest: !d.isRest, dayName: '', rawExercisesText: '' } : d));
   };
 
   // Update specific day's title (which is NEVER an exercise)
@@ -201,34 +192,36 @@ Lying Leg Curls 3x12 40kg`
   const handleParseSplitBuilder = async () => {
     setIsParsing(true);
     try {
-      const parsedDays = splitDays.map((d, dIdx) => {
-        const exercises = parseSingleDayText(d.rawExercisesText);
-        return {
-          dayName: d.dayName.trim() || `Day ${dIdx + 1}`,
-          dayNumber: dIdx + 1,
-          exercises: exercises.length > 0 ? exercises : [
-            {
-              exerciseName: 'Barbell Bench Press',
-              matchedExerciseId: 'barbell_bench_press',
-              targetSets: 4,
-              targetReps: '8',
-              suggestedWeightKg: 60,
-              restSeconds: 90
-            }
-          ]
-        };
-      });
+      const activeDays = splitDays.filter(d => !d.isRest);
+      if (activeDays.length === 0) return;
 
-      const res: ParsedMultiDaySplit = {
-        isMultiDaySplit: parsedDays.length > 1,
-        programName: language === 'ar' ? `جدول مخصص (${parsedDays.length} أيام)` : `Custom ${parsedDays.length}-Day AI Split`,
-        days: parsedDays
-      };
+      const parsedDays = [];
+      const placeholders = language === "ar" ? PLACEHOLDER_SAMPLES_AR[daysCount] || PLACEHOLDER_SAMPLES_AR[4] : PLACEHOLDER_SAMPLES_EN[daysCount] || PLACEHOLDER_SAMPLES_EN[4];
 
-      setParsedSplit(res);
-      setActivePreviewDayIndex(0);
-    } catch (err) {
-      console.error('Parse error:', err);
+      for (let i = 0; i < activeDays.length; i++) {
+        const textToParse = activeDays[i].rawExercisesText.trim() || placeholders[i]?.text || "";
+        const nameToUse = activeDays[i].dayName.trim() || placeholders[i]?.dayName || `Day ${i + 1}`;
+        
+        const res = await parseSingleDayText(textToParse);
+        if (res && res.length > 0) {
+          parsedDays.push({
+            dayNumber: i + 1,
+            dayName: nameToUse,
+            exercises: res
+          });
+        }
+      }
+
+      if (parsedDays.length > 0) {
+        setParsedSplit({
+          isMultiDaySplit: true,
+          programName: "Imported Split",
+          days: parsedDays
+        });
+        setActivePreviewDayIndex(0);
+      }
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsParsing(false);
     }
@@ -247,6 +240,7 @@ Lying Leg Curls 3x12 40kg`
       if (res && res.days.length > 0) {
         setDaysCount(res.days.length);
         setSplitDays(res.days.map(d => ({
+          isRest: false,
           dayName: d.dayName,
           rawExercisesText: d.exercises.map(e => `${e.exerciseName} ${e.targetSets}x${e.targetReps} ${e.suggestedWeightKg}kg`).join('\n')
         })));
@@ -341,9 +335,29 @@ Lying Leg Curls 3x12 40kg`
     };
 
     saveGeneratedProgram(newProg);
+    
+    // Sync with Calendar by generating scheduledDays based on 7-day pattern
+    const startDayOffset = new Date().getDay(); // 0 = Sunday, 1 = Monday
+    let currentDayOfWeek = startDayOffset === 0 ? 7 : startDayOffset; 
+    if (startDayPref === 'tomorrow') {
+      currentDayOfWeek = currentDayOfWeek === 7 ? 1 : currentDayOfWeek + 1;
+    }
+
+    const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const newScheduledDays: string[] = [];
+
+    // splitDays contains exactly 7 days
+    splitDays.forEach((d, idx) => {
+       const dOfWeek = ((currentDayOfWeek - 1 + idx) % 7) + 1; // 1-7
+       if (!d.isRest) {
+          newScheduledDays.push(allDays[dOfWeek - 1]);
+       }
+    });
+
     updateUserProfile({
       startDayOption: startDayPref,
-      programStartDate: new Date().toISOString().split('T')[0]
+      programStartDate: new Date().toISOString().split('T')[0],
+      scheduledDays: newScheduledDays
     });
     alert(language === 'ar' 
       ? `تم حفظ وتفعيل جدول الـ ${parsedSplit.days.length} أيام بنجاح! يبدأ الجدول (${startDayPref === 'today' ? 'اليوم' : 'غداً'}).` 
@@ -447,13 +461,14 @@ Lying Leg Curls 3x12 40kg`
                       key={idx}
                       type="button"
                       onClick={() => setActiveTabDay(idx)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
                         activeTabDay === idx
                           ? 'bg-accent-indigo text-white border-accent-indigo shadow-glow-indigo'
                           : 'bg-background-elevated text-slate-300 border-border hover:border-slate-600'
-                      }`}
+                      } ${d.isRest ? 'opacity-60' : ''}`}
                     >
-                      {d.dayName.split(':')[0].split('-')[0] || `Day ${idx + 1}`}
+                      {d.isRest && <Calendar className="w-3 h-3" />}
+                      {d.dayName.split(':')[0].split('-')[0] || (language === 'ar' ? `يوم ${idx + 1}` : `Day ${idx + 1}`)}
                     </button>
                   ))}
                 </div>
