@@ -23,6 +23,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById } from '../../data/mockExercises';
 import { calculateDashboardAnalytics } from '../../services/progressiveOverload';
 import { getExerciseDisplayName, getFitnessGoalDisplayName, formatUnitDisplay } from '../../i18n/fitnessDictionary';
+import { AIWelcomeTeaserModal } from './AIWelcomeTeaserModal';
 
 interface DashboardViewProps {
   onNavigate: (tab: string) => void;
@@ -53,10 +54,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const analytics = calculateDashboardAnalytics(history, prs, user.daysPerWeek);
 
   const primaryGoalLabel = getFitnessGoalDisplayName(user.primaryGoal, language);
+
+  const [showWelcomeTeaser, setShowWelcomeTeaser] = React.useState(false);
+  const { updateUserProfile } = useWorkout();
+
+  React.useEffect(() => {
+    if (user.hasExistingPlan && !user.hasSeenAITeaser) {
+      const timer = setTimeout(() => {
+        setShowWelcomeTeaser(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user.hasExistingPlan, user.hasSeenAITeaser]);
   const secondaryGoalLabel = user.secondaryGoal ? getFitnessGoalDisplayName(user.secondaryGoal, language) : '';
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
+
+      <AIWelcomeTeaserModal
+        isOpen={showWelcomeTeaser}
+        onClose={() => {
+          setShowWelcomeTeaser(false);
+          updateUserProfile({ hasSeenAITeaser: true });
+        }}
+        onOpenAIImport={() => {
+          setShowWelcomeTeaser(false);
+          updateUserProfile({ hasSeenAITeaser: true });
+          onOpenAIImport();
+        }}
+      />
       
       {/* PERSISTENT DEMO MODE BANNER */}
       {user.isDemoUser && (

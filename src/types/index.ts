@@ -180,6 +180,8 @@ export interface UserProfile {
   streakDays: number;
   joinedDate: string;
   hasCompletedOnboarding?: boolean;
+  hasExistingPlan?: boolean;
+  hasSeenAITeaser?: boolean;
   aiQuestionsUsedToday?: number;
   startDayOption?: 'today' | 'tomorrow';
   programStartDate?: string;

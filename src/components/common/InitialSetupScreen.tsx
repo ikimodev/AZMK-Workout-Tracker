@@ -148,6 +148,8 @@ export const InitialSetupScreen: React.FC<InitialSetupScreenProps> = ({ onComple
       startingBaselineOption: 'beginner_rpe',
       streakDays: 0,
       hasCompletedOnboarding: true,
+      hasExistingPlan: hasPlan === true,
+      hasSeenAITeaser: false,
       startDayOption: 'today',
       programStartDate: new Date().toISOString().split('T')[0],
       email: `${finalName.toLowerCase().replace(/\s+/g, '')}@azmk.fit`,
