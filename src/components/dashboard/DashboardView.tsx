@@ -188,7 +188,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-black text-white">{t('importAiTitle')}</span>
-                <span className="px-1.5 py-0.2 rounded bg-accent-cyan/10 text-accent-cyan text-[9px] font-mono font-bold">REAL AI</span>
+                <span className="px-1.5 py-0.2 rounded bg-accent-cyan/10 text-accent-cyan text-[9px] font-bold whitespace-nowrap">{language === 'ar' ? 'مجاناً أول 4 أسابيع' : 'FREE 4 WEEKS'}</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {t('importAiDesc')}
