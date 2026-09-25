@@ -3,6 +3,7 @@ import { WorkoutProvider, useWorkout } from './context/WorkoutContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
+import { AIWelcomeTeaserModal } from './components/dashboard/AIWelcomeTeaserModal';
 import { RestTimerFloat } from './components/common/RestTimerFloat';
 import { PRCelebrationModal } from './components/common/PRCelebrationModal';
 import { WorkoutSummaryModal } from './components/common/WorkoutSummaryModal';
@@ -28,7 +29,7 @@ import { FeedbackModal } from './components/common/FeedbackModal';
 import { trackUserSession } from './services/analyticsService';
 
 const AppContent: React.FC = () => {
-  const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession } = useWorkout();
+  const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout } = useWorkout();
   
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -165,6 +166,22 @@ const AppContent: React.FC = () => {
         </main>
 
       </div>
+
+      <AIWelcomeTeaserModal
+        isOpen={showWelcomeTeaser}
+        onClose={() => {
+          setShowWelcomeTeaser(false);
+          startTodaysAutocompleteWorkout(true);
+        }}
+        onOpenAIImport={() => {
+          setShowWelcomeTeaser(false);
+          setIsAIImportOpen(true);
+        }}
+        onNavigateToPrograms={() => {
+          setShowWelcomeTeaser(false);
+          handleNavigate("programs");
+        }}
+      />
 
       {/* Mobile Bottom Navigation */}
       {!isZenMode && (

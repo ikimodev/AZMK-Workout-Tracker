@@ -44,7 +44,9 @@ interface WorkoutContextType {
   activeWorkout: WorkoutSession | null;
   workoutDuration: number;
   startWorkout: (name?: string, templateExercises?: WorkoutExercise[]) => void;
-  startTodaysAutocompleteWorkout: () => void;
+  startTodaysAutocompleteWorkout: (force?: boolean | React.MouseEvent | any) => void;
+  showWelcomeTeaser: boolean;
+  setShowWelcomeTeaser: (show: boolean) => void;
   cancelActiveWorkout: () => void;
   finishActiveWorkout: () => WorkoutSession | null;
   lastCompletedSession: WorkoutSession | null;
@@ -272,6 +274,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const saved = localStorage.getItem('pulse_active_workout');
     return saved ? JSON.parse(saved) : null;
   });
+
+  const [showWelcomeTeaser, setShowWelcomeTeaser] = useState(false);
 
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [lastCompletedSession, setLastCompletedSession] = useState<WorkoutSession | null>(null);
@@ -584,7 +588,14 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
    * Workout Autocomplete: Automatically pre-fills the NEXT scheduled day's workout
    * (Day 1 -> Day 2 -> Day 3 -> Day 4) with progressive targets
    */
-  const startTodaysAutocompleteWorkout = () => {
+  const startTodaysAutocompleteWorkout = (force: boolean | any = false) => {
+    const isForce = force === true;
+    const hasAnyProgram = (programs && programs.length > 0) || (history && history.length > 0);
+    if (!isForce && !hasAnyProgram && user.hasExistingPlan) {
+      setShowWelcomeTeaser(true);
+      return;
+    }
+
     const sched = getTodaysScheduleState();
     const workoutTemplate = sched.workoutTemplate || activeProgram.weeks[0]?.workouts[0];
     if (!workoutTemplate) return;
@@ -1182,6 +1193,8 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
         workoutDuration,
         startWorkout,
         startTodaysAutocompleteWorkout,
+        showWelcomeTeaser,
+        setShowWelcomeTeaser,
         cancelActiveWorkout,
         finishActiveWorkout,
         lastCompletedSession,
