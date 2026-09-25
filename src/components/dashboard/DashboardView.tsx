@@ -43,6 +43,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     activeWorkout, 
     startTodaysAutocompleteWorkout, 
     activeProgram,
+    programs,
     getTodaysScheduleState,
     language,
     t
@@ -56,16 +57,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const primaryGoalLabel = getFitnessGoalDisplayName(user.primaryGoal, language);
 
   const [showWelcomeTeaser, setShowWelcomeTeaser] = React.useState(false);
-  const { updateUserProfile } = useWorkout();
 
-  React.useEffect(() => {
-    if (user.hasExistingPlan && !user.hasSeenAITeaser) {
-      const timer = setTimeout(() => {
-        setShowWelcomeTeaser(true);
-      }, 800);
-      return () => clearTimeout(timer);
+  const handleStartWorkout = () => {
+    const hasAnyProgram = (programs && programs.length > 0) || (history && history.length > 0);
+    if (!hasAnyProgram && user.hasExistingPlan) {
+      setShowWelcomeTeaser(true);
+    } else {
+      startTodaysAutocompleteWorkout();
     }
-  }, [user.hasExistingPlan, user.hasSeenAITeaser]);
+  };
+  
+
+  
   const secondaryGoalLabel = user.secondaryGoal ? getFitnessGoalDisplayName(user.secondaryGoal, language) : '';
 
   return (
@@ -73,15 +76,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       <AIWelcomeTeaserModal
         isOpen={showWelcomeTeaser}
-        onClose={() => {
-          setShowWelcomeTeaser(false);
-          updateUserProfile({ hasSeenAITeaser: true });
-        }}
-        onOpenAIImport={() => {
-          setShowWelcomeTeaser(false);
-          updateUserProfile({ hasSeenAITeaser: true });
-          onOpenAIImport();
-        }}
+        onClose={() => { setShowWelcomeTeaser(false); startTodaysAutocompleteWorkout(); }}
+        onOpenAIImport={() => { setShowWelcomeTeaser(false); onOpenAIImport(); }} onNavigateToPrograms={() => { setShowWelcomeTeaser(false); onNavigate('programs'); }}
       />
       
       {/* PERSISTENT DEMO MODE BANNER */}
@@ -138,7 +134,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {!activeWorkout ? (
             <button
-              onClick={startTodaysAutocompleteWorkout}
+              onClick={handleStartWorkout}
               className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-gradient-to-r from-accent-emerald to-emerald-500 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-md transition-all transform active:scale-95"
             >
               <Play className="w-4 h-4 fill-black" />
@@ -358,7 +354,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
 
               <button
-                onClick={startTodaysAutocompleteWorkout}
+                onClick={handleStartWorkout}
                 className="px-4 py-2.5 rounded-xl bg-background-elevated hover:bg-background-hover text-slate-300 text-xs font-bold border border-border transition-all flex items-center gap-1.5"
               >
                 <Play className="w-3.5 h-3.5" />
@@ -409,7 +405,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               
               <button
-                onClick={startTodaysAutocompleteWorkout}
+                onClick={handleStartWorkout}
                 className="px-5 py-2.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black text-xs font-black transition-all flex items-center gap-1.5 shadow-glow-sm active:scale-95"
               >
                 <Play className="w-3.5 h-3.5 fill-black" />
@@ -493,7 +489,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
             </button>
             <button
-              onClick={startTodaysAutocompleteWorkout}
+              onClick={handleStartWorkout}
               className="px-4 py-2.5 rounded-xl bg-accent-emerald hover:bg-emerald-400 text-black text-xs font-extrabold flex items-center gap-1.5 shadow-glow-sm transition-all active:scale-95"
             >
               <Zap className="w-3.5 h-3.5 fill-black" />
@@ -577,7 +573,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {t('noHistoryPrompt')}
             </p>
             <button
-              onClick={startTodaysAutocompleteWorkout}
+              onClick={handleStartWorkout}
               className="px-6 py-2.5 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs shadow-glow-sm transition-all active:scale-95 inline-flex items-center gap-2"
             >
               <Play className="w-3.5 h-3.5 fill-black" />

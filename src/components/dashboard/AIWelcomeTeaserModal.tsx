@@ -1,14 +1,15 @@
-﻿import React from "react";
-import { Sparkles, X, ArrowRight } from "lucide-react";
+import React from "react";
+import { Sparkles, X, PenLine } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 
 interface AIWelcomeTeaserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenAIImport: () => void;
+  onNavigateToPrograms: () => void;
 }
 
-export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOpen, onClose, onOpenAIImport }) => {
+export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOpen, onClose, onOpenAIImport, onNavigateToPrograms }) => {
   const { language } = useWorkout();
 
   if (!isOpen) return null;
@@ -21,7 +22,7 @@ export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOp
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent-indigo/30 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
         
-        <button onClick={onClose} className="absolute top-4 right-4 rtl:right-auto rtl:left-4 text-slate-400 hover:text-white z-10 bg-background-elevated p-2 rounded-full">
+        <button onClick={onClose} className="absolute top-4 right-4 rtl:right-auto rtl:left-4 text-slate-400 hover:text-white z-10 bg-background-elevated p-2 rounded-full transition-all">
           <X className="w-4 h-4" />
         </button>
 
@@ -30,39 +31,48 @@ export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOp
             <Sparkles className="w-8 h-8" />
           </div>
           
-          <h2 className="text-2xl font-black text-white mb-3">
-            {language === "ar" ? "جاهز لإضافة جدولك؟" : "Ready to add your plan?"}
+          <h2 className="text-2xl font-black text-white mb-3 leading-tight">
+            {language === "ar" ? "لم تقم بإضافة جدولك بعد!" : "You haven't added a plan yet!"}
           </h2>
           
-          <p className="text-slate-300 mb-6 text-sm leading-relaxed">
+          <p className="text-slate-300 mb-8 text-sm leading-relaxed">
             {language === "ar" 
-              ? "بما أن لديك جدول تمارين، يمكنك إضافة جميع تمارينك في ثوانٍ فقط بنسخها ولصقها كنص باستخدام الذكاء الاصطناعي."
-              : "Since you already have a workout routine, you can add all your exercises in seconds by pasting them as text using our AI."}
+              ? "للبدء بالتمرين، يجب عليك إما استيراد جدولك الخاص بنسخ النص، أو إنشاء جدولك يدوياً."
+              : "To start working out, you must either import your routine by pasting text, or build it manually."}
           </p>
 
-          <button
-            onClick={() => {
-              onClose();
-              setTimeout(() => {
-                onOpenAIImport();
-              }, 300);
-            }}
-            className="w-full py-4 rounded-xl bg-accent-indigo hover:bg-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-glow-indigo transition-all mb-3 active:scale-95"
-          >
-            <Sparkles className="w-5 h-5" />
-            <span>{language === "ar" ? "استيراد جدولي الآن" : "Import Now by Text"}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={onClose}
-            className="w-full py-3 rounded-xl text-slate-400 hover:text-white text-xs font-bold transition-all"
-          >
-            {language === "ar" ? "ليس الآن" : "Not now"}
-          </button>
+          <div className="w-full space-y-3">
+            <button
+              onClick={() => {
+                onClose();
+                setTimeout(() => onOpenAIImport(), 300);
+              }}
+              className="w-full py-4 rounded-xl bg-accent-indigo hover:bg-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-glow-indigo transition-all active:scale-95"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>{language === "ar" ? "استيراد بالذكاء الاصطناعي (سريع)" : "AI Text Import (Fast)"}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onClose();
+                setTimeout(() => onNavigateToPrograms(), 300);
+              }}
+              className="w-full py-4 rounded-xl bg-background-elevated border border-border hover:border-slate-500 text-slate-300 hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+            >
+              <PenLine className="w-4 h-4" />
+              <span>{language === "ar" ? "إنشاء جدول يدوياً" : "Create Plan Manually"}</span>
+            </button>
+            
+            <button
+              onClick={onClose}
+              className="w-full pt-3 text-slate-500 hover:text-slate-400 text-xs font-bold transition-all underline decoration-slate-500/30 underline-offset-4"
+            >
+              {language === "ar" ? "تخطي والبدء بتمرين حر" : "Skip & Start Freestyle"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
