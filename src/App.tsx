@@ -29,7 +29,7 @@ import { FeedbackModal } from './components/common/FeedbackModal';
 import { trackUserSession } from './services/analyticsService';
 
 const AppContent: React.FC = () => {
-  const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout } = useWorkout();
+  const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout, startWorkout } = useWorkout();
   
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -171,7 +171,8 @@ const AppContent: React.FC = () => {
         isOpen={showWelcomeTeaser}
         onClose={() => {
           setShowWelcomeTeaser(false);
-          startTodaysAutocompleteWorkout(true);
+          startWorkout("Freestyle Workout");
+          handleNavigate('active_workout');
         }}
         onOpenAIImport={() => {
           setShowWelcomeTeaser(false);

@@ -590,8 +590,16 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
    */
   const startTodaysAutocompleteWorkout = (force: boolean | any = false) => {
     const isForce = force === true;
-    const hasAnyProgram = (programs && programs.length > 0) || (history && history.length > 0);
-    if (!isForce && !hasAnyProgram && user.hasExistingPlan) {
+    
+    // Check if user has ANY program (mock or real) OR any history
+    // (If they just signed up, they have MOCK_PROGRAM which we ignore here by checking for actual valid data,
+    // wait, actually MOCK_PROGRAM is loaded by default. Let's check how mock programs are handled)
+    // Wait, by default `programs` is initialized with `[MOCK_PROGRAM]`!
+    // So `programs.length > 0` is ALWAYS true! 
+    const isMockProgram = programs.length === 1 && programs[0].id === 'program_hypertrophy_4day';
+    const hasAnyProgram = programs && programs.length > 0 && !isMockProgram;
+    
+    if (!isForce && !hasAnyProgram) {
       setShowWelcomeTeaser(true);
       return;
     }
