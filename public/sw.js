@@ -1,5 +1,5 @@
 // AZMK Service Worker for Progressive Web App (PWA)
-const CACHE_NAME = 'azmk-cache-v1';
+const CACHE_NAME = 'azmk-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
