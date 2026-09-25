@@ -1,7 +1,4 @@
-/**
- * AZMK Real Cloud Analytics & Telemetry Engine (100% Real Live Telemetry)
- * Synchronizes real visitors across all devices to a centralized cloud registry.
- */
+import { supabase } from './supabase';
 
 export interface VisitorLog {
   id: string;
@@ -63,16 +60,10 @@ export interface AdminAnalyticsSummary {
   feedbacks: UserFeedbackItem[];
 }
 
-const CLOUD_REGISTRY_ID = 'ff8081819ff5b11001a01fe35f8a5ece';
-const CLOUD_API_URL = `https://api.restful-api.dev/objects/${CLOUD_REGISTRY_ID}`;
-
 const VISITOR_ID_KEY = 'azmk_visitor_id';
 const LOCAL_VISITOR_KEY = 'azmk_my_visitor_profile';
 const LOCAL_FEEDBACK_KEY = 'azmk_my_feedback_list';
 
-/**
- * Detects current client device details with high accuracy
- */
 export const detectClientDevice = () => {
   const ua = navigator.userAgent.toLowerCase();
   const isIOS = /iphone|ipad|ipod/.test(ua);
@@ -99,24 +90,21 @@ export const detectClientDevice = () => {
   } else if (/windows/.test(ua)) {
     platform = 'Desktop';
     deviceName = 'Windows PC';
+  } else if (/linux/.test(ua)) {
+    platform = 'Desktop';
+    deviceName = 'Linux PC';
   }
 
-  // Location detection via timezone
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Riyadh';
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  let city = 'مدينة غير محددة';
   let country = 'Saudi Arabia 🇸🇦';
-  let city = 'الرياض (Riyadh)';
 
-  if (tz.includes('Riyadh') || tz.includes('Asia/Riyadh')) {
+  if (tz.includes('Riyadh')) {
     city = 'الرياض (Riyadh)';
-    country = 'Saudi Arabia 🇸🇦';
-  } else if (tz.includes('Dubai') || tz.includes('Asia/Dubai')) {
-    city = 'دبي (Dubai)';
-    country = 'UAE 🇦🇪';
-  } else if (tz.includes('Kuwait')) {
-    city = 'الكويت (Kuwait City)';
-    country = 'Kuwait 🇰🇼';
-  } else if (tz.includes('Bahrain') || tz.includes('Qatar') || tz.includes('Doha')) {
-    city = 'الدوحة / المنامة';
+  } else if (tz.includes('Jeddah')) {
+    city = 'جدة (Jeddah)';
+  } else if (tz.includes('Dubai') || tz.includes('Qatar') || tz.includes('Kuwait') || tz.includes('Bahrain') || tz.includes('Muscat')) {
+    city = 'الخليج (GCC)';
     country = 'GCC 🇶🇦🇧🇭';
   } else if (tz.includes('Cairo') || tz.includes('Africa/Cairo')) {
     city = 'القاهرة (Cairo)';
@@ -129,9 +117,6 @@ export const detectClientDevice = () => {
   return { deviceName, platform, isPWA, city, country };
 };
 
-/**
- * Initializes or updates real user session and syncs to Central Cloud
- */
 export const trackUserSession = (userName?: string): VisitorLog => {
   let visitorId = localStorage.getItem(VISITOR_ID_KEY);
   if (!visitorId) {
@@ -212,59 +197,36 @@ const createNewVisitorLog = (
   };
 };
 
-/**
- * Sync a single visitor log to the central Cloud Registry with cache busting
- */
 export const syncVisitorToCloud = async (visitor: VisitorLog): Promise<void> => {
   try {
-    const res = await fetch(`${CLOUD_API_URL}?t=${Date.now()}`, {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-    if (!res.ok) return;
+    const { error } = await supabase.from('visitors').upsert({
+      id: visitor.id,
+      name: visitor.name,
+      device: visitor.device,
+      platform: visitor.platform,
+      isPWA: visitor.isPWA,
+      city: visitor.city,
+      country: visitor.country,
+      firstVisitDate: visitor.firstVisitDate,
+      lastActiveDate: visitor.lastActiveDate,
+      sessionCount: visitor.sessionCount,
+      workoutsCompleted: visitor.workoutsCompleted,
+      prsBroken: visitor.prsBroken,
+      aiImportsCount: visitor.aiImportsCount,
+      aiChatsCount: visitor.aiChatsCount,
+      rating: visitor.rating,
+      feedback: visitor.feedback,
+      actions: visitor.actions
+    }, { onConflict: 'id' });
     
-    const doc = await res.json();
-    const existingVisitors: VisitorLog[] = doc?.data?.visitors || [];
-    const existingFeedbacks: UserFeedbackItem[] = doc?.data?.feedbacks || [];
-
-    const index = existingVisitors.findIndex(v => v.id === visitor.id);
-    if (index >= 0) {
-      existingVisitors[index] = {
-        ...existingVisitors[index],
-        ...visitor,
-        name: (visitor.name && !visitor.name.includes('مستخدم')) ? visitor.name : existingVisitors[index].name,
-        sessionCount: Math.max(existingVisitors[index].sessionCount || 1, visitor.sessionCount || 1),
-        workoutsCompleted: Math.max(existingVisitors[index].workoutsCompleted || 0, visitor.workoutsCompleted || 0),
-        aiImportsCount: Math.max(existingVisitors[index].aiImportsCount || 0, visitor.aiImportsCount || 0),
-        lastActiveDate: new Date().toISOString()
-      };
-    } else {
-      existingVisitors.unshift(visitor);
+    if (error) {
+      console.warn('Supabase visitor sync error:', error);
     }
-
-    // Save back to cloud
-    await fetch(CLOUD_API_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'AZMK_PROD_CLOUD_ANALYTICS_V1',
-        data: {
-          updatedAt: new Date().toISOString(),
-          visitors: existingVisitors,
-          feedbacks: existingFeedbacks
-        }
-      })
-    });
   } catch (err) {
     console.warn('Cloud sync error:', err);
   }
 };
 
-/**
- * Log specific user actions in real-time
- */
 export const trackEvent = (
   actionType: 'WORKOUT_COMPLETED' | 'AI_IMPORT' | 'AI_COACH' | 'PR_BROKEN' | 'PWA_INSTALL'
 ) => {
@@ -276,102 +238,68 @@ export const trackEvent = (
     current.lastActiveDate = new Date().toISOString();
     current.actions.push(`${actionType}_${Date.now()}`);
 
-    if (actionType === 'WORKOUT_COMPLETED') current.workoutsCompleted += 1;
-    if (actionType === 'AI_IMPORT') current.aiImportsCount += 1;
-    if (actionType === 'AI_COACH') current.aiChatsCount += 1;
-    if (actionType === 'PR_BROKEN') current.prsBroken += 1;
+    if (actionType === 'WORKOUT_COMPLETED') current.workoutsCompleted = (current.workoutsCompleted || 0) + 1;
+    if (actionType === 'AI_IMPORT') current.aiImportsCount = (current.aiImportsCount || 0) + 1;
+    if (actionType === 'AI_COACH') current.aiChatsCount = (current.aiChatsCount || 0) + 1;
+    if (actionType === 'PR_BROKEN') current.prsBroken = (current.prsBroken || 0) + 1;
     if (actionType === 'PWA_INSTALL') current.isPWA = true;
 
     localStorage.setItem(LOCAL_VISITOR_KEY, JSON.stringify(current));
+
     syncVisitorToCloud(current).catch(() => {});
-  } catch (e) {}
+  } catch (err) {
+    console.warn('Track event error', err);
+  }
 };
 
-/**
- * Submit real user review and sync to Central Cloud
- */
 export const submitUserFeedback = async (rating: number, comment: string, userName?: string): Promise<UserFeedbackItem> => {
-  const visitorId = localStorage.getItem(VISITOR_ID_KEY) || 'usr_guest';
+  const visitorId = localStorage.getItem(VISITOR_ID_KEY) || `usr_${Date.now()}`;
   const { deviceName, isPWA } = detectClientDevice();
+  const sentiment = rating >= 4 ? 'positive' : rating <= 2 ? 'suggestion' : 'neutral';
 
   const feedbackItem: UserFeedbackItem = {
-    id: `fb_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `fb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     visitorId,
-    userName: userName || (deviceName.includes('iPhone') ? 'مستخدم آيفون' : 'بطل عزمك'),
+    userName: userName || 'مستخدم مجهول',
     rating,
     comment,
     date: new Date().toISOString(),
     device: deviceName,
     isPWA,
-    sentiment: rating >= 4 ? 'positive' : rating === 3 ? 'neutral' : 'suggestion'
+    sentiment
   };
 
   try {
-    // Save locally
-    const stored = localStorage.getItem(LOCAL_FEEDBACK_KEY);
-    const localFeedbacks: UserFeedbackItem[] = stored ? JSON.parse(stored) : [];
-    localFeedbacks.unshift(feedbackItem);
-    localStorage.setItem(LOCAL_FEEDBACK_KEY, JSON.stringify(localFeedbacks));
+    const localFbs = JSON.parse(localStorage.getItem(LOCAL_FEEDBACK_KEY) || '[]');
+    localFbs.unshift(feedbackItem);
+    localStorage.setItem(LOCAL_FEEDBACK_KEY, JSON.stringify(localFbs));
 
-    // Update local visitor
-    const visitorRaw = localStorage.getItem(LOCAL_VISITOR_KEY);
-    if (visitorRaw) {
-      const v: VisitorLog = JSON.parse(visitorRaw);
-      v.rating = rating;
-      v.feedback = comment;
-      localStorage.setItem(LOCAL_VISITOR_KEY, JSON.stringify(v));
+    const storedVisitor = localStorage.getItem(LOCAL_VISITOR_KEY);
+    if (storedVisitor) {
+      const currentVisitor: VisitorLog = JSON.parse(storedVisitor);
+      currentVisitor.rating = rating;
+      currentVisitor.feedback = comment;
+      if (userName) currentVisitor.name = userName;
+      currentVisitor.actions.push(`FEEDBACK_${Date.now()}`);
+      localStorage.setItem(LOCAL_VISITOR_KEY, JSON.stringify(currentVisitor));
+      await syncVisitorToCloud(currentVisitor);
     }
-
-    // Sync to Cloud
-    const res = await fetch(`${CLOUD_API_URL}?t=${Date.now()}`);
-    if (res.ok) {
-      const doc = await res.json();
-      const visitors: VisitorLog[] = doc?.data?.visitors || [];
-      const feedbacks: UserFeedbackItem[] = doc?.data?.feedbacks || [];
-      feedbacks.unshift(feedbackItem);
-
-      const vIdx = visitors.findIndex(v => v.id === visitorId);
-      if (vIdx >= 0) {
-        visitors[vIdx].rating = rating;
-        visitors[vIdx].feedback = comment;
-        if (userName && !visitors[vIdx].name.includes(userName)) {
-          visitors[vIdx].name = userName;
-        }
-      } else {
-        // Register visitor if not existing yet
-        visitors.unshift({
-          id: visitorId,
-          name: userName || (deviceName.includes('iPhone') ? 'مستخدم آيفون 📲' : 'بطل عزمك'),
-          device: deviceName,
-          platform: deviceName.includes('iPhone') ? 'iOS' : deviceName.includes('Android') ? 'Android' : 'Desktop',
-          isPWA,
-          city: 'المملكة العربية السعودية 🇸🇦',
-          country: 'Saudi Arabia 🇸🇦',
-          firstVisitDate: new Date().toISOString(),
-          lastActiveDate: new Date().toISOString(),
-          sessionCount: 1,
-          workoutsCompleted: 0,
-          prsBroken: 0,
-          aiImportsCount: 0,
-          aiChatsCount: 0,
-          rating,
-          feedback: comment,
-          actions: ['FEEDBACK_SUBMITTED']
-        });
-      }
-
-      await fetch(CLOUD_API_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'AZMK_PROD_CLOUD_ANALYTICS_V1',
-          data: {
-            updatedAt: new Date().toISOString(),
-            visitors,
-            feedbacks
-          }
-        })
-      });
+    
+    // Insert feedback into supabase
+    const { error } = await supabase.from('feedbacks').insert({
+      id: feedbackItem.id,
+      visitorId: feedbackItem.visitorId,
+      userName: feedbackItem.userName,
+      rating: feedbackItem.rating,
+      comment: feedbackItem.comment,
+      date: feedbackItem.date,
+      device: feedbackItem.device,
+      isPWA: feedbackItem.isPWA,
+      sentiment: feedbackItem.sentiment
+    });
+    
+    if (error) {
+      console.warn('Supabase feedback sync error:', error);
     }
   } catch (err) {
     console.warn('Feedback cloud sync error:', err);
@@ -380,58 +308,27 @@ export const submitUserFeedback = async (rating: number, comment: string, userNa
   return feedbackItem;
 };
 
-/**
- * Retrieves the 100% REAL telemetry summary directly from Central Cloud
- */
 export const getAdminAnalyticsSummary = async (): Promise<AdminAnalyticsSummary> => {
   let visitors: VisitorLog[] = [];
   let feedbacks: UserFeedbackItem[] = [];
   let isCloudSynced = false;
 
-  // 1. Fetch real centralized data from Cloud DB with cache busting
   try {
-    const res = await fetch(`${CLOUD_API_URL}?t=${Date.now()}`, {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-    if (res.ok) {
-      const doc = await res.json();
-      visitors = doc?.data?.visitors || [];
-      feedbacks = doc?.data?.feedbacks || [];
+    const { data: visitorsData, error: visitorsError } = await supabase.from('visitors').select('*').order('lastActiveDate', { ascending: false });
+    const { data: feedbacksData, error: feedbacksError } = await supabase.from('feedbacks').select('*').order('date', { ascending: false });
+    
+    if (!visitorsError && visitorsData) {
+      visitors = visitorsData as VisitorLog[];
       isCloudSynced = true;
     }
+    if (!feedbacksError && feedbacksData) {
+      feedbacks = feedbacksData as UserFeedbackItem[];
+    }
   } catch (e) {
-    console.warn('Cloud fetch fallback to local:', e);
+    console.warn('Supabase fetch fallback to local:', e);
   }
 
-  // 2. Ensure every user who submitted feedback is also represented in visitors
-  feedbacks.forEach(fb => {
-    if (!visitors.some(v => v.id === fb.visitorId || (fb.userName && v.name === fb.userName))) {
-      visitors.unshift({
-        id: fb.visitorId,
-        name: fb.userName,
-        device: fb.device,
-        platform: fb.device.includes('iPhone') ? 'iOS' : fb.device.includes('Android') ? 'Android' : 'Desktop',
-        isPWA: fb.isPWA,
-        city: 'المملكة العربية السعودية 🇸🇦',
-        country: 'Saudi Arabia 🇸🇦',
-        firstVisitDate: fb.date,
-        lastActiveDate: fb.date,
-        sessionCount: 2,
-        workoutsCompleted: 1,
-        prsBroken: 0,
-        aiImportsCount: 1,
-        aiChatsCount: 0,
-        rating: fb.rating,
-        feedback: fb.comment,
-        actions: ['FIRST_ENTRY', 'FEEDBACK_SUBMITTED']
-      });
-    }
-  });
-
-  // 3. Fallback / Merge with current client's real visitor record if cloud was empty or offline
+  // Fallback / Merge with current client's real visitor record if cloud was empty or offline
   const localVisitorRaw = localStorage.getItem(LOCAL_VISITOR_KEY);
   if (localVisitorRaw) {
     try {
@@ -449,7 +346,6 @@ export const getAdminAnalyticsSummary = async (): Promise<AdminAnalyticsSummary>
     } catch (e) {}
   }
 
-  // 4. Compute 100% REAL exact metrics
   const totalVisitors = visitors.length;
   const returningVisitors = visitors.filter(v => (v.sessionCount || 1) > 1).length;
   const retentionRatePercent = totalVisitors > 0 ? Math.round((returningVisitors / totalVisitors) * 1000) / 10 : 0;
@@ -471,7 +367,6 @@ export const getAdminAnalyticsSummary = async (): Promise<AdminAnalyticsSummary>
   const androidCount = visitors.filter(v => v.platform === 'Android').length;
   const desktopCount = visitors.filter(v => v.platform === 'Desktop').length;
 
-  // Real daily breakdown from actual timestamps
   const last7DaysMap = new Map<string, { visitors: number; workouts: number; aiImports: number }>();
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000);
