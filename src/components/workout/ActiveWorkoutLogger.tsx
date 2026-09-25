@@ -19,7 +19,8 @@ import {
   Plus,
   X,
   MoreHorizontal,
-  FileText
+  FileText,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { YoutubeIcon } from '../common/YoutubeIcon';

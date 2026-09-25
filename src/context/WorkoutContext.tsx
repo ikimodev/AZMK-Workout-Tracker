@@ -1223,7 +1223,7 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
         clearLastCompletedSession,
         addSetToExercise,
         updateSet,
-        updateExercise,
+        updateExercise, updateWorkoutDate,
         deleteSet,
         duplicateSet,
         toggleSetCompleted,
