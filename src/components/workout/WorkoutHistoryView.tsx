@@ -8,7 +8,8 @@ import {
   ChevronDown, 
   ChevronUp, 
   Sparkles,
-  Play
+  Play,
+  Plus
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById } from '../../data/mockExercises';
@@ -36,13 +37,22 @@ export const WorkoutHistoryView: React.FC<WorkoutHistoryViewProps> = ({ onNaviga
           <p className="text-xs text-slate-400 mt-1">Every rep, set, and volume milestone recorded in the database.</p>
         </div>
 
-        <button
-          onClick={startTodaysAutocompleteWorkout}
-          className="px-5 py-3 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-sm transition-all"
-        >
-          <Play className="w-4 h-4 fill-black" />
-          <span>Start New Workout</span>
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <button
+            onClick={() => startWorkout('Manual Workout Log', undefined, true)}
+            className="flex-1 sm:flex-none px-4 py-3 rounded-2xl bg-background-elevated hover:bg-slate-800 border border-border text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Manual Log</span>
+          </button>
+          <button
+            onClick={startTodaysAutocompleteWorkout}
+            className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-accent-emerald hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-sm transition-all"
+          >
+            <Play className="w-4 h-4 fill-black" />
+            <span>Start New Workout</span>
+          </button>
+        </div>
       </div>
 
       {/* History Feed */}

@@ -43,7 +43,7 @@ interface WorkoutContextType {
   // Active Workout
   activeWorkout: WorkoutSession | null;
   workoutDuration: number;
-  startWorkout: (name?: string, templateExercises?: WorkoutExercise[]) => void;
+  startWorkout: (name?: string, templateExercises?: WorkoutExercise[], isManualLog?: boolean) => void;
   startTodaysAutocompleteWorkout: (force?: boolean | React.MouseEvent | any) => void;
   showWelcomeTeaser: boolean;
   setShowWelcomeTeaser: (show: boolean) => void;
@@ -56,6 +56,7 @@ interface WorkoutContextType {
   addSetToExercise: (exerciseIndex: number) => void;
   updateSet: (exerciseIndex: number, setIndex: number, fields: Partial<LoggedSet>) => void;
   updateExercise: (exerciseIndex: number, fields: Partial<WorkoutExercise>) => void;
+  updateWorkoutDate: (dateString: string) => void;
   deleteSet: (exerciseIndex: number, setIndex: number) => void;
   duplicateSet: (exerciseIndex: number, setIndex: number) => void;
   toggleSetCompleted: (exerciseIndex: number, setIndex: number) => void;
@@ -444,7 +445,7 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
   /**
    * Starts a brand new live workout session
    */
-  const startWorkout = (name = 'Live Workout', templateExercises?: WorkoutExercise[]) => {
+  const startWorkout = (name = 'Live Workout', templateExercises?: WorkoutExercise[], isManualLog = false) => {
     // Experience-based starter defaults (conservative exploratory weights)
     const baseBenchWeight = user.experience === 'Beginner' ? 20 : user.experience === 'Intermediate' ? 45 : 60;
     const baseTargetWeight = user.experience === 'Beginner' ? 22.5 : user.experience === 'Intermediate' ? 50 : 62.5;
@@ -464,8 +465,8 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     ];
 
     const session: WorkoutSession = {
-      id: `live_session_${Date.now()}`,
-      name,
+      id: isManualLog ? `manual_session_${Date.now()}` : `live_session_${Date.now()}`,
+      name: isManualLog && name === 'Live Workout' ? 'Manual Workout Log' : name,
       date: new Date().toISOString(),
       startedAt: new Date().toISOString(),
       durationMinutes: 0,
@@ -474,10 +475,12 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
       totalSets: defaultExs.reduce((sum, e) => sum + e.sets.length, 0),
       totalReps: 0,
       prCount: 0,
-      isCompleted: false
+      isCompleted: false,
+      isManualLog
     };
 
     setActiveWorkout(session);
+    setWorkoutDuration(0);
   };
 
   const [loggedActivities, setLoggedActivities] = useState<LoggedActivity[]>(() => {
@@ -721,6 +724,17 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     });
   };
 
+  const updateWorkoutDate = (dateString: string) => {
+    setActiveWorkout((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        date: dateString,
+        startedAt: dateString
+      };
+    });
+  };
+
   const deleteSet = (exerciseIndex: number, setIndex: number) => {
     if (!activeWorkout) return;
     const updatedExercises = [...activeWorkout.exercises];
@@ -960,7 +974,7 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     });
 
     const actualDurationSeconds = Math.floor((Date.now() - new Date(activeWorkout.startedAt).getTime()) / 1000);
-    const durationMin = Math.max(1, Math.round(actualDurationSeconds / 60));
+    const durationMin = activeWorkout.isManualLog ? 45 : Math.max(1, Math.round(actualDurationSeconds / 60));
     
     // Compare volume with previous matching session
     const prevSimilar = history.find(s => s.name === activeWorkout.name);

@@ -45,7 +45,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     history,
     addSetToExercise, 
     updateSet, 
-    updateExercise,
+    updateExercise, updateWorkoutDate,
     deleteSet, 
     duplicateSet, 
     toggleSetCompleted, 
@@ -175,25 +175,49 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
         <div className="flex items-center justify-between w-full sm:w-auto">
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-accent-emerald animate-ping" />
-              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-accent-emerald leading-none">{t('liveLoggingMode')}</span>
+              {!activeWorkout.isManualLog ? (
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-accent-emerald animate-ping" />
+              ) : (
+                <Calendar className="w-3 h-3 text-accent-indigo" />
+              )}
+              <span className={`text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider leading-none ${activeWorkout.isManualLog ? 'text-accent-indigo' : 'text-accent-emerald'}`}>
+                {activeWorkout.isManualLog ? 'MANUAL LOG' : t('liveLoggingMode')}
+              </span>
             </div>
             <h1 className="text-base sm:text-2xl font-black text-white mt-1 line-clamp-1">{activeWorkout.name}</h1>
           </div>
           
-          {/* Mobile Timer (Shown next to title to save vertical space) */}
-          <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-background-elevated border border-border text-white font-mono font-bold text-[11px]">
-            <Clock className="w-3 h-3 text-accent-emerald" />
-            <span>{formatTimer(workoutDuration)}</span>
-          </div>
+          {/* Mobile Timer or Date Picker */}
+          {activeWorkout.isManualLog ? (
+            <input 
+              type="date"
+              value={activeWorkout.date.split('T')[0]}
+              onChange={(e) => updateWorkoutDate(new Date(e.target.value).toISOString())}
+              className="sm:hidden bg-background-elevated border border-border text-white text-xs px-2 py-1 rounded-lg"
+            />
+          ) : (
+            <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-background-elevated border border-border text-white font-mono font-bold text-[11px]">
+              <Clock className="w-3 h-3 text-accent-emerald" />
+              <span>{formatTimer(workoutDuration)}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-          {/* Desktop Timer */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background-elevated border border-border text-white font-mono font-bold text-sm">
-            <Clock className="w-4 h-4 text-accent-emerald" />
-            <span>{formatTimer(workoutDuration)}</span>
-          </div>
+          {/* Desktop Timer or Date Picker */}
+          {activeWorkout.isManualLog ? (
+            <input 
+              type="date"
+              value={activeWorkout.date.split('T')[0]}
+              onChange={(e) => updateWorkoutDate(new Date(e.target.value).toISOString())}
+              className="hidden sm:block bg-background-elevated border border-border text-white text-sm px-3 py-1.5 rounded-xl"
+            />
+          ) : (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background-elevated border border-border text-white font-mono font-bold text-sm">
+              <Clock className="w-4 h-4 text-accent-emerald" />
+              <span>{formatTimer(workoutDuration)}</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {/* Discard Workout */}
@@ -221,7 +245,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
               className="flex-[2] sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-accent-emerald to-emerald-400 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-glow-sm transition-all"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>{t('finishWorkout')}</span>
+              <span>{activeWorkout.isManualLog ? 'Save Manual Log' : t('finishWorkout')}</span>
             </button>
           </div>
         </div>

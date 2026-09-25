@@ -105,6 +105,7 @@ export interface WorkoutSession {
   aiSummary?: string;
   isCompleted: boolean;
   programWorkoutId?: string;
+  isManualLog?: boolean;
 }
 
 export interface ProgramWorkout {
