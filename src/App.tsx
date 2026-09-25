@@ -28,14 +28,43 @@ import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
 import { FeedbackModal } from './components/common/FeedbackModal';
 import { trackUserSession } from './services/analyticsService';
 
+const getTabFromPath = (path: string): string => {
+  if (path === '/' || path === '/dashboard') return 'dashboard';
+  if (path.startsWith('/calendar')) return 'calendar';
+  if (path.startsWith('/workouts')) return 'workouts';
+  if (path.startsWith('/programs')) return 'programs';
+  if (path.startsWith('/progress')) return 'progress';
+  if (path.startsWith('/ai-coach') || path.startsWith('/ai_coach')) return 'ai_coach';
+  if (path.startsWith('/exercises')) return 'exercises';
+  if (path.startsWith('/prs')) return 'prs';
+  if (path.startsWith('/premium') || path.startsWith('/pricing')) return 'premium';
+  if (path.startsWith('/referrals')) return 'referrals';
+  if (path.startsWith('/profile')) return 'profile';
+  if (path.startsWith('/admin')) return 'admin';
+  return 'dashboard';
+};
+
+const getPathFromTab = (tab: string): string => {
+  if (tab === 'dashboard') return '/';
+  if (tab === 'calendar') return '/calendar';
+  if (tab === 'workouts') return '/workouts';
+  if (tab === 'programs') return '/programs';
+  if (tab === 'progress') return '/progress';
+  if (tab === 'ai_coach') return '/ai-coach';
+  if (tab === 'exercises') return '/exercises';
+  if (tab === 'prs') return '/prs';
+  if (tab === 'premium') return '/premium';
+  if (tab === 'referrals') return '/referrals';
+  if (tab === 'profile') return '/profile';
+  if (tab === 'admin') return '/admin';
+  return '';
+};
+
 const AppContent: React.FC = () => {
   const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout, startWorkout } = useWorkout();
   
   const [activeTab, setActiveTab] = useState<string>(() => {
-    if (window.location.pathname.startsWith('/admin')) {
-      return 'admin';
-    }
-    return 'dashboard';
+    return getTabFromPath(window.location.pathname);
   });
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAIImportOpen, setIsAIImportOpen] = useState(false);
@@ -45,6 +74,12 @@ const AppContent: React.FC = () => {
 
   React.useEffect(() => {
     trackUserSession(user.name);
+    
+    const handlePopState = () => {
+      setActiveTab(getTabFromPath(window.location.pathname));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [user.name]);
 
   // If user hasn't completed setup (first time or factory reset), show setup screen unless they are accessing admin
@@ -65,14 +100,12 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // If user starts workout, automatically switch to active_workout tab
   const handleNavigate = (tab: string) => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (tab === 'admin') {
-      window.history.pushState({}, '', '/admin');
-    } else if (window.location.pathname.startsWith('/admin')) {
-      window.history.pushState({}, '', '/');
+    const path = getPathFromTab(tab);
+    if (path && window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
     }
   };
 
