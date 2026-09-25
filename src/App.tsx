@@ -31,7 +31,12 @@ import { trackUserSession } from './services/analyticsService';
 const AppContent: React.FC = () => {
   const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout, startWorkout } = useWorkout();
   
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (window.location.pathname.startsWith('/admin')) {
+      return 'admin';
+    }
+    return 'dashboard';
+  });
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAIImportOpen, setIsAIImportOpen] = useState(false);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
@@ -42,8 +47,8 @@ const AppContent: React.FC = () => {
     trackUserSession(user.name);
   }, [user.name]);
 
-  // If user hasn't completed setup (first time or factory reset), show setup screen
-  if (!user.hasCompletedOnboarding) {
+  // If user hasn't completed setup (first time or factory reset), show setup screen unless they are accessing admin
+  if (!user.hasCompletedOnboarding && activeTab !== 'admin') {
     return (
       <>
         <InitialSetupScreen
@@ -64,6 +69,11 @@ const AppContent: React.FC = () => {
   const handleNavigate = (tab: string) => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (tab === 'admin') {
+      window.history.pushState({}, '', '/admin');
+    } else if (window.location.pathname.startsWith('/admin')) {
+      window.history.pushState({}, '', '/');
+    }
   };
 
   const isZenMode = activeWorkout !== null && (activeTab === 'workouts' || activeTab === 'active_workout');
