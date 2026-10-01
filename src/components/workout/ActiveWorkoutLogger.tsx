@@ -272,7 +272,17 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
               isExpanded={expandedExerciseIndex === exIdx} 
               onToggleExpand={() => setExpandedExerciseIndex(expandedExerciseIndex === exIdx ? -1 : exIdx)} 
               openInfoModal={openInfoModal} 
-              setActiveWeightEditor={setActiveWeightEditor} 
+              setActiveWeightEditor={setActiveWeightEditor}
+              isFirst={exIdx === 0}
+              isLast={exIdx === activeWorkout.exercises.length - 1}
+              onReplace={() => {
+                setReplacingExerciseId(workoutEx.exerciseId);
+                setReplacingExerciseIndex(exIdx);
+                setReplaceModalOpen(true);
+              }}
+              onToggleNotes={() => toggleNotes(workoutEx.exerciseId)}
+              showNotes={!!showNotesFor[workoutEx.exerciseId]}
+              onOpenYoutube={openYoutubeTutorial}
             />
           );
         })}
@@ -394,3 +404,4 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     </div>
   );
 };
+

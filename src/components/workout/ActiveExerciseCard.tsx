@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Clock, ChevronDown, ChevronUp, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Check, Clock, ChevronDown, ChevronUp, MoreHorizontal, Trash2, ArrowUp, ArrowDown, RefreshCw, StickyNote } from 'lucide-react';
 import { WorkoutExercise } from '../../types';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getExerciseById } from '../../data/mockExercises';
 import { getExerciseDisplayName } from '../../i18n/fitnessDictionary';
 import { useWorkout } from '../../context/WorkoutContext';
+import { YoutubeIcon } from '../common/YoutubeIcon';
 
 interface ActiveExerciseCardProps {
   workoutEx: WorkoutExercise;
@@ -14,6 +15,12 @@ interface ActiveExerciseCardProps {
   onToggleExpand: () => void;
   openInfoModal: (name: string, equipment?: string, muscle?: string) => void;
   setActiveWeightEditor: (args: any) => void;
+  isFirst: boolean;
+  isLast: boolean;
+  onReplace: () => void;
+  onToggleNotes: () => void;
+  showNotes: boolean;
+  onOpenYoutube: (query: string) => void;
 }
 
 export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
@@ -22,17 +29,26 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
   isExpanded,
   onToggleExpand,
   openInfoModal,
-  setActiveWeightEditor
+  setActiveWeightEditor,
+  isFirst,
+  isLast,
+  onReplace,
+  onToggleNotes,
+  showNotes,
+  onOpenYoutube
 }) => {
   const {
     updateSet,
     toggleSetCompleted,
     removeExerciseFromActiveWorkout,
+    reorderExercisesInActiveWorkout,
+    deleteSet,
     addSetToExercise,
     language
   } = useWorkout();
 
   const [showMenu, setShowMenu] = useState(false);
+  const [localNotes, setLocalNotes] = useState(workoutEx.notes || '');
 
   const exerciseInfo = getExerciseById(workoutEx.exerciseId);
   const isTimeOnly = exerciseInfo?.trackingType === 'time_only';
@@ -43,12 +59,35 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
   const totalSets = workoutEx.sets.length;
   const isAllCompleted = completedSetsCount === totalSets && totalSets > 0;
 
-  // Find the first uncompleted set
   const activeSetIdx = workoutEx.sets.findIndex(s => !s.isCompleted);
   const activeSet = activeSetIdx !== -1 ? workoutEx.sets[activeSetIdx] : null;
 
+  const handleDragEnd = (event: any, info: any, setIndex: number) => {
+    if (info.offset.x < -100 || info.offset.x > 100) {
+      deleteSet(exIdx, setIndex);
+    }
+  };
+
+  const renderSetWithSwipe = (set: any, idx: number, children: React.ReactNode) => (
+    <div key={set.id} className="relative overflow-hidden rounded-xl">
+      <div className="absolute inset-0 bg-red-500/20 flex items-center justify-between px-6">
+        <Trash2 className="w-5 h-5 text-red-500 opacity-50" />
+        <Trash2 className="w-5 h-5 text-red-500 opacity-50" />
+      </div>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        onDragEnd={(e, info) => handleDragEnd(e, info, idx)}
+        whileDrag={{ scale: 0.98 }}
+        className="relative bg-background-card"
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+
   return (
-    <div className={`bg-background-card border rounded-3xl overflow-hidden transition-all duration-500 shadow-card ${
+    <div className={`bg-background-card border rounded-3xl transition-all duration-500 shadow-card ${
       isExpanded 
         ? 'border-accent-cyan shadow-[0_0_15px_rgba(34,211,238,0.1)] ring-1 ring-accent-cyan/20' 
         : isAllCompleted 
@@ -56,7 +95,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
           : 'border-border'
     }`}>
       
-      {/* Header - Always visible, clicking toggles expand */}
+      {/* Header */}
       <div 
         className="p-4 flex items-center justify-between cursor-pointer"
         onClick={onToggleExpand}
@@ -70,14 +109,14 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
               exerciseName={displayName} 
               images={exerciseInfo?.images} 
               equipment={exerciseInfo?.equipment} 
-              className="w-full h-full"
+              className="w-full h-full rounded-xl"
             />
           </div>
           <div>
             <h3 className={`font-bold text-base transition-colors ${isExpanded ? 'text-accent-cyan' : 'text-white'}`}>
               {displayName}
             </h3>
-            <p className="text-xs font-mono font-semibold text-slate-400 mt-1">
+            <p className="text-xs font-mono font-semibold text-slate-400 mt-1 flex items-center gap-2">
               {isAllCompleted ? (
                 <span className="text-green-400 flex items-center gap-1"><Check className="w-3 h-3"/> Done</span>
               ) : (
@@ -88,13 +127,33 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Quick Tools */}
+          {isExpanded && (
+             <div className="flex items-center gap-1 mr-2" onClick={e => e.stopPropagation()}>
+               <button 
+                 onClick={() => onOpenYoutube(displayName)}
+                 className="p-2 text-slate-400 hover:text-red-500 transition-colors bg-background-elevated rounded-full"
+               >
+                 <YoutubeIcon className="w-4 h-4" />
+               </button>
+               <button 
+                 onClick={onToggleNotes}
+                 className={`p-2 transition-colors bg-background-elevated rounded-full ${showNotes ? 'text-accent-cyan' : 'text-slate-400 hover:text-white'}`}
+               >
+                 <StickyNote className="w-4 h-4" />
+               </button>
+             </div>
+          )}
+
           {/* Quick Menu */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-            className="p-2 text-slate-400 hover:text-white bg-background-elevated rounded-full"
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+              className={`p-2 rounded-full transition-colors ${showMenu ? 'bg-accent-cyan/20 text-accent-cyan' : 'text-slate-400 hover:text-white bg-background-elevated'}`}
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -105,26 +164,77 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-border/50"
+            className="border-t border-border/50 flex flex-col"
           >
-            {showMenu && (
-              <div className="px-4 py-3 bg-background-elevated flex items-center justify-end gap-3 border-b border-border/50">
-                <button 
-                  onClick={() => removeExerciseFromActiveWorkout(exIdx)}
-                  className="flex items-center gap-2 text-xs font-bold text-red-400 bg-red-950/40 px-3 py-1.5 rounded-lg"
+            {/* Context Menu Dropdown */}
+            <AnimatePresence>
+              {showMenu && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-background-elevated border-b border-border p-3 space-y-2"
                 >
-                  <Trash2 className="w-4 h-4" /> Remove Exercise
-                </button>
-              </div>
-            )}
+                  <button 
+                    onClick={() => { reorderExercisesInActiveWorkout(exIdx, exIdx - 1); setShowMenu(false); }}
+                    disabled={isFirst}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
+                  >
+                    <span className="text-sm font-bold text-slate-300">Move Up</span>
+                    <ArrowUp className="w-4 h-4 text-slate-400" />
+                  </button>
+                  <button 
+                    onClick={() => { reorderExercisesInActiveWorkout(exIdx, exIdx + 1); setShowMenu(false); }}
+                    disabled={isLast}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
+                  >
+                    <span className="text-sm font-bold text-slate-300">Move Down</span>
+                    <ArrowDown className="w-4 h-4 text-slate-400" />
+                  </button>
+                  <button 
+                    onClick={() => { onReplace(); setShowMenu(false); }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 transition-colors text-left"
+                  >
+                    <span className="text-sm font-bold text-slate-300">Replace Exercise</span>
+                    <RefreshCw className="w-4 h-4 text-slate-400" />
+                  </button>
+                  <button 
+                    onClick={() => { removeExerciseFromActiveWorkout(exIdx); setShowMenu(false); }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-950/40 transition-colors text-left"
+                  >
+                    <span className="text-sm font-bold text-red-400">Remove Exercise</span>
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="p-4 space-y-4 bg-background-card">
+            <div className="p-4 space-y-4 bg-background-card rounded-b-3xl">
               
+              {/* Notes Section */}
+              <AnimatePresence>
+                {showNotes && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <textarea 
+                      value={localNotes}
+                      onChange={(e) => setLocalNotes(e.target.value)}
+                      placeholder="Add specific notes, e.g. seat at 5, lean forward..."
+                      className="w-full bg-background-elevated border border-border rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:border-accent-cyan resize-none h-20"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Previously completed sets (Small Pills) */}
               {workoutEx.sets.map((set, idx) => {
                 if (!set.isCompleted) return null;
-                return (
-                  <div key={set.id} className="flex items-center justify-between bg-green-950/20 border border-green-500/20 px-4 py-2.5 rounded-xl">
+                return renderSetWithSwipe(set, idx, 
+                  <div className="flex items-center justify-between bg-green-950/20 border border-green-500/20 px-4 py-2.5 rounded-xl">
                     <span className="text-xs font-mono font-bold text-slate-400">Set {set.setNumber}</span>
                     <span className="text-sm font-bold text-green-400">
                       {isTimeOnly ? `${set.reps}s` : isRepsOnly ? `${set.reps} reps` : `${set.weight}kg × ${set.reps}`}
@@ -137,7 +247,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
               })}
 
               {/* ⭐ Smart Next Set ⭐ */}
-              {activeSet && (
+              {activeSet && renderSetWithSwipe(activeSet, activeSetIdx, (
                 <div className="bg-background-elevated border border-accent-cyan/30 rounded-2xl p-6 text-center shadow-[0_0_30px_rgba(34,211,238,0.05)] relative overflow-hidden my-4">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-cyan/0 via-accent-cyan to-accent-cyan/0 opacity-50" />
                   
@@ -192,13 +302,13 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
                     <Check className="w-6 h-6 stroke-[3]" /> Log Set
                   </button>
                 </div>
-              )}
+              ))}
 
               {/* Upcoming Sets (Small text) */}
               {workoutEx.sets.map((set, idx) => {
                 if (set.isCompleted || idx === activeSetIdx) return null;
-                return (
-                  <div key={set.id} className="flex items-center justify-between px-4 py-2 opacity-50">
+                return renderSetWithSwipe(set, idx, 
+                  <div className="flex items-center justify-between px-4 py-2 opacity-50 bg-background-card rounded-xl border border-border/50">
                     <span className="text-xs font-mono text-slate-500">Set {set.setNumber}</span>
                     <span className="text-xs text-slate-500 font-mono">
                       Target: {isTimeOnly ? `${set.reps}s` : isRepsOnly ? `${set.reps} reps` : `${set.weight}kg × ${set.reps}`}
