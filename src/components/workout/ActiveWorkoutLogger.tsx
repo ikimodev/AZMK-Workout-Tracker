@@ -68,7 +68,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
   const [addExerciseModalOpen, setAddExerciseModalOpen] = useState(false);
   const [showBenchmarkFor, setShowBenchmarkFor] = useState<Record<string, boolean>>({});
   const [showNotesFor, setShowNotesFor] = useState<Record<string, boolean>>({});
-  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+  const [activeMenuExIdx, setActiveMenuExIdx] = useState<number | null>(null);
 
   const toggleBenchmark = (exerciseId: string) => {
     setShowBenchmarkFor(prev => ({
@@ -283,6 +283,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
               onToggleNotes={() => toggleNotes(workoutEx.exerciseId)}
               showNotes={!!showNotesFor[workoutEx.exerciseId]}
               onOpenYoutube={openYoutubeTutorial}
+              onOpenMenu={() => setActiveMenuExIdx(exIdx)}
             />
           );
         })}
@@ -401,6 +402,90 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
         </div>
       )}
 
+      {/* Global Exercise Menu Bottom Sheet */}
+      <AnimatePresence>
+        {activeMenuExIdx !== null && (
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm">
+            <div className="absolute inset-0" onClick={() => setActiveMenuExIdx(null)} />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              onDragEnd={(e, info) => {
+                if (info.offset.y > 100) {
+                  setActiveMenuExIdx(null);
+                }
+              }}
+              className="bg-[#18181b] w-full max-w-md rounded-t-[2rem] p-6 pb-8 shadow-2xl border-t border-white/5 relative z-10"
+            >
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6" />
+              
+              <div className="space-y-1">
+                <button 
+                  onClick={() => {
+                    reorderExercisesInActiveWorkout(activeMenuExIdx, activeMenuExIdx - 1);
+                    setActiveMenuExIdx(null);
+                  }}
+                  disabled={activeMenuExIdx === 0}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
+                >
+                  <ArrowUp className="w-5 h-5 text-slate-300" />
+                  <span className="text-base font-medium text-slate-200">Reorder Up</span>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    reorderExercisesInActiveWorkout(activeMenuExIdx, activeMenuExIdx + 1);
+                    setActiveMenuExIdx(null);
+                  }}
+                  disabled={activeMenuExIdx === activeWorkout.exercises.length - 1}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
+                >
+                  <ArrowDown className="w-5 h-5 text-slate-300" />
+                  <span className="text-base font-medium text-slate-200">Reorder Down</span>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setReplacingExerciseId(activeWorkout.exercises[activeMenuExIdx].exerciseId);
+                    setReplacingExerciseIndex(activeMenuExIdx);
+                    setReplaceModalOpen(true);
+                    setActiveMenuExIdx(null);
+                  }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 transition-colors text-left"
+                >
+                  <RefreshCw className="w-5 h-5 text-slate-300" />
+                  <span className="text-base font-medium text-slate-200">Replace Exercise</span>
+                </button>
+
+                <button 
+                  onClick={() => { setActiveMenuExIdx(null); }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 transition-colors text-left"
+                >
+                  <Plus className="w-5 h-5 text-slate-300" />
+                  <span className="text-base font-medium text-slate-200">Add To Superset</span>
+                </button>
+                
+                <div className="h-px bg-white/10 my-2" />
+
+                <button 
+                  onClick={() => {
+                    removeExerciseFromActiveWorkout(activeMenuExIdx);
+                    setActiveMenuExIdx(null);
+                  }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-red-950/40 transition-colors text-left"
+                >
+                  <X className="w-5 h-5 text-red-500" />
+                  <span className="text-base font-medium text-red-500">Remove Exercise</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

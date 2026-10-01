@@ -21,6 +21,7 @@ interface ActiveExerciseCardProps {
   onToggleNotes: () => void;
   showNotes: boolean;
   onOpenYoutube: (query: string) => void;
+  onOpenMenu: () => void;
 }
 
 export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
@@ -35,19 +36,17 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
   onReplace,
   onToggleNotes,
   showNotes,
-  onOpenYoutube
+  onOpenYoutube,
+  onOpenMenu
 }) => {
   const {
     updateSet,
     toggleSetCompleted,
-    removeExerciseFromActiveWorkout,
-    reorderExercisesInActiveWorkout,
     deleteSet,
     addSetToExercise,
     language
   } = useWorkout();
 
-  const [showMenu, setShowMenu] = useState(false);
   const [localNotes, setLocalNotes] = useState(workoutEx.notes || '');
 
   const exerciseInfo = getExerciseById(workoutEx.exerciseId);
@@ -148,8 +147,8 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
           {/* Quick Menu */}
           <div className="relative">
             <button 
-              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-              className={`p-2 rounded-full transition-colors ${showMenu ? 'bg-accent-cyan/20 text-accent-cyan' : 'text-slate-400 hover:text-white bg-background-elevated'}`}
+              onClick={(e) => { e.stopPropagation(); onOpenMenu(); }}
+              className="p-2 rounded-full transition-colors text-slate-400 hover:text-white bg-background-elevated active:scale-95"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -166,49 +165,6 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
             exit={{ height: 0, opacity: 0 }}
             className="border-t border-border/50 flex flex-col"
           >
-            {/* Context Menu Dropdown */}
-            <AnimatePresence>
-              {showMenu && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="bg-background-elevated border-b border-border p-3 space-y-2"
-                >
-                  <button 
-                    onClick={() => { reorderExercisesInActiveWorkout(exIdx, exIdx - 1); setShowMenu(false); }}
-                    disabled={isFirst}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
-                  >
-                    <span className="text-sm font-bold text-slate-300">Move Up</span>
-                    <ArrowUp className="w-4 h-4 text-slate-400" />
-                  </button>
-                  <button 
-                    onClick={() => { reorderExercisesInActiveWorkout(exIdx, exIdx + 1); setShowMenu(false); }}
-                    disabled={isLast}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
-                  >
-                    <span className="text-sm font-bold text-slate-300">Move Down</span>
-                    <ArrowDown className="w-4 h-4 text-slate-400" />
-                  </button>
-                  <button 
-                    onClick={() => { onReplace(); setShowMenu(false); }}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 transition-colors text-left"
-                  >
-                    <span className="text-sm font-bold text-slate-300">Replace Exercise</span>
-                    <RefreshCw className="w-4 h-4 text-slate-400" />
-                  </button>
-                  <button 
-                    onClick={() => { removeExerciseFromActiveWorkout(exIdx); setShowMenu(false); }}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-950/40 transition-colors text-left"
-                  >
-                    <span className="text-sm font-bold text-red-400">Remove Exercise</span>
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <div className="p-4 space-y-4 bg-background-card rounded-b-3xl">
               
               {/* Notes Section */}
