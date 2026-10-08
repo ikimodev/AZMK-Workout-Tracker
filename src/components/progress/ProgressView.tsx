@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, 
-  Weight, 
-  Trophy, 
-  Calendar, 
-  Activity, 
-  Flame, 
-  Zap,
+  Search,
+  ChevronDown,
+  Sparkles,
+  Lock,
   ArrowUpRight,
-  Filter
+  Activity,
+  Plus
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
-import { MOCK_EXERCISES, getExerciseById } from '../../data/mockExercises';
+import { getExerciseById } from '../../data/mockExercises';
 import { calculate1RM, getExerciseSummary } from '../../services/progressiveOverload';
 import { 
   ResponsiveContainer, 
@@ -20,20 +19,18 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  CartesianGrid, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell 
+  CartesianGrid 
 } from 'recharts';
 
-export const ProgressView: React.FC = () => {
-  const { history, prs } = useWorkout();
+interface ProgressViewProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const ProgressView: React.FC<ProgressViewProps> = ({ onNavigate }) => {
+  const { history, user, language, startTodaysAutocompleteWorkout } = useWorkout();
   
   const [selectedExerciseId, setSelectedExerciseId] = useState('barbell_bench_press');
-  const [timeFilter, setTimeFilter] = useState<'4w' | '8w' | '3m' | '6m' | '1y' | 'all'>('8w');
-  const [activeTab, setActiveTab] = useState<'core' | 'advanced'>('core');
+  const [timeFilter, setTimeFilter] = useState('8w');
 
   const selectedExercise = getExerciseById(selectedExerciseId);
   const exerciseSummary = getExerciseSummary(selectedExerciseId, history);
@@ -60,47 +57,23 @@ export const ProgressView: React.FC = () => {
     };
   });
 
-  // Prepare weekly total volume chart
-  const weeklyVolumeMap: Record<string, number> = {};
-  history.filter(s => s.isCompleted).forEach(s => {
-    const d = new Date(s.date);
-    const weekLabel = `${d.getMonth() + 1}/${d.getDate()}`;
-    weeklyVolumeMap[weekLabel] = (weeklyVolumeMap[weekLabel] || 0) + s.totalVolumeKg;
-  });
+  const hasEnoughData = progressionData.length >= 2;
 
-  const weeklyVolumeData = Object.entries(weeklyVolumeMap).slice(-8).map(([label, vol]) => ({
-    week: label,
-    volume: vol
-  }));
+  // Mock progression data for ghost chart
+  const ghostData = [
+    { date: 'W1', weight: 40 },
+    { date: 'W2', weight: 45 },
+    { date: 'W3', weight: 55 },
+    { date: 'W4', weight: 65 },
+    { date: 'W5', weight: 70 },
+  ];
 
-  // Muscle group volume distribution
-  const muscleColors: Record<string, string> = {
-    Chest: '#10B981',
-    Back: '#06B6D4',
-    Quads: '#6366F1',
-    Hamstrings: '#8B5CF6',
-    Shoulders: '#F59E0B',
-    Biceps: '#EC4899',
-    Triceps: '#F43F5E',
-    Core: '#14B8A6'
-  };
-
-  const muscleVolumeMap: Record<string, number> = {};
-  history.filter(s => s.isCompleted).forEach(session => {
-    session.exercises.forEach(we => {
-      const info = getExerciseById(we.exerciseId);
-      if (!info) return;
-      const vol = we.sets.filter(s => s.isCompleted).reduce((sum, s) => sum + (s.weight * s.reps), 0);
-      muscleVolumeMap[info.muscleGroup] = (muscleVolumeMap[info.muscleGroup] || 0) + vol;
-    });
-  });
-
-  const musclePieData = Object.entries(muscleVolumeMap).map(([name, value]) => ({
-    name,
-    value,
-    color: muscleColors[name] || '#94A3B8'
-  }));
-
+  // Calculate Next AI Target (mock logic for UI)
+  const currentBestWeight = exerciseSummary.allTimeBestWeight || 0;
+  const currentBestReps = exerciseSummary.allTimeBestReps || 0;
+  const nextTargetWeight = currentBestWeight > 0 ? currentBestWeight + 2.5 : 40;
+  const nextTargetReps = currentBestReps > 0 ? currentBestReps : 8;
+  
   // Popular exercises to filter
   const primaryTrackedExercises = [
     { id: 'barbell_bench_press', name: 'Bench Press' },
@@ -112,237 +85,223 @@ export const ProgressView: React.FC = () => {
     { id: 'barbell_row', name: 'Barbell Row' }
   ];
 
-  return (
-    <div className="space-y-6 pb-12 animate-fade-in max-w-5xl mx-auto">
-      
-      {/* Top Banner */}
-      <div className="bg-background-card border border-border rounded-3xl p-6 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-mono font-bold tracking-wider text-accent-emerald">ANALYTICS & PR ENGINE</span>
-            </div>
-            <h1 className="text-2xl font-black text-white mt-1">Progression & Performance</h1>
-            <p className="text-xs text-slate-400 mt-1">Calculated using empirical formulas and stored workout sessions.</p>
-          </div>
+  const isPro = user?.tier === 'premium';
 
-          {/* Sub-tab Switcher: Core vs Advanced */}
-          <div className="flex items-center p-1 bg-background-elevated rounded-2xl border border-border self-start sm:self-auto">
-            <button
-              onClick={() => setActiveTab('core')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'core'
-                  ? 'bg-accent-emerald text-black shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Core Progression
-            </button>
-            <button
-              onClick={() => setActiveTab('advanced')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'advanced'
-                  ? 'bg-accent-emerald text-black shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Advanced Analytics
-            </button>
-          </div>
+  return (
+    <div className="space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+      
+      {/* 1. Header & Exercise Chips */}
+      <div className="pt-2">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <h1 className="text-lg font-black text-white">{language === 'ar' ? 'التطور والإحصائيات' : 'Progression & Analytics'}</h1>
+          <button className="p-2 rounded-full bg-background-elevated text-slate-400 hover:text-white transition-colors">
+            <Search className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Exercise Quick Selector Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-5 pb-1">
-          {primaryTrackedExercises.map(ex => (
-            <button
-              key={ex.id}
-              onClick={() => setSelectedExerciseId(ex.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                selectedExerciseId === ex.id
-                  ? 'bg-accent-emerald/15 text-accent-emerald border-accent-emerald shadow-glow-sm'
-                  : 'bg-background-elevated text-slate-300 border-border hover:border-slate-600'
-              }`}
-            >
-              {ex.name}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar px-2">
+          {primaryTrackedExercises.map(ex => {
+            const exSummary = getExerciseSummary(ex.id, history);
+            const isSelected = selectedExerciseId === ex.id;
+            return (
+              <button
+                key={ex.id}
+                onClick={() => setSelectedExerciseId(ex.id)}
+                className={`flex flex-col items-center justify-center px-4 py-2 rounded-2xl whitespace-nowrap transition-all border ${
+                  isSelected
+                    ? 'bg-accent-emerald/15 text-accent-emerald border-accent-emerald shadow-glow-sm'
+                    : 'bg-background-card text-slate-300 border-border hover:border-slate-600'
+                }`}
+              >
+                <span className={`text-[11px] sm:text-xs font-bold ${isSelected ? 'text-accent-emerald' : 'text-slate-300'}`}>
+                  {ex.name}
+                </span>
+                <span className={`text-[9px] font-mono mt-0.5 ${isSelected ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  {exSummary.allTimeBestWeight > 0 ? `${exSummary.allTimeBestWeight} kg` : '--'}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {activeTab === 'core' && (
-        <>
-          {/* Key Indicators for the selected exercise */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            
-            <div className="p-4 rounded-2xl bg-background-card border border-border">
-              <span className="text-xs text-slate-400 font-semibold uppercase">Current Best</span>
-              <p className="text-xl sm:text-2xl font-black font-mono text-white mt-1">
-                {exerciseSummary.allTimeBestWeight} kg <span className="text-xs text-slate-400 font-normal">× {exerciseSummary.allTimeBestReps}</span>
-              </p>
-              <span className="text-[11px] text-accent-emerald font-mono">Verified in history</span>
+      {/* 2. AI SMART TARGET (Teaser style instead of Full Blur) */}
+      <div className="mx-2 p-[1px] rounded-3xl bg-gradient-to-r from-accent-emerald/40 to-accent-cyan/40 shadow-glow-sm">
+        <div className="p-5 rounded-[23px] bg-background-card flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-accent-emerald" />
+              <h3 className="text-xs font-extrabold text-accent-emerald uppercase tracking-widest">
+                {language === 'ar' ? 'هدف الجلسة القادمة ⚡' : 'AI Target for Next Workout ⚡'}
+              </h3>
             </div>
+            {!isPro && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-bold border border-amber-500/20">
+                PRO 👑
+              </span>
+            )}
+          </div>
 
-            <div className="p-4 rounded-2xl bg-background-card border border-border">
-              <span className="text-xs text-slate-400 font-semibold uppercase">Previous Benchmark</span>
-              <p className="text-xl sm:text-2xl font-black font-mono text-slate-300 mt-1">
-                {Math.round(exerciseSummary.allTimeBestWeight * 0.94)} kg
-              </p>
-              <span className="text-[11px] text-slate-400 font-mono">Baseline starting point</span>
-            </div>
+          <p className="text-sm sm:text-base font-bold text-slate-200 leading-snug mb-3">
+            {language === 'ar' ? 'استناداً لجلستك الأخيرة:' : 'Based on your last session:'} <span className="text-white">{nextTargetWeight} kg × {nextTargetReps} reps</span>
+          </p>
 
-            <div className="p-4 rounded-2xl bg-background-card border border-border">
-              <span className="text-xs text-slate-400 font-semibold uppercase">Progression</span>
-              <div className="flex items-center gap-1 text-accent-emerald font-mono font-bold text-xl sm:text-2xl mt-1">
-                <ArrowUpRight className="w-5 h-5" />
+          {!isPro ? (
+            <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-600/10 border border-amber-500/30 text-amber-500 font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+              <Lock className="w-3.5 h-3.5" />
+              {language === 'ar' ? 'توصية الذكاء الاصطناعي مقفلة للمشتركين 👑' : 'Unlock AI Recommendations 👑'}
+            </button>
+          ) : (
+            <div className="inline-flex items-center self-start gap-1.5 px-3 py-1.5 rounded-lg bg-accent-emerald/10 border border-accent-emerald/20 text-accent-emerald text-xs font-bold">
+               <TrendingUp className="w-3.5 h-3.5" />
+               <span>{language === 'ar' ? `زيادة مقترحة +${2.5} كجم` : '+2.5 kg Overload Recommendation'}</span>
+             </div>
+          )}
+        </div>
+      </div>
+
+      {/* 3. COMPACT 2x1 METRIC BANNER */}
+      <div className="mx-2 grid grid-cols-2 rounded-3xl bg-background-card border border-border divide-x divide-border overflow-hidden shadow-card">
+        <div className="p-4 flex flex-col justify-center">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{language === 'ar' ? 'أقصى وزن تقديري' : 'Estimated 1RM'}</span>
+          <div className="flex items-end gap-2">
+            <span className="text-xl font-black font-mono text-accent-cyan">
+              {exerciseSummary.allTimeBest1RM > 0 ? exerciseSummary.allTimeBest1RM : '--'} <span className="text-xs text-slate-500 font-normal">kg</span>
+            </span>
+            {exerciseSummary.improvementPercentage > 0 && (
+              <div className="flex items-center text-accent-emerald text-[11px] font-bold pb-1">
+                <ArrowUpRight className="w-3 h-3" />
                 <span>+{exerciseSummary.improvementPercentage}%</span>
               </div>
-              <span className="text-[11px] text-emerald-400 font-mono">Above target rate</span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-background-card border border-border">
-              <span className="text-xs text-slate-400 font-semibold uppercase">Estimated 1RM</span>
-              <p className="text-xl sm:text-2xl font-black font-mono text-accent-cyan mt-1">
-                {exerciseSummary.allTimeBest1RM} kg
-              </p>
-              <span className="text-[11px] text-slate-400 font-mono">Brzycki formula</span>
-            </div>
-
+            )}
           </div>
-
-          {/* 1RM & Weight Progression Chart */}
-          <div className="bg-background-card border border-border rounded-3xl p-6 shadow-card space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="font-extrabold text-lg text-white">
-                  {selectedExercise?.name} — Strength Curve
-                </h3>
-                <p className="text-xs text-slate-400">Load lifted on top working sets over time</p>
-              </div>
-
-              {/* Time Range Filter */}
-              <div className="flex items-center gap-1 p-1 bg-background-elevated rounded-xl border border-border text-xs font-mono">
-                {(['4w', '8w', '3m', '6m', '1y', 'all'] as const).map(tf => (
-                  <button
-                    key={tf}
-                    onClick={() => setTimeFilter(tf)}
-                    className={`px-2.5 py-1 rounded-lg uppercase font-bold transition-all ${
-                      timeFilter === tf
-                        ? 'bg-accent-emerald text-black'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {tf}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Recharts Area Chart */}
-            <div className="h-72 w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={progressionData.length > 0 ? progressionData : [{ date: 'Start', weight: 50, reps: 8, oneRM: 60, volume: 400 }]}>
-                  <defs>
-                    <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.0}/>
-                    </linearGradient>
-                    <linearGradient id="cyanGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#06B6D4" stopOpacity={0.0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
-                  <XAxis dataKey="date" stroke="#64748B" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={12} domain={['dataMin - 5', 'dataMax + 5']} tickLine={false} unit="kg" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#151C2C', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
-                    itemStyle={{ color: '#10B981' }}
-                  />
-                  <Area type="monotone" dataKey="oneRM" name="Estimated 1RM" stroke="#06B6D4" strokeWidth={2} fillOpacity={1} fill="url(#cyanGradient)" />
-                  <Area type="monotone" dataKey="weight" name="Working Set Weight" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#emeraldGradient)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="flex items-center justify-center gap-6 text-xs text-slate-400 font-medium pt-2">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-accent-emerald" />
-                <span>Working Set Load (kg)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-accent-cyan" />
-                <span>Estimated 1RM (kg)</span>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {activeTab === 'advanced' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up">
-          
-          {/* Weekly Volume Bar Chart */}
-          <div className="bg-background-card border border-border rounded-3xl p-6 shadow-card space-y-4">
-            <div>
-              <h3 className="font-extrabold text-base text-white">Weekly Training Volume (kg)</h3>
-              <p className="text-xs text-slate-400">Total workload lifted per week</p>
-            </div>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyVolumeData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
-                  <XAxis dataKey="week" stroke="#64748B" fontSize={11} />
-                  <YAxis stroke="#64748B" fontSize={11} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#151C2C', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
-                  />
-                  <Bar dataKey="volume" name="Volume (kg)" fill="#10B981" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Muscle Group Distribution */}
-          <div className="bg-background-card border border-border rounded-3xl p-6 shadow-card space-y-4">
-            <div>
-              <h3 className="font-extrabold text-base text-white">Muscle Group Volume Distribution</h3>
-              <p className="text-xs text-slate-400">Proportion of workload across body regions</p>
-            </div>
-
-            <div className="h-48 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={musclePieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {musclePieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#151C2C', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {musclePieData.map(item => (
-                <div key={item.name} className="flex items-center gap-2 text-slate-300">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="truncate">{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
-      )}
+
+        <div className="p-4 flex flex-col justify-center">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{language === 'ar' ? 'أفضل أداء حالي' : 'Current Best'}</span>
+          <div className="flex items-end gap-2">
+            <span className="text-xl font-black font-mono text-white">
+              {exerciseSummary.allTimeBestWeight > 0 ? exerciseSummary.allTimeBestWeight : '--'} <span className="text-xs text-slate-500 font-normal">kg</span>
+            </span>
+            {exerciseSummary.allTimeBestReps > 0 && (
+              <span className="text-sm font-bold text-slate-400 pb-0.5">
+                × {exerciseSummary.allTimeBestReps}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. STRENGTH CURVE */}
+      <div className="mx-2 p-5 rounded-3xl bg-background-card border border-border shadow-card relative overflow-hidden">
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
+            <Activity className="w-4 h-4 text-accent-emerald" />
+            {language === 'ar' ? 'منحنى القوة' : 'Strength Curve'}
+          </h3>
+          <div className="relative">
+             <select 
+               value={timeFilter}
+               onChange={(e) => setTimeFilter(e.target.value)}
+               className="appearance-none pl-3 pr-8 py-1.5 rounded-lg bg-background-elevated border border-border text-xs font-bold text-white outline-none cursor-pointer"
+             >
+               <option value="4w">{language === 'ar' ? '4 أسابيع' : '4 Weeks'}</option>
+               <option value="8w">{language === 'ar' ? '8 أسابيع' : '8 Weeks'}</option>
+               <option value="3m">{language === 'ar' ? '3 أشهر' : '3 Months'}</option>
+               <option value="6m">{language === 'ar' ? '6 أشهر' : '6 Months'}</option>
+               <option value="all">{language === 'ar' ? 'الكل' : 'All Time'}</option>
+             </select>
+             <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="h-48 w-full -ml-3 relative z-10">
+          {!hasEnoughData ? (
+             <div className="absolute inset-0 flex flex-col items-center justify-center pl-3">
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={ghostData}>
+                   <Area type="monotone" dataKey="weight" stroke="#334155" strokeWidth={2} strokeDasharray="5 5" fill="none" isAnimationActive={false} />
+                 </AreaChart>
+               </ResponsiveContainer>
+               <div className="absolute inset-0 flex items-center justify-center text-center px-8 bg-background-card/60 backdrop-blur-[1px]">
+                 <p className="text-xs font-bold text-slate-400 leading-relaxed max-w-[200px]">
+                   {language === 'ar' ? 'سجل جلستين على الأقل لرسم منحنى قوتك وتتبع أوزانك تلقائياً' : 'Log at least 2 sessions to draw your strength curve automatically'}
+                 </p>
+               </div>
+             </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={progressionData}>
+                <defs>
+                  <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
+                <XAxis dataKey="date" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis domain={['dataMin - 2.5', 'dataMax + 5']} stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} width={40} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#151C2C', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                  itemStyle={{ color: '#10B981', fontWeight: 'bold' }}
+                />
+                <Area type="monotone" dataKey="weight" name="Working Weight" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#emeraldGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* 5. RECENT WORKING SETS STRIP */}
+      <div className="mx-2 p-5 rounded-3xl bg-background-card border border-border shadow-card">
+        <h3 className="font-extrabold text-sm text-white mb-4">
+          {language === 'ar' ? 'الجلسات الأخيرة' : 'Recent Working Sets'} <span className="text-slate-500 font-normal ml-1">{language === 'ar' ? '(آخر 3)' : '(Last 3)'}</span>
+        </h3>
+        
+        {exerciseSessions.length > 0 ? (
+          <div className="space-y-3">
+            {exerciseSessions.slice(-3).reverse().map((session, i) => {
+              const exInstance = session.exercises.find(e => e.exerciseId === selectedExerciseId);
+              const sets = exInstance?.sets.filter(s => s.isCompleted) || [];
+              const setString = sets.map(s => s.reps).join(', ');
+              const weightStr = sets.length > 0 ? `${sets[0].weight} kg` : '0 kg';
+              const dateStr = new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-emerald shrink-0" />
+                  <div className="flex-1 flex items-center justify-between text-sm">
+                    <span className="text-slate-300 font-mono w-16">{dateStr}:</span>
+                    <span className="text-white font-bold font-mono">
+                      {weightStr} × {setString}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2 opacity-50">
+              <div className="flex items-center justify-between text-xs font-mono text-slate-400 p-2 rounded-lg bg-background-elevated border border-border border-dashed">
+                <span>Set 1</span>
+                <span>-- kg × -- reps</span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono text-slate-400 p-2 rounded-lg bg-background-elevated border border-border border-dashed">
+                <span>Set 2</span>
+                <span>-- kg × -- reps</span>
+              </div>
+            </div>
+            <button 
+              onClick={startTodaysAutocompleteWorkout}
+              className="w-full py-2.5 rounded-xl bg-background-elevated border border-accent-emerald/30 text-accent-emerald text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 hover:bg-accent-emerald/10"
+            >
+              <Plus className="w-4 h-4" />
+              {language === 'ar' ? 'سجل تمرينك الأول الآن' : 'Log Session Now'}
+            </button>
+          </div>
+        )}
+      </div>
 
     </div>
   );

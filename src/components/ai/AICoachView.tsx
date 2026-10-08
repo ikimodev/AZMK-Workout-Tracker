@@ -35,7 +35,8 @@ export const AICoachView: React.FC<AICoachViewProps> = ({ onNavigate }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isFree = user.tier === 'free';
-  const usedQuestions = user.aiQuestionsUsedToday || 0;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const usedQuestions = user.aiQuestionsLastUsedDate === todayStr ? (user.aiQuestionsUsedToday || 0) : 0;
   const maxFreeQuestions = 5;
   const isLimitReached = isFree && usedQuestions >= maxFreeQuestions;
 

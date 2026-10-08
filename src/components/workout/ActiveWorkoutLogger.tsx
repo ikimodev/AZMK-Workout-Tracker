@@ -1,35 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Play, 
-  Check, 
-  Trash2, 
-  Copy, 
-  RefreshCw, 
-  ArrowUp, 
-  ArrowDown, 
-  Sparkles, 
-  Clock, 
-  Weight, 
-  Trophy, 
-  AlertCircle,
-  HelpCircle,
-  MoreVertical,
-  Flame,
-  Dumbbell,
-  Plus,
-  X,
-  MoreHorizontal,
-  FileText,
-  Calendar
+  Play, Check, Trash2, Copy, RefreshCw, ArrowUp, ArrowDown, Sparkles, Clock, Weight, Trophy, AlertCircle, HelpCircle, MoreVertical, Flame, Dumbbell, Plus, X, MoreHorizontal, FileText, Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { YoutubeIcon } from '../common/YoutubeIcon';
-import { ExerciseThumbnail } from './ExerciseThumbnail';
-import { SetTimer } from './SetTimer';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getExerciseById, getAllExercises } from '../../data/mockExercises';
-import { getExerciseSummary, getNextSetRecommendation } from '../../services/progressiveOverload';
-import { getExerciseDisplayName, getMuscleGroupDisplayName } from '../../i18n/fitnessDictionary';
 import { ExerciseReplaceModal } from './ExerciseReplaceModal';
 import ExerciseInfoModal from './ExerciseInfoModal';
 import { ActiveExerciseCard } from './ActiveExerciseCard';
@@ -41,60 +16,43 @@ interface ActiveWorkoutLoggerProps {
 
 export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavigate }) => {
   const { 
-    activeWorkout, 
-    workoutDuration, 
-    history,
-    addSetToExercise, 
-    updateSet, 
-    updateExercise, updateWorkoutDate,
-    deleteSet, 
-    duplicateSet, 
-    toggleSetCompleted, 
-    addExerciseToActiveWorkout, 
-    replaceExerciseInActiveWorkout, 
-    removeExerciseFromActiveWorkout, 
-    reorderExercisesInActiveWorkout,
-    finishActiveWorkout, 
-    cancelActiveWorkout,
-    language,
-    t
+    activeWorkout, workoutDuration, history, addSetToExercise, updateSet, updateExercise, updateWorkoutDate, deleteSet, duplicateSet, toggleSetCompleted, addExerciseToActiveWorkout, replaceExerciseInActiveWorkout, removeExerciseFromActiveWorkout, reorderExercisesInActiveWorkout, finishActiveWorkout, cancelActiveWorkout, language, t, isRestTimerActive
   } = useWorkout();
 
-  // State for modals
-  const [expandedExerciseIndex, setExpandedExerciseIndex] = useState<number>(0);
+  const [activeExerciseIndex, setActiveExerciseIndex] = useState<number>(0);
   const [replaceModalOpen, setReplaceModalOpen] = useState(false);
   const [replacingExerciseIndex, setReplacingExerciseIndex] = useState<number | null>(null);
   const [replacingExerciseId, setReplacingExerciseId] = useState<string | null>(null);
   const [addExerciseModalOpen, setAddExerciseModalOpen] = useState(false);
-  const [showBenchmarkFor, setShowBenchmarkFor] = useState<Record<string, boolean>>({});
   const [showNotesFor, setShowNotesFor] = useState<Record<string, boolean>>({});
   const [activeMenuExIdx, setActiveMenuExIdx] = useState<number | null>(null);
-
-  const toggleBenchmark = (exerciseId: string) => {
-    setShowBenchmarkFor(prev => ({
-      ...prev,
-      [exerciseId]: !prev[exerciseId]
-    }));
-  };
-
-  const toggleNotes = (exerciseId: string) => {
-    setShowNotesFor(prev => ({
-      ...prev,
-      [exerciseId]: !prev[exerciseId]
-    }));
-  };
-
   const [searchExQuery, setSearchExQuery] = useState('');
-  const [activeRpeSelector, setActiveRpeSelector] = useState<{ exIdx: number; setIdx: number } | null>(null);
-  
-  // State for Weight Modal
   const [activeWeightEditor, setActiveWeightEditor] = useState<{ exIdx: number; setIdx: number; initialWeight: number } | null>(null);
-
-  // Exercise Info Modal State
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [infoExerciseName, setInfoExerciseName] = useState('');
   const [infoExerciseEquipment, setInfoExerciseEquipment] = useState('');
   const [infoExerciseMuscle, setInfoExerciseMuscle] = useState('');
+  const [completedExercises, setCompletedExercises] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!activeWorkout) return;
+    const currentWorkoutEx = activeWorkout.exercises[activeExerciseIndex];
+    if (!currentWorkoutEx) return;
+    
+    const totalSets = currentWorkoutEx.sets.length;
+    const completedSetsCount = currentWorkoutEx.sets.filter(s => s.isCompleted).length;
+    const isCompleted = totalSets > 0 && completedSetsCount === totalSets;
+
+    if (isCompleted && !completedExercises[currentWorkoutEx.exerciseId]) {
+      setCompletedExercises(prev => ({ ...prev, [currentWorkoutEx.exerciseId]: true }));
+      if (activeExerciseIndex < activeWorkout.exercises.length - 1) {
+        const timer = setTimeout(() => {
+          setActiveExerciseIndex(i => i + 1);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [activeWorkout, activeExerciseIndex, completedExercises]);
 
   if (!activeWorkout) {
     return (
@@ -102,12 +60,7 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
         <Dumbbell className="w-12 h-12 text-slate-500 mx-auto mb-3 animate-pulse" />
         <h2 className="text-xl font-bold text-white mb-2">{t('noActiveWorkout')}</h2>
         <p className="text-sm text-slate-400 mb-6" dir="auto">{t('noActiveWorkoutDesc')}</p>
-        <button
-          onClick={() => onNavigate('dashboard')}
-          className="px-6 py-3 rounded-2xl bg-accent-emerald text-black font-extrabold text-sm shadow-glow-sm"
-        >
-          {t('goToDashboard')}
-        </button>
+        <button onClick={() => onNavigate('dashboard')} className="px-6 py-3 rounded-2xl bg-accent-emerald text-black font-extrabold text-sm shadow-glow-sm">{t('goToDashboard')}</button>
       </div>
     );
   }
@@ -118,375 +71,211 @@ export const ActiveWorkoutLogger: React.FC<ActiveWorkoutLoggerProps> = ({ onNavi
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const openReplaceModal = (index: number, exerciseId: string) => {
-    setReplacingExerciseIndex(index);
-    setReplacingExerciseId(exerciseId);
-    setReplaceModalOpen(true);
-  };
-
-  const openYoutubeTutorial = (query: string) => {
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-    window.open(url, '_blank');
-  };
-
-  // Filtered exercise library for "Add Exercise" modal
   const filteredExercisesToAdd = getAllExercises().filter(ex => 
     ex.name.toLowerCase().includes(searchExQuery.toLowerCase()) ||
     ex.muscleGroup.toLowerCase().includes(searchExQuery.toLowerCase())
   );
 
   const openInfoModal = (name: string, equipment?: string, muscle?: string) => {
-    setInfoExerciseName(name);
-    setInfoExerciseEquipment(equipment || '');
-    setInfoExerciseMuscle(muscle || '');
-    setInfoModalOpen(true);
+    setInfoExerciseName(name); setInfoExerciseEquipment(equipment || ''); setInfoExerciseMuscle(muscle || ''); setInfoModalOpen(true);
   };
 
   const handleSaveWeight = (exIdx: number, setIdx: number, newWeight: number) => {
     if (!activeWorkout) return;
     const exercise = activeWorkout.exercises[exIdx];
     if (!exercise) return;
-    
-    const targetSet = exercise.sets[setIdx];
-    const oldWeight = targetSet.weight || 0;
-
-    // Update the specific set
+    const oldWeight = exercise.sets[setIdx].weight || 0;
     updateSet(exIdx, setIdx, { weight: newWeight });
-
-    // Auto-propagate logic: If this is the FIRST set, update subsequent uncompleted sets 
-    // IF their current weight matches the old weight of the first set (meaning user hasn't diverged them).
     if (setIdx === 0) {
       exercise.sets.forEach((set, idx) => {
-        if (idx > 0 && !set.isCompleted) {
-          // If the subsequent set has the exact same weight as the first set's old weight,
-          // it means they are linked in the user's mind (or default). Update it!
-          if ((set.weight || 0) === oldWeight) {
-            updateSet(exIdx, idx, { weight: newWeight });
-          }
+        if (idx > 0 && !set.isCompleted && (set.weight || 0) === oldWeight) {
+          updateSet(exIdx, idx, { weight: newWeight });
         }
       });
     }
   };
 
+  const goToNextExercise = () => {
+    if (activeExerciseIndex < activeWorkout.exercises.length - 1) setActiveExerciseIndex(i => i + 1);
+  };
+  const goToPrevExercise = () => {
+    if (activeExerciseIndex > 0) setActiveExerciseIndex(i => i - 1);
+  };
+
+  if (activeExerciseIndex >= activeWorkout.exercises.length && activeWorkout.exercises.length > 0) {
+    setActiveExerciseIndex(activeWorkout.exercises.length - 1);
+  }
+
+  const currentWorkoutEx = activeWorkout.exercises[activeExerciseIndex];
+
   return (
-    <div className="space-y-6 pb-20 animate-fade-in max-w-4xl mx-auto">
-      
-      {/* Top Header & Sticky Action Bar - Highly compact for mobile */}
+    <div className={`space-y-4 pb-[80px] animate-fade-in max-w-xl mx-auto ${isRestTimerActive ? 'pb-[160px]' : ''}`}>
       <div className="bg-background-card/85 border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 sticky top-2 sm:top-6 z-40 backdrop-blur-xl">
         <div className="flex items-center justify-between w-full sm:w-auto">
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {!activeWorkout.isManualLog ? (
-                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-accent-emerald animate-ping" />
-              ) : (
-                <Calendar className="w-3 h-3 text-accent-indigo" />
-              )}
+              {!activeWorkout.isManualLog ? <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-accent-emerald animate-ping" /> : <Calendar className="w-3 h-3 text-accent-indigo" />}
               <span className={`text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider leading-none ${activeWorkout.isManualLog ? 'text-accent-indigo' : 'text-accent-emerald'}`}>
                 {activeWorkout.isManualLog ? 'MANUAL LOG' : t('liveLoggingMode')}
               </span>
             </div>
             <h1 className="text-base sm:text-2xl font-black text-white mt-1 line-clamp-1">{activeWorkout.name}</h1>
           </div>
-          
-          {/* Mobile Timer or Date Picker */}
-          {activeWorkout.isManualLog ? (
-            <input 
-              type="date"
-              value={activeWorkout.date.split('T')[0]}
-              onChange={(e) => updateWorkoutDate(new Date(e.target.value).toISOString())}
-              className="sm:hidden bg-background-elevated border border-border text-white text-xs px-2 py-1 rounded-lg"
-            />
-          ) : (
+          {!activeWorkout.isManualLog && (
             <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-background-elevated border border-border text-white font-mono font-bold text-[11px]">
               <Clock className="w-3 h-3 text-accent-emerald" />
               <span>{formatTimer(workoutDuration)}</span>
             </div>
           )}
         </div>
-
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-          {/* Desktop Timer or Date Picker */}
-          {activeWorkout.isManualLog ? (
-            <input 
-              type="date"
-              value={activeWorkout.date.split('T')[0]}
-              onChange={(e) => updateWorkoutDate(new Date(e.target.value).toISOString())}
-              className="hidden sm:block bg-background-elevated border border-border text-white text-sm px-3 py-1.5 rounded-xl"
-            />
-          ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background-elevated border border-border text-white font-mono font-bold text-sm">
-              <Clock className="w-4 h-4 text-accent-emerald" />
-              <span>{formatTimer(workoutDuration)}</span>
-            </div>
-          )}
-
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* Discard Workout */}
-            <button
-              onClick={() => {
-                if (confirm(t('discardConfirm'))) {
-                  cancelActiveWorkout();
-                  onNavigate('dashboard');
-                }
-              }}
-              className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 rounded-xl bg-background-elevated hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 text-[11px] sm:text-xs font-bold border border-border transition-all flex items-center justify-center gap-1"
-            >
-              <X className="w-3.5 h-3.5" />
-              <span>{t('discard')}</span>
+            <button onClick={() => { if (confirm(t('discardConfirm'))) { cancelActiveWorkout(); onNavigate('dashboard'); } }} className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 rounded-xl bg-background-elevated hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 text-[11px] sm:text-xs font-bold border border-border transition-all flex items-center justify-center gap-1">
+              <X className="w-3.5 h-3.5" /><span>{t('discard')}</span>
             </button>
-
-            {/* Finish Workout CTA */}
-            <button
-              onClick={() => {
-                const res = finishActiveWorkout();
-                if (res) {
-                  // finished! Context will hold lastCompletedSession which triggers modal
-                }
-              }}
-              className="flex-[2] sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-accent-emerald to-emerald-400 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-glow-sm transition-all"
-            >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>{activeWorkout.isManualLog ? 'Save Manual Log' : t('finishWorkout')}</span>
+            <button onClick={() => { finishActiveWorkout(); }} className="flex-[2] sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-accent-emerald to-emerald-400 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-glow-sm transition-all">
+              <Check className="w-4 h-4 stroke-[3]" /><span>{activeWorkout.isManualLog ? 'Save Manual Log' : t('finishWorkout')}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Exercises List */}
-      <div className="space-y-6">
-        {activeWorkout.exercises.map((workoutEx, exIdx) => {
-          const exerciseInfo = getExerciseById(workoutEx.exerciseId);
-          const exSummary = getExerciseSummary(workoutEx.exerciseId, history);
-          const completedSets = workoutEx.sets.filter(s => s.isCompleted);
-          const nextSetRec = getNextSetRecommendation(completedSets, exerciseInfo?.defaultReps || 8);
-          const isTimeOnly = exerciseInfo?.trackingType === 'time_only';
-          const isRepsOnly = exerciseInfo?.trackingType === 'reps_only';
+      {currentWorkoutEx ? (
+        <ActiveExerciseCard 
+          workoutEx={currentWorkoutEx} 
+          exIdx={activeExerciseIndex} 
+          openInfoModal={openInfoModal} 
+          setActiveWeightEditor={setActiveWeightEditor}
+          onReplace={() => { setReplacingExerciseId(currentWorkoutEx.exerciseId); setReplacingExerciseIndex(activeExerciseIndex); setReplaceModalOpen(true); }}
+          onToggleNotes={() => {}}
+          showNotes={false}
+          onOpenYoutube={(q) => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, '_blank')}
+          onOpenMenu={() => setActiveMenuExIdx(activeExerciseIndex)}
+        />
+      ) : (
+        <div className="p-8 text-center text-slate-400">No exercises left.</div>
+      )}
 
-          console.log(`[DEBUG] Exercise: ${workoutEx.exerciseId}, Info:`, exerciseInfo, `isTimeOnly: ${isTimeOnly}, isRepsOnly: ${isRepsOnly}`);
-
-          return (
-            <ActiveExerciseCard 
-              key={workoutEx.id} 
-              workoutEx={workoutEx} 
-              exIdx={exIdx} 
-              isExpanded={expandedExerciseIndex === exIdx} 
-              onToggleExpand={() => setExpandedExerciseIndex(expandedExerciseIndex === exIdx ? -1 : exIdx)} 
-              openInfoModal={openInfoModal} 
-              setActiveWeightEditor={setActiveWeightEditor}
-              isFirst={exIdx === 0}
-              isLast={exIdx === activeWorkout.exercises.length - 1}
-              onReplace={() => {
-                setReplacingExerciseId(workoutEx.exerciseId);
-                setReplacingExerciseIndex(exIdx);
-                setReplaceModalOpen(true);
-              }}
-              onToggleNotes={() => toggleNotes(workoutEx.exerciseId)}
-              showNotes={!!showNotesFor[workoutEx.exerciseId]}
-              onOpenYoutube={openYoutubeTutorial}
-              onOpenMenu={() => setActiveMenuExIdx(exIdx)}
-            />
-          );
-        })}
-      </div>
-
-      {/* Add New Exercise to Workout Button */}
-      <div className="pt-2">
-        <button
-          onClick={() => setAddExerciseModalOpen(true)}
-          className="w-full py-4 rounded-3xl bg-background-card hover:bg-background-elevated border-2 border-dashed border-border hover:border-slate-500 text-slate-300 hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-card"
+      {/* Exercise Navigation Bar */}
+      <div className="flex items-center justify-between px-2 pt-2">
+        <button 
+          onClick={goToPrevExercise}
+          disabled={activeExerciseIndex === 0}
+          className="px-4 py-3 bg-background-card rounded-2xl flex items-center justify-center border border-border disabled:opacity-30 active:scale-95 transition-all w-[100px]"
         >
-          <Plus className="w-5 h-5 text-accent-emerald" />
-          <span>{t('addAnotherExercise')}</span>
+          <ChevronLeft className="w-5 h-5 text-slate-300" />
+        </button>
+        <div className="flex-1 flex justify-center text-sm font-bold font-mono text-slate-400">
+          {activeWorkout.exercises.length > 0 ? `${activeExerciseIndex + 1} / ${activeWorkout.exercises.length}` : '0 / 0'}
+        </div>
+        <button 
+          onClick={goToNextExercise}
+          disabled={activeExerciseIndex === activeWorkout.exercises.length - 1}
+          className="px-4 py-3 bg-background-card rounded-2xl flex items-center justify-center border border-border disabled:opacity-30 active:scale-95 transition-all w-[100px]"
+        >
+          <ChevronRight className="w-5 h-5 text-slate-300" />
         </button>
       </div>
 
-      {/* MODAL: Replace Exercise */}
-      <ExerciseReplaceModal
-        isOpen={replaceModalOpen}
-        onClose={() => {
-          setReplaceModalOpen(false);
-          setReplacingExerciseIndex(null);
-          setReplacingExerciseId(null);
-        }}
-        currentExerciseId={replacingExerciseId}
-        exerciseIndex={replacingExerciseIndex}
-        onSelectAlternative={replaceExerciseInActiveWorkout}
-      />
+      <div className="pt-2 pb-6">
+        <button onClick={() => setAddExerciseModalOpen(true)} className="w-full py-4 rounded-3xl bg-background-card hover:bg-background-elevated border border-dashed border-border hover:border-slate-500 text-slate-400 font-bold text-sm flex items-center justify-center gap-2 transition-all">
+          <Plus className="w-4 h-4 text-accent-emerald" /><span>Add Another Exercise</span>
+        </button>
+      </div>
 
-      <WeightEditModal
-        isOpen={activeWeightEditor !== null}
-        initialWeight={activeWeightEditor?.initialWeight || 0}
-        exerciseIndex={activeWeightEditor?.exIdx ?? 0}
-        setIndex={activeWeightEditor?.setIdx ?? 0}
-        onClose={() => setActiveWeightEditor(null)}
-        onSave={handleSaveWeight}
-      />
-
-      {/* Learn Exercise Info Modal */}
-      <ExerciseInfoModal 
-        isOpen={infoModalOpen}
-        onClose={() => setInfoModalOpen(false)}
-        exerciseName={infoExerciseName}
-        fallbackEquipment={infoExerciseEquipment}
-        fallbackTargetMuscle={infoExerciseMuscle}
-      />
-
-      {/* MODAL: Add Exercise from Library */}
-      {addExerciseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-background-card border border-border rounded-3xl max-w-lg w-full p-6 relative shadow-2xl animate-slide-up">
-            
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-accent-emerald/20 border border-accent-emerald/40 flex items-center justify-center text-accent-emerald">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs uppercase font-extrabold tracking-wider text-accent-emerald">{t('exerciseDirectory')}</span>
-                  <h3 className="text-lg font-bold text-white">{t('addAnotherExercise')}</h3>
-                </div>
-              </div>
-              <button
-                onClick={() => setAddExerciseModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1.5 rounded-full bg-background-elevated"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <input
-              type="text"
-              placeholder={t('searchPlaceholder')}
-              value={searchExQuery}
-              onChange={e => setSearchExQuery(e.target.value)}
-              className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-2xl text-white font-medium mb-4 focus:outline-none focus:border-accent-emerald"
-            />
-
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-              {filteredExercisesToAdd.map(ex => (
-                <div
-                  key={ex.id}
-                  onClick={() => {
-                    setInfoExerciseName(ex.name);
-                    setInfoExerciseEquipment(ex.equipment);
-                    setInfoExerciseMuscle(ex.muscleGroup);
-                    setInfoModalOpen(true);
-                  }}
-                  className="p-3 rounded-2xl bg-background-elevated hover:bg-background-hover border border-border hover:border-accent-emerald/40 cursor-pointer flex items-center justify-between transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex-shrink-0">
-                      <ExerciseThumbnail exerciseName={ex.name} images={ex.images} equipment={ex.equipment} className="w-full h-full" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-white">{ex.name}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{ex.muscleGroup} • {ex.equipment}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addExerciseToActiveWorkout(ex.id);
-                      setAddExerciseModalOpen(false);
-                      setSearchExQuery('');
-                    }}
-                    className="text-xs font-bold text-accent-emerald bg-accent-emerald/10 hover:bg-accent-emerald/20 px-3 py-1.5 rounded-xl transition-colors shrink-0 ml-2"
-                  >
-                    + Add
-                  </button>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </div>
-      )}
-
+      {/* MODALS */}
+      <ExerciseReplaceModal isOpen={replaceModalOpen} onClose={() => { setReplaceModalOpen(false); setReplacingExerciseIndex(null); setReplacingExerciseId(null); }} currentExerciseId={replacingExerciseId} exerciseIndex={replacingExerciseIndex} onSelectAlternative={replaceExerciseInActiveWorkout} />
+      <WeightEditModal isOpen={activeWeightEditor !== null} initialWeight={activeWeightEditor?.initialWeight || 0} exerciseIndex={activeWeightEditor?.exIdx ?? 0} setIndex={activeWeightEditor?.setIdx ?? 0} onClose={() => setActiveWeightEditor(null)} onSave={handleSaveWeight} />
+      <ExerciseInfoModal isOpen={infoModalOpen} onClose={() => setInfoModalOpen(false)} exerciseName={infoExerciseName} fallbackEquipment={infoExerciseEquipment} fallbackTargetMuscle={infoExerciseMuscle} />
+      
       {/* Global Exercise Menu Bottom Sheet */}
       <AnimatePresence>
         {activeMenuExIdx !== null && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm">
-            <div className="absolute inset-0" onClick={() => setActiveMenuExIdx(null)} />
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setActiveMenuExIdx(null)}>
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              drag="y"
-              dragConstraints={{ top: 0, bottom: 0 }}
-              onDragEnd={(e, info) => {
-                if (info.offset.y > 100) {
-                  setActiveMenuExIdx(null);
-                }
-              }}
-              className="bg-[#18181b] w-full max-w-md rounded-t-[2rem] p-6 pb-8 shadow-2xl border-t border-white/5 relative z-10"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="bg-background-card w-full max-w-lg rounded-t-3xl border-t border-border shadow-2xl overflow-hidden relative pb-safe"
             >
-              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6" />
+              <div className="flex justify-center p-3"><div className="w-12 h-1.5 bg-border rounded-full" /></div>
               
-              <div className="space-y-1">
+              <div className="px-6 pb-6 pt-2 space-y-2">
                 <button 
-                  onClick={() => {
-                    reorderExercisesInActiveWorkout(activeMenuExIdx, activeMenuExIdx - 1);
+                  onClick={() => { setReplacingExerciseId(activeWorkout.exercises[activeMenuExIdx].exerciseId); setReplacingExerciseIndex(activeMenuExIdx); setActiveMenuExIdx(null); setReplaceModalOpen(true); }}
+                  className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-background-elevated transition-colors group"
+                >
+                  <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center text-accent-cyan group-hover:scale-110 transition-transform"><RefreshCw className="w-5 h-5" /></div><span className="font-bold text-white text-lg">Replace Exercise</span></div>
+                  <ChevronRight className="w-5 h-5 text-slate-500" />
+                </button>
+                
+                <button 
+                  onClick={() => { 
+                    if (activeMenuExIdx > 0) {
+                      reorderExercisesInActiveWorkout(activeMenuExIdx, activeMenuExIdx - 1);
+                      setActiveExerciseIndex(activeMenuExIdx - 1);
+                    }
                     setActiveMenuExIdx(null);
                   }}
                   disabled={activeMenuExIdx === 0}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
+                  className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-background-elevated transition-colors group disabled:opacity-50"
                 >
-                  <ArrowUp className="w-5 h-5 text-slate-300" />
-                  <span className="text-base font-medium text-slate-200">Reorder Up</span>
+                  <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform"><ArrowUp className="w-5 h-5" /></div><span className="font-bold text-white text-lg">Move Up</span></div>
                 </button>
 
                 <button 
-                  onClick={() => {
-                    reorderExercisesInActiveWorkout(activeMenuExIdx, activeMenuExIdx + 1);
+                  onClick={() => { 
+                    if (activeMenuExIdx < activeWorkout.exercises.length - 1) {
+                      reorderExercisesInActiveWorkout(activeMenuExIdx, activeMenuExIdx + 1);
+                      setActiveExerciseIndex(activeMenuExIdx + 1);
+                    }
                     setActiveMenuExIdx(null);
                   }}
                   disabled={activeMenuExIdx === activeWorkout.exercises.length - 1}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-left"
+                  className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-background-elevated transition-colors group disabled:opacity-50"
                 >
-                  <ArrowDown className="w-5 h-5 text-slate-300" />
-                  <span className="text-base font-medium text-slate-200">Reorder Down</span>
-                </button>
-
-                <button 
-                  onClick={() => {
-                    setReplacingExerciseId(activeWorkout.exercises[activeMenuExIdx].exerciseId);
-                    setReplacingExerciseIndex(activeMenuExIdx);
-                    setReplaceModalOpen(true);
-                    setActiveMenuExIdx(null);
-                  }}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 transition-colors text-left"
-                >
-                  <RefreshCw className="w-5 h-5 text-slate-300" />
-                  <span className="text-base font-medium text-slate-200">Replace Exercise</span>
-                </button>
-
-                <button 
-                  onClick={() => { setActiveMenuExIdx(null); }}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-slate-800 transition-colors text-left"
-                >
-                  <Plus className="w-5 h-5 text-slate-300" />
-                  <span className="text-base font-medium text-slate-200">Add To Superset</span>
+                  <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform"><ArrowDown className="w-5 h-5" /></div><span className="font-bold text-white text-lg">Move Down</span></div>
                 </button>
                 
-                <div className="h-px bg-white/10 my-2" />
-
                 <button 
-                  onClick={() => {
-                    removeExerciseFromActiveWorkout(activeMenuExIdx);
-                    setActiveMenuExIdx(null);
+                  onClick={() => { 
+                    if (confirm('Are you sure you want to remove this exercise?')) { 
+                      removeExerciseFromActiveWorkout(activeMenuExIdx); 
+                    } 
+                    setActiveMenuExIdx(null); 
                   }}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-red-950/40 transition-colors text-left"
+                  className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-rose-500/10 transition-colors group"
                 >
-                  <X className="w-5 h-5 text-red-500" />
-                  <span className="text-base font-medium text-red-500">Remove Exercise</span>
+                  <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform"><Trash2 className="w-5 h-5" /></div><span className="font-bold text-rose-500 text-lg">Remove Exercise</span></div>
+                </button>
+                
+                <button onClick={() => setActiveMenuExIdx(null)} className="w-full py-4 mt-2 rounded-xl bg-background-elevated text-slate-300 font-bold text-lg hover:text-white hover:bg-slate-700 transition-colors">
+                  Cancel
                 </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {addExerciseModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-background-card border border-border rounded-3xl max-w-lg w-full p-6 relative shadow-2xl animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Add Exercise</h3>
+              <button onClick={() => setAddExerciseModalOpen(false)} className="text-slate-400 p-1.5"><X className="w-4 h-4" /></button>
+            </div>
+            <input type="text" placeholder="Search..." value={searchExQuery} onChange={e => setSearchExQuery(e.target.value)} className="w-full px-4 py-2.5 bg-background-elevated border border-border rounded-2xl text-white mb-4" />
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {filteredExercisesToAdd.map(ex => (
+                <div key={ex.id} className="p-3 rounded-2xl bg-background-elevated border border-border flex justify-between">
+                  <div><p className="font-bold text-sm text-white">{ex.name}</p></div>
+                  <button onClick={() => { addExerciseToActiveWorkout(ex.id); setAddExerciseModalOpen(false); setSearchExQuery(''); }} className="text-xs font-bold text-accent-emerald">+ Add</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

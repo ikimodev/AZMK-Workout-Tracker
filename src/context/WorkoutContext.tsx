@@ -197,8 +197,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // State initialization with localStorage fallback
   const [user, setUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('pulse_user');
-    return saved ? JSON.parse(saved) : DEFAULT_CLEAN_USER;
+    try {
+      const saved = localStorage.getItem('pulse_user');
+      return saved ? JSON.parse(saved) : DEFAULT_CLEAN_USER;
+    } catch {
+      return DEFAULT_CLEAN_USER;
+    }
   });
 
   const [exercises] = useState<Exercise[]>(() => getAllExercises());
@@ -272,8 +276,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Active Live Workout State
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(() => {
-    const saved = localStorage.getItem('pulse_active_workout');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('pulse_active_workout');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   const [showWelcomeTeaser, setShowWelcomeTeaser] = useState(false);
@@ -484,8 +492,11 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
   };
 
   const [loggedActivities, setLoggedActivities] = useState<LoggedActivity[]>(() => {
-    const saved = localStorage.getItem('pulse_activities');
-    return saved ? JSON.parse(saved) : [
+    try {
+      const saved = localStorage.getItem('pulse_activities');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
       {
         id: 'act_demo_1',
         name: 'Zone 2 Recovery Jog & Walk',
@@ -552,16 +563,21 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     const completedToday = history.some(h => h.date && h.date.startsWith(todayStr));
 
     // Calculate which workout is next in the progression cycle (Day 1 -> Day 2 -> Day 3 -> Day 4...)
-    const completedCount = history.length;
-    const nextWorkoutIndex = weekWorkouts.length > 0 ? (completedCount % weekWorkouts.length) : 0;
+    const completedProgramSessionsCount = history.filter(h => !h.isManualLog).length;
+    const nextWorkoutIndex = weekWorkouts.length > 0 ? (completedProgramSessionsCount % weekWorkouts.length) : 0;
     const nextWorkoutTemplate = weekWorkouts[nextWorkoutIndex] || null;
 
     let scheduledWorkoutDays: number[] = [1, 2, 4, 5];
-    if (daysCount === 2) scheduledWorkoutDays = [1, 4];
-    else if (daysCount === 3) scheduledWorkoutDays = [1, 3, 5];
-    else if (daysCount === 4) scheduledWorkoutDays = [1, 2, 4, 5];
-    else if (daysCount === 5) scheduledWorkoutDays = [1, 2, 3, 5, 6];
-    else if (daysCount === 6) scheduledWorkoutDays = [1, 2, 3, 4, 5, 6];
+    if (user.scheduledDays && user.scheduledDays.length > 0) {
+      const allDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      scheduledWorkoutDays = user.scheduledDays.map(d => allDays.indexOf(d) + 1).filter(n => n > 0);
+    } else {
+      if (daysCount === 2) scheduledWorkoutDays = [1, 4];
+      else if (daysCount === 3) scheduledWorkoutDays = [1, 3, 5];
+      else if (daysCount === 4) scheduledWorkoutDays = [1, 2, 4, 5];
+      else if (daysCount === 5) scheduledWorkoutDays = [1, 2, 3, 5, 6];
+      else if (daysCount === 6) scheduledWorkoutDays = [1, 2, 3, 4, 5, 6];
+    }
 
     // Check manual day override or tomorrow start
     const customForToday = user.calendarCustomizations?.[todayStr];
@@ -569,7 +585,7 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
 
     if (customForToday) {
       isRestDayToday = customForToday.type === 'rest';
-    } else if (user.startDayOption === 'tomorrow' && user.programStartDate === todayStr && completedCount === 0) {
+    } else if (user.startDayOption === 'tomorrow' && user.programStartDate === todayStr && completedProgramSessionsCount === 0) {
       isRestDayToday = true;
     } else {
       isRestDayToday = !scheduledWorkoutDays.includes(dayOfWeekNumber) || completedToday;
@@ -582,7 +598,7 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
       workoutTemplate: nextWorkoutTemplate,
       workoutIndex: nextWorkoutIndex,
       totalWorkoutsInWeek: weekWorkouts.length,
-      completedThisWeek: weekWorkouts.length > 0 ? (completedCount % weekWorkouts.length) : 0,
+      completedThisWeek: weekWorkouts.length > 0 ? (completedProgramSessionsCount % weekWorkouts.length) : 0,
       nextScheduledWorkoutDay: isRestDayToday ? (completedToday ? 'Tomorrow' : 'Next Scheduled Day') : 'Today'
     };
   };
@@ -810,7 +826,10 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
 
       const truePreviousBest = Math.max(summary.allTimeBestWeight, currentWorkoutMaxWeight);
 
-      if (targetSet.weight > truePreviousBest) {
+      // Avoid creating duplicate PR if one already exists for this session with same weight
+      const alreadyHasPR = prs.some(p => p.exerciseId === exercise.exerciseId && p.weight === targetSet.weight && p.date === new Date().toISOString().split('T')[0]);
+
+      if (targetSet.weight > truePreviousBest && !alreadyHasPR) {
         isNewPR = true;
         const newPrRecord: PRRecord = {
           id: `pr_${Date.now()}`,
@@ -841,11 +860,24 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
           // ignore
         }
       }
+    } else if (!newStatus && targetSet.isPR) {
+      setPrs(prev => {
+        const matchingIndex = prev.findIndex(p => p.exerciseId === exercise.exerciseId && p.weight === targetSet.weight && p.date === new Date().toISOString().split('T')[0]);
+        if (matchingIndex !== -1) {
+          const newPrs = [...prev];
+          newPrs.splice(matchingIndex, 1);
+          return newPrs;
+        }
+        return prev;
+      });
+      if (celebrationPR && celebrationPR.exerciseId === exercise.exerciseId) {
+        setCelebrationPR(null);
+      }
     }
 
     updateSet(exerciseIndex, setIndex, {
       isCompleted: newStatus,
-      isPR: isNewPR
+      isPR: newStatus ? isNewPR : false
     });
 
     // Automatically trigger rest timer when marked complete
@@ -973,12 +1005,18 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
       });
     });
 
+    if (totalCompletedSets === 0) {
+      if (!window.confirm(language === 'ar' ? 'لم تنجز أي تمرين. هل تريد الحفظ كجلسة فارغة؟' : 'No sets completed. Save as empty session?')) {
+        return null;
+      }
+    }
+
     const actualDurationSeconds = Math.floor((Date.now() - new Date(activeWorkout.startedAt).getTime()) / 1000);
     const durationMin = activeWorkout.isManualLog ? 45 : Math.max(1, Math.round(actualDurationSeconds / 60));
     
     // Compare volume with previous matching session
     const prevSimilar = history.find(s => s.name === activeWorkout.name);
-    let volDiffPercent = 5.2;
+    let volDiffPercent = 0;
     if (prevSimilar && prevSimilar.totalVolumeKg > 0) {
       volDiffPercent = Math.round(((totalVolume - prevSimilar.totalVolumeKg) / prevSimilar.totalVolumeKg) * 1000) / 10;
     }
@@ -1003,10 +1041,33 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     setIsRestTimerActive(false);
 
     // Increment streak
-    setUser(prev => ({
-      ...prev,
-      streakDays: prev.streakDays + 1
-    }));
+    setUser(prev => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const prevDateStr = history.length > 0 ? history[0].completedAt?.split('T')[0] : null;
+      let newStreak = prev.streakDays;
+      
+      if (prevDateStr) {
+        const msPerDay = 86400000;
+        const d1 = new Date(todayStr);
+        d1.setUTCHours(0,0,0,0);
+        const d2 = new Date(prevDateStr);
+        d2.setUTCHours(0,0,0,0);
+        const daysDiff = Math.round((d1.getTime() - d2.getTime()) / msPerDay);
+        
+        if (daysDiff === 1) {
+          newStreak += 1;
+        } else if (daysDiff > 1) {
+          newStreak = 1;
+        }
+      } else {
+        newStreak = 1;
+      }
+
+      return {
+        ...prev,
+        streakDays: newStreak
+      };
+    });
 
     return completedSession;
   };
@@ -1016,7 +1077,11 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
 
   const sendChatMessage = async (text: string) => {
     const isFree = user.tier === 'free';
-    const used = user.aiQuestionsUsedToday || 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+    let used = user.aiQuestionsUsedToday || 0;
+    if (user.aiQuestionsLastUsedDate !== todayStr) {
+      used = 0;
+    }
     const limit = 5;
 
     const userMsg: AIChatMessage = {
@@ -1060,7 +1125,11 @@ Hey ${user.name || 'Athlete'}, you have reached your daily quota of 5 AI Coach (
 
     // Increment question count for free user
     if (isFree) {
-      setUser(prev => ({ ...prev, aiQuestionsUsedToday: (prev.aiQuestionsUsedToday || 0) + 1 }));
+      setUser(prev => {
+        const currTodayStr = new Date().toISOString().split('T')[0];
+        const prevUsed = prev.aiQuestionsLastUsedDate === currTodayStr ? (prev.aiQuestionsUsedToday || 0) : 0;
+        return { ...prev, aiQuestionsUsedToday: prevUsed + 1, aiQuestionsLastUsedDate: currTodayStr };
+      });
     }
 
     try {

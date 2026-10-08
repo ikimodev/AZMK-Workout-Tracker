@@ -106,9 +106,9 @@ export const getExerciseSummary = (
       lastWeight = isBarbell ? 40 : isDumbbell ? 14 : 20;
     }
     lastReps = exercise?.defaultReps || 8;
-    allTimeBestWeight = lastWeight;
-    allTimeBestReps = lastReps;
-    allTimeBest1RM = calculate1RM(lastWeight, lastReps);
+    allTimeBestWeight = 0;
+    allTimeBestReps = 0;
+    allTimeBest1RM = 0;
   }
 
   // Calculate Progressive Overload Recommendation
@@ -188,8 +188,8 @@ export const getExerciseSummary = (
   };
 
   const improvementPercentage = allTimeBestWeight > 0 && lastWeight > 0
-    ? Math.round(((lastWeight - (lastWeight * 0.92)) / (lastWeight * 0.92)) * 1000) / 10
-    : 4.2;
+    ? Math.round(((lastWeight - allTimeBestWeight) / allTimeBestWeight) * 1000) / 10
+    : 0;
 
   return {
     exerciseId,
@@ -347,7 +347,7 @@ export const calculateDashboardAnalytics = (
       strengthTimeframeWeeks = Math.max(1, Math.round(diffDays / 7));
     }
   } else if (targetLiftSessions.length === 1) {
-    strengthDeltaPercent = 4.2;
+    strengthDeltaPercent = 0;
     strengthTimeframeWeeks = 1;
   }
 
@@ -371,7 +371,7 @@ export const calculateDashboardAnalytics = (
   if (previous7dVolumeKg > 0) {
     volumeDeltaPercent = Math.round(((recent7dVolumeKg - previous7dVolumeKg) / previous7dVolumeKg) * 1000) / 10;
   } else {
-    volumeDeltaPercent = 5.0;
+    volumeDeltaPercent = 0;
   }
 
   // 3. Consistency & Adherence
@@ -381,7 +381,12 @@ export const calculateDashboardAnalytics = (
   const goalAdherencePercent = Math.min(100, Math.round((actualWorkoutsPerWeek / (targetWorkoutsPerWeek || 4)) * 100));
 
   // 4. PRs
-  const prsThisMonth = prs.length;
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const prsThisMonth = prs.filter(p => {
+    const d = new Date(p.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).length;
 
   // 5. Program Progress
   const programTotalPlanned = (targetWorkoutsPerWeek || 4) * 4; // 16 sessions in 4 weeks
@@ -396,6 +401,6 @@ export const calculateDashboardAnalytics = (
     actualWorkoutsPerWeek,
     goalAdherencePercent,
     prsThisMonth,
-    programProgressPercent: programProgressPercent || 15
+    programProgressPercent: programProgressPercent || 0
   };
 };

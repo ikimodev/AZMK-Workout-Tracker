@@ -5,21 +5,12 @@
  */
 
 import { MOCK_EXERCISES, findOrCreateExercise, inferExerciseAttributes } from '../data/mockExercises';
+import { matchExerciseForImport, MatcherCandidate } from './exerciseMatcherService';
 import { Program, WorkoutExercise, UserProfile, AIChatMessage } from '../types';
-
-// Secure internal key
-const _K = 'QVEuQWI4Uk42SWNHcEs0dTFjcEtHUUhWR0Z6QngyUVBrSGd4dnI3c19NeTB5QmN4RFowYnc=';
 
 export const getGeminiApiKey = (): string => {
   const envKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
-  if (envKey && envKey.trim().length > 5) {
-    return envKey.trim();
-  }
-  try {
-    return atob(_K);
-  } catch {
-    return '';
-  }
+  return envKey.trim();
 };
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
@@ -101,115 +92,20 @@ export interface ParsedMultiDaySplit {
     dayNumber: number;
     exercises: {
       exerciseName: string;
-      matchedExerciseId: string;
+      equipment?: string;
+      muscleGroup?: string;
+      matchedExerciseId: string | null;
       targetSets: number;
       targetReps: string;
       suggestedWeightKg: number;
       restSeconds: number;
       notes?: string;
+      ambiguous?: boolean;
+      candidates?: MatcherCandidate[];
+      autoConfirmed?: boolean;
     }[];
   }[];
 }
-
-/**
- * Intelligent exercise matching with strict precedence and dynamic creation fallback
- */
-export const matchExerciseId = (exerciseName: string): string => {
-  const clean = exerciseName.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g, ' ');
-  const normalized = clean.replace(/\s+/g, ' ').trim();
-
-  // 1. Direct name match in built-in database
-  const foundExact = MOCK_EXERCISES.find(e => {
-    const eNorm = e.name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-    return eNorm === normalized || normalized.includes(eNorm) || eNorm.includes(normalized);
-  });
-  if (foundExact) return foundExact.id;
-
-  // 2. High-precision rule matching (multi-word and compound patterns first!)
-
-  // Chest Press & Variations
-  if (normalized.includes('smith') && (normalized.includes('bench') || normalized.includes('صدر') || normalized.includes('بنش'))) return 'smith_bench_press';
-  if ((normalized.includes('incline') || normalized.includes('عالي') || normalized.includes('علوي')) && (normalized.includes('dumbbell') || normalized.includes('دامبل') || normalized.includes('تجميع'))) return 'incline_dumbbell_press';
-  if ((normalized.includes('incline') || normalized.includes('عالي') || normalized.includes('علوي')) && (normalized.includes('barbell') || normalized.includes('بار'))) return 'incline_barbell_press';
-  if ((normalized.includes('incline') || normalized.includes('عالي')) && normalized.includes('smith')) return 'incline_smith_press';
-  if (normalized.includes('decline') || normalized.includes('سفلي') || normalized.includes('مائل لأسفل')) return 'decline_bench_press';
-  if ((normalized.includes('dumbbell') || normalized.includes('دامبل')) && (normalized.includes('bench') || normalized.includes('chest press') || normalized.includes('صدر') || normalized.includes('بنش'))) return 'dumbbell_bench_press';
-  if (normalized.includes('pec deck') || normalized.includes('butterfly') || normalized.includes('فراشة جهاز')) return 'pec_deck_fly';
-  if ((normalized.includes('cable') || normalized.includes('كيبل')) && (normalized.includes('fly') || normalized.includes('chest') || normalized.includes('تفتيح') || normalized.includes('فراشة'))) return 'cable_chest_fly';
-  if (normalized.includes('chest dip') || (normalized.includes('dip') && !normalized.includes('tricep') && !normalized.includes('bench dip')) || normalized.includes('متوازي')) return 'chest_dips';
-  if (normalized.includes('bench press') || (normalized.includes('bench') && normalized.includes('press')) || normalized.includes('بنش بار') || normalized.includes('بنش مستوي') || normalized.includes('بنش برس')) return 'barbell_bench_press';
-  if (normalized.includes('machine chest') || normalized.includes('chest press machine') || normalized.includes('جهاز الصدر')) return 'machine_chest_press';
-
-  // Triceps Extensions & Pushdowns (Checked before shoulder overhead press!)
-  if ((normalized.includes('overhead') || normalized.includes('extension') || normalized.includes('اوفر هيد')) && (normalized.includes('tricep') || normalized.includes('تراي'))) return 'overhead_cable_tricep_extension';
-  if (normalized.includes('skull crusher') || normalized.includes('skullcrusher') || normalized.includes('سكل كراشر')) return 'skull_crushers';
-  if (normalized.includes('tricep') || normalized.includes('pushdown') || normalized.includes('تراي') || normalized.includes('ترايسبس')) return 'tricep_rope_pushdown';
-
-  // Shoulders & Traps
-  if (normalized.includes('face pull') || normalized.includes('facepull') || normalized.includes('فيس بول')) return 'face_pulls';
-  if (normalized.includes('reverse pec') || normalized.includes('rear delt') || normalized.includes('كتف خلفي') || normalized.includes('فراشة خلفي')) return 'reverse_pec_deck';
-  if ((normalized.includes('dumbbell') || normalized.includes('دامبل')) && (normalized.includes('overhead') || normalized.includes('shoulder press') || normalized.includes('ohp') || normalized.includes('كتف') || normalized.includes('أكتاف'))) return 'seated_dumbbell_shoulder_press';
-  if (normalized.includes('smith') && (normalized.includes('overhead') || normalized.includes('shoulder press') || normalized.includes('كتف'))) return 'smith_overhead_press';
-  if (normalized.includes('overhead') || normalized.includes('ohp') || (normalized.includes('shoulder') && normalized.includes('press')) || normalized.includes('عسكري') || normalized.includes('كتف بار')) return 'overhead_barbell_press';
-  if (normalized.includes('lateral') || normalized.includes('side raise') || normalized.includes('رفرفة جانبي') || normalized.includes('رفرفه جانبي') || normalized.includes('رفرفة')) {
-    return (normalized.includes('cable') || normalized.includes('كيبل')) ? 'cable_lateral_raise' : 'dumbbell_lateral_raise';
-  }
-  if (normalized.includes('shrug') || normalized.includes('ترابيس')) return 'dumbbell_shrugs';
-
-  // Push-Ups (Checked after overhead shoulder press checks)
-  if (normalized.includes('push up') || normalized.includes('pushup') || normalized.includes('push-up') || normalized.includes('تمرين ضغط') || (normalized.includes('ضغط') && !normalized.includes('كتف') && !normalized.includes('أكتاف') && !normalized.includes('عسكري') && !normalized.includes('صدر') && !normalized.includes('رجل'))) return 'push_ups';
-
-  // Back & Vertical/Horizontal Pulls
-  if (normalized.includes('pull up') || normalized.includes('pullup') || normalized.includes('pull-up') || normalized.includes('عقلة') || normalized.includes('عقله')) return 'pull_ups';
-  if (normalized.includes('chin up') || normalized.includes('chinup') || normalized.includes('chin-up')) return 'chin_ups';
-  if (normalized.includes('lat pulldown') || normalized.includes('pulldown') || normalized.includes('سحب عالي')) {
-    return (normalized.includes('close') || normalized.includes('ضيق')) ? 'close_grip_pulldown' : 'lat_pulldown';
-  }
-  if (normalized.includes('seated cable row') || normalized.includes('seated row') || normalized.includes('cable row') || normalized.includes('سحب أرضي') || normalized.includes('سحب ارضي')) return 'seated_cable_row';
-  if (normalized.includes('t bar') || normalized.includes('tbar') || normalized.includes('تي بار') || normalized.includes('chest supported') || normalized.includes('chest-supported')) return 'chest_supported_tbar_row';
-  if ((normalized.includes('single arm') || normalized.includes('one arm') || normalized.includes('dumbbell') || normalized.includes('دامبل') || normalized.includes('منشار')) && normalized.includes('row')) return 'single_arm_dumbbell_row';
-  if (normalized.includes('barbell row') || normalized.includes('bent over') || normalized.includes('سحب بار') || (normalized.includes('row') && !normalized.includes('upright'))) return 'barbell_row';
-  if (normalized.includes('straight arm') || normalized.includes('pullover') || normalized.includes('بلوفر')) return 'straight_arm_cable_pulldown';
-  if (normalized.includes('deadlift') || normalized.includes('ديدلفت')) {
-    return (normalized.includes('romanian') || normalized.includes('rdl') || normalized.includes('روماني')) ? (normalized.includes('dumbbell') ? 'dumbbell_rdl' : 'romanian_deadlift') : 'barbell_deadlift';
-  }
-
-  // Quads, Glutes, Hamstrings, Calves
-  if (normalized.includes('hip thrust') || normalized.includes('hipthrust') || normalized.includes('هيب ثروست') || normalized.includes('هيبثروست')) {
-    return (normalized.includes('dumbbell') || normalized.includes('دامبل')) ? 'dumbbell_hip_thrust' : 'barbell_hip_thrust';
-  }
-  if (normalized.includes('prone') || normalized.includes('lying') || normalized.includes('leg curl') || normalized.includes('hamstring curl') || normalized.includes('فخذ خلفي') || normalized.includes('خلفي منبطح')) {
-    return (normalized.includes('seated') || normalized.includes('جالس')) ? 'seated_leg_curl' : 'lying_leg_curl';
-  }
-  if (normalized.includes('rdl') || normalized.includes('romanian') || normalized.includes('رومانيان') || normalized.includes('روماني')) {
-    return (normalized.includes('dumbbell') || normalized.includes('دامبل')) ? 'dumbbell_rdl' : 'romanian_deadlift';
-  }
-  if (normalized.includes('bulgarian') || normalized.includes('split squat') || normalized.includes('سكوات بلغاري')) return 'bulgarian_split_squat';
-  if (normalized.includes('hack') || normalized.includes('هاك')) return 'hack_squat';
-  if (normalized.includes('leg press') || normalized.includes('مكبس') || normalized.includes('دفع أرجل') || normalized.includes('دفع رجل')) return 'leg_press';
-  if (normalized.includes('leg extension') || normalized.includes('extension') || normalized.includes('فخذ أمامي') || normalized.includes('اكستنشن')) return 'leg_extensions';
-  if (normalized.includes('squat') || normalized.includes('سكوات')) return 'barbell_back_squat';
-  if (normalized.includes('calf') || normalized.includes('calves') || normalized.includes('بطات') || normalized.includes('سمانة') || normalized.includes('سمانه')) {
-    return (normalized.includes('seated') || normalized.includes('جالس')) ? 'seated_calf_raise' : 'standing_calf_raise';
-  }
-
-  // Arms (Biceps) - checked AFTER leg curl / legs
-  if (normalized.includes('preacher') || normalized.includes('تبشير')) return 'preacher_curl';
-  if (normalized.includes('hammer') || normalized.includes('شاكوش')) return 'hammer_curls';
-  if (normalized.includes('incline') && normalized.includes('curl')) return 'dumbbell_incline_bicep_curl';
-  if ((normalized.includes('cable') || normalized.includes('كيبل')) && normalized.includes('curl')) return 'cable_bicep_curl';
-  if (normalized.includes('curl') || normalized.includes('bicep') || normalized.includes('باي') || normalized.includes('بايسبس')) return 'barbell_bicep_curl';
-
-  // Core & Abs
-  if (normalized.includes('cable crunch') || normalized.includes('crunch') || normalized.includes('كرنش') || normalized.includes('طحن بطن')) return 'cable_crunch';
-  if (normalized.includes('plank') || normalized.includes('بلانك')) return 'plank';
-  if (normalized.includes('hanging') || normalized.includes('leg raise') || normalized.includes('knee raise') || normalized.includes('رفع أرجل') || normalized.includes('رفع ارجل')) return 'hanging_leg_raise';
-  if (normalized.includes('wheel') || normalized.includes('عجلة') || normalized.includes('عجله')) return 'ab_wheel_rollout';
-
-  // 3. Graceful Dynamic Fallback: Register and return the exact user exercise!
-  const dynamicEx = findOrCreateExercise(exerciseName);
-  return dynamicEx.id;
-};
 
 /**
  * Checks if a given text line is a Day Header rather than an exercise line
@@ -231,17 +127,19 @@ export const isDayHeaderLine = (line: string): boolean => {
  * Real LLM Workout & Multi-Day Split Parser using Gemini
  */
 export const parseWorkoutTextWithGemini = async (rawText: string): Promise<ParsedMultiDaySplit> => {
-  const systemInstruction = `You are a world-class strength and conditioning coach and workout parser for the AZMK (عزمك) fitness app.
+const systemInstruction = `You are a world-class strength and conditioning coach and data extractor for the AZMK fitness app.
 Analyze the user workout text (which may be in Arabic, English, gym slang, or bullet points).
 
-CRITICAL RULES:
-1. If the input describes multiple days/splits (e.g. Day 1 Push, Day 2 Pull, Day 3 Legs or الأحد صدر، الاثنين ظهر، إلخ), you MUST separate them into distinct items in the "days" array!
-2. A day title/header (like "Day 1: Push", "اليوم الأول: صدر وتراي") belongs in "dayName" and MUST NEVER BE INCLUDED AS AN EXERCISE inside "exercises"!
-3. "exercises" must ONLY contain actual physical movements (e.g. Smith Machine Bench Press, Pull-ups, Dumbbell Overhead Press, Seated Cable Row, Face Pull, Cable Crunch, Leg Press, Hip Thrust, Leg Extension, Prone Leg Curl, Standing Calf Raise, Plank).
-4. Preserve exact exercise names as provided by the user.
-5. If it is only 1 workout session, return isMultiDaySplit: false with 1 day in "days".
-6. If the user does NOT explicitly state a weight in kg or lbs for an exercise, you MUST output 0 for "suggestedWeightKg". DO NOT invent or guess weights.
-7. Return valid JSON only.
+CRITICAL EXTRACTION RULES (Smart Extraction):
+1. For each exercise, output the pure exercise name in "exerciseName".
+   - MUST REMOVE time units (sec, seconds, min, mins) and numbers from the name (e.g. "Plank 60 sec" -> "Plank").
+   - MUST REMOVE all punctuation like hyphens (-), em-dashes (—), slashes (/), and periods (.) from the exerciseName.
+   - Example: "Push-ups / 3x10" -> "Push ups", "Plank — 60sec" -> "Plank"
+2. Infer the likely equipment (e.g. "Barbell", "Dumbbell", "Cable", "Machine", "Bodyweight", "Kettlebell") and output in "equipment".
+3. Infer the primary target muscle group (e.g. "Chest", "Back", "Quads", "Hamstrings", "Glutes", "Shoulders", "Biceps", "Triceps", "Core", "Calves") and output in "muscleGroup".
+4. If the input describes multiple days/splits, you MUST separate them into distinct items in the "days" array!
+5. Day headers belong in "dayName" and MUST NEVER BE INCLUDED AS AN EXERCISE.
+6. Return valid JSON only.
 
 JSON Output Schema:
 {
@@ -254,6 +152,8 @@ JSON Output Schema:
       "exercises": [
         {
           "exerciseName": string,
+          "equipment": string,
+          "muscleGroup": string,
           "targetSets": number,
           "targetReps": string,
           "suggestedWeightKg": number,
@@ -282,7 +182,10 @@ JSON Output Schema:
 
       // Match each exercise ID
       day.exercises.forEach(ex => {
-        ex.matchedExerciseId = matchExerciseId(ex.exerciseName);
+        const matchResult = matchExerciseForImport(ex.exerciseName, ex.equipment, ex.muscleGroup);
+        ex.matchedExerciseId = matchResult.matchedExerciseId;
+        ex.ambiguous = matchResult.ambiguous;
+        ex.candidates = matchResult.candidates;
       });
     });
 
@@ -374,12 +277,17 @@ export const parseSingleDayText = (dayText: string) => {
       cleanName = `Exercise ${eIdx + 1}`;
     }
 
-    const matchedId = matchExerciseId(cleanName);
-    const suggestedWeight = hasExplicitWeight ? weight : 0;
+    const matchResult = matchExerciseForImport(cleanName);
+    let suggestedWeight = weight;
+    if (!hasExplicitWeight && matchResult.matchedExerciseId) {
+      suggestedWeight = estimateDefaultWeight(matchResult.matchedExerciseId, cleanName);
+    }
 
     return {
       exerciseName: cleanName,
-      matchedExerciseId: matchedId,
+      matchedExerciseId: matchResult.matchedExerciseId,
+      ambiguous: matchResult.ambiguous,
+      candidates: matchResult.candidates,
       targetSets: sets,
       targetReps: reps,
       suggestedWeightKg: suggestedWeight,
@@ -504,4 +412,102 @@ ${performanceSummary}`;
     }));
 
   return await callGeminiAPI(userMessage, systemInstruction, false, formattedHistory);
+};
+
+/**
+ * Intelligent exercise matching with strict precedence and dynamic fallback (Legacy for backward compatibility)
+ */
+export const matchExerciseId = (exerciseName: string): string => {
+  const clean = exerciseName.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g, ' ');
+  const normalized = clean.replace(/\s+/g, ' ').trim();
+
+  // 1. Direct name match in built-in database
+  const foundExact = MOCK_EXERCISES.find(e => {
+    const eNorm = e.name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    return eNorm === normalized || normalized.includes(eNorm) || eNorm.includes(normalized);
+  });
+  if (foundExact) return foundExact.id;
+
+  // Chest Press & Variations
+  if (normalized.includes('smith') && (normalized.includes('bench') || normalized.includes('صدر') || normalized.includes('بنش'))) return 'smith_bench_press';
+  if ((normalized.includes('incline') || normalized.includes('عالي') || normalized.includes('علوي')) && (normalized.includes('dumbbell') || normalized.includes('دامبل') || normalized.includes('تجميع'))) return 'incline_dumbbell_press';
+  if ((normalized.includes('incline') || normalized.includes('عالي') || normalized.includes('علوي')) && (normalized.includes('barbell') || normalized.includes('بار'))) return 'incline_barbell_press';
+  if ((normalized.includes('incline') || normalized.includes('عالي')) && normalized.includes('smith')) return 'incline_smith_press';
+  if (normalized.includes('decline') || normalized.includes('سفلي') || normalized.includes('مائل لأسفل')) return 'decline_bench_press';
+  if ((normalized.includes('dumbbell') || normalized.includes('دامبل')) && (normalized.includes('bench') || normalized.includes('chest press') || normalized.includes('صدر') || normalized.includes('بنش'))) return 'dumbbell_bench_press';
+  if (normalized.includes('pec deck') || normalized.includes('butterfly') || normalized.includes('فراشة جهاز')) return 'pec_deck_fly';
+  if ((normalized.includes('cable') || normalized.includes('كيبل')) && (normalized.includes('fly') || normalized.includes('chest') || normalized.includes('تفتيح') || normalized.includes('فراشة'))) return 'cable_chest_fly';
+  if (normalized.includes('chest dip') || (normalized.includes('dip') && !normalized.includes('tricep') && !normalized.includes('bench dip')) || normalized.includes('متوازي')) return 'chest_dips';
+  if (normalized.includes('bench press') || (normalized.includes('bench') && normalized.includes('press')) || normalized.includes('بنش بار') || normalized.includes('بنش مستوي') || normalized.includes('بنش برس')) return 'barbell_bench_press';
+  if (normalized.includes('machine chest') || normalized.includes('chest press machine') || normalized.includes('جهاز الصدر')) return 'machine_chest_press';
+
+  // Triceps Extensions & Pushdowns
+  if ((normalized.includes('overhead') || normalized.includes('extension') || normalized.includes('اوفر هيد')) && (normalized.includes('tricep') || normalized.includes('تراي'))) return 'overhead_cable_tricep_extension';
+  if (normalized.includes('skull crusher') || normalized.includes('skullcrusher') || normalized.includes('سكل كراشر')) return 'skull_crushers';
+  if (normalized.includes('tricep') || normalized.includes('pushdown') || normalized.includes('تراي') || normalized.includes('ترايسبس')) return 'tricep_rope_pushdown';
+
+  // Shoulders & Traps
+  if (normalized.includes('face pull') || normalized.includes('facepull') || normalized.includes('فيس بول')) return 'face_pulls';
+  if (normalized.includes('reverse pec') || normalized.includes('rear delt') || normalized.includes('كتف خلفي') || normalized.includes('فراشة خلفي')) return 'reverse_pec_deck';
+  if ((normalized.includes('dumbbell') || normalized.includes('دامبل')) && (normalized.includes('overhead') || normalized.includes('shoulder press') || normalized.includes('ohp') || normalized.includes('كتف') || normalized.includes('أكتاف'))) return 'seated_dumbbell_shoulder_press';
+  if (normalized.includes('smith') && (normalized.includes('overhead') || normalized.includes('shoulder press') || normalized.includes('كتف'))) return 'smith_overhead_press';
+  if (normalized.includes('overhead') || normalized.includes('ohp') || (normalized.includes('shoulder') && normalized.includes('press')) || normalized.includes('عسكري') || normalized.includes('كتف بار')) return 'overhead_barbell_press';
+  if (normalized.includes('lateral') || normalized.includes('side raise') || normalized.includes('رفرفة جانبي') || normalized.includes('رفرفه جانبي') || normalized.includes('رفرفة')) {
+    return (normalized.includes('cable') || normalized.includes('كيبل')) ? 'cable_lateral_raise' : 'dumbbell_lateral_raise';
+  }
+  if (normalized.includes('shrug') || normalized.includes('ترابيس')) return 'dumbbell_shrugs';
+
+  // Push-Ups
+  if (normalized.includes('push up') || normalized.includes('pushup') || normalized.includes('push-up') || normalized.includes('تمرين ضغط') || (normalized.includes('ضغط') && !normalized.includes('كتف') && !normalized.includes('أكتاف') && !normalized.includes('عسكري') && !normalized.includes('صدر') && !normalized.includes('رجل'))) return 'push_ups';
+
+  // Back & Vertical/Horizontal Pulls
+  if (normalized.includes('pull up') || normalized.includes('pullup') || normalized.includes('pull-up') || normalized.includes('عقلة') || normalized.includes('عقله')) return 'pull_ups';
+  if (normalized.includes('chin up') || normalized.includes('chinup') || normalized.includes('chin-up')) return 'chin_ups';
+  if (normalized.includes('lat pulldown') || normalized.includes('pulldown') || normalized.includes('سحب عالي')) {
+    return (normalized.includes('close') || normalized.includes('ضيق')) ? 'close_grip_pulldown' : 'lat_pulldown';
+  }
+  if (normalized.includes('seated cable row') || normalized.includes('seated row') || normalized.includes('cable row') || normalized.includes('سحب أرضي') || normalized.includes('سحب ارضي')) return 'seated_cable_row';
+  if (normalized.includes('t bar') || normalized.includes('tbar') || normalized.includes('تي بار') || normalized.includes('chest supported') || normalized.includes('chest-supported')) return 'chest_supported_tbar_row';
+  if ((normalized.includes('single arm') || normalized.includes('one arm') || normalized.includes('dumbbell') || normalized.includes('دامبل') || normalized.includes('منشار')) && normalized.includes('row')) return 'single_arm_dumbbell_row';
+  if (normalized.includes('barbell row') || normalized.includes('bent over') || normalized.includes('سحب بار') || (normalized.includes('row') && !normalized.includes('upright'))) return 'barbell_row';
+  if (normalized.includes('straight arm') || normalized.includes('pullover') || normalized.includes('بلوفر')) return 'straight_arm_cable_pulldown';
+  if (normalized.includes('deadlift') || normalized.includes('ديدلفت')) {
+    return (normalized.includes('romanian') || normalized.includes('rdl') || normalized.includes('روماني')) ? (normalized.includes('dumbbell') ? 'dumbbell_rdl' : 'romanian_deadlift') : 'barbell_deadlift';
+  }
+
+  // Quads, Glutes, Hamstrings, Calves
+  if (normalized.includes('hip thrust') || normalized.includes('hipthrust') || normalized.includes('هيب ثروست') || normalized.includes('هيبثروست')) {
+    return (normalized.includes('dumbbell') || normalized.includes('دامبل')) ? 'dumbbell_hip_thrust' : 'barbell_hip_thrust';
+  }
+  if (normalized.includes('prone') || normalized.includes('lying') || normalized.includes('leg curl') || normalized.includes('hamstring curl') || normalized.includes('فخذ خلفي') || normalized.includes('خلفي منبطح')) {
+    return (normalized.includes('seated') || normalized.includes('جالس')) ? 'seated_leg_curl' : 'lying_leg_curl';
+  }
+  if (normalized.includes('rdl') || normalized.includes('romanian') || normalized.includes('رومانيان') || normalized.includes('روماني')) {
+    return (normalized.includes('dumbbell') || normalized.includes('دامبل')) ? 'dumbbell_rdl' : 'romanian_deadlift';
+  }
+  if (normalized.includes('bulgarian') || normalized.includes('split squat') || normalized.includes('سكوات بلغاري')) return 'bulgarian_split_squat';
+  if (normalized.includes('hack') || normalized.includes('هاك')) return 'hack_squat';
+  if (normalized.includes('leg press') || normalized.includes('مكبس') || normalized.includes('دفع أرجل') || normalized.includes('دفع رجل')) return 'leg_press';
+  if (normalized.includes('leg extension') || normalized.includes('extension') || normalized.includes('فخذ أمامي') || normalized.includes('اكستنشن')) return 'leg_extensions';
+  if (normalized.includes('squat') || normalized.includes('سكوات')) return 'barbell_back_squat';
+  if (normalized.includes('calf') || normalized.includes('calves') || normalized.includes('بطات') || normalized.includes('سمانة') || normalized.includes('سمانه')) {
+    return (normalized.includes('seated') || normalized.includes('جالس')) ? 'seated_calf_raise' : 'standing_calf_raise';
+  }
+
+  // Arms (Biceps)
+  if (normalized.includes('preacher') || normalized.includes('تبشير')) return 'preacher_curl';
+  if (normalized.includes('hammer') || normalized.includes('شاكوش')) return 'hammer_curls';
+  if (normalized.includes('incline') && normalized.includes('curl')) return 'dumbbell_incline_bicep_curl';
+  if ((normalized.includes('cable') || normalized.includes('كيبل')) && normalized.includes('curl')) return 'cable_bicep_curl';
+  if (normalized.includes('curl') || normalized.includes('bicep') || normalized.includes('باي') || normalized.includes('بايسبس')) return 'barbell_bicep_curl';
+
+  // Core & Abs
+  if (normalized.includes('cable crunch') || normalized.includes('crunch') || normalized.includes('كرنش') || normalized.includes('طحن بطن')) return 'cable_crunch';
+  if (normalized.includes('plank') || normalized.includes('بلانك')) return 'plank';
+  if (normalized.includes('hanging') || normalized.includes('leg raise') || normalized.includes('knee raise') || normalized.includes('رفع أرجل') || normalized.includes('رفع ارجل')) return 'hanging_leg_raise';
+  if (normalized.includes('wheel') || normalized.includes('عجلة') || normalized.includes('عجله')) return 'ab_wheel_rollout';
+
+  // 3. Graceful Dynamic Fallback
+  const dynamicEx = findOrCreateExercise(exerciseName);
+  return dynamicEx.id;
 };

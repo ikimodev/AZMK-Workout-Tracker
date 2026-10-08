@@ -61,6 +61,9 @@ export interface Exercise {
   youtubeQuery: string;
   trackingType?: ExerciseTrackingType;
   images?: string[];
+  aliases?: string[];
+  position?: 'standing' | 'seated' | 'lying' | 'incline' | 'decline' | 'prone' | 'other';
+  grip?: 'neutral' | 'wide' | 'close' | 'underhand' | 'overhand' | 'other';
 }
 
 export interface LoggedSet {
@@ -184,6 +187,7 @@ export interface UserProfile {
   hasExistingPlan?: boolean;
   hasSeenAITeaser?: boolean;
   aiQuestionsUsedToday?: number;
+  aiQuestionsLastUsedDate?: string;
   startDayOption?: 'today' | 'tomorrow';
   programStartDate?: string;
   scheduledDays?: string[];

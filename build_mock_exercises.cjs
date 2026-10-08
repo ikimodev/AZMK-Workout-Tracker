@@ -64,6 +64,20 @@ const mapExternalToExercise = (ext: any): Exercise => {
     defaultSets: 3,
     defaultReps: 10,
     alternatives: [],
+    aliases: (() => {
+      const a = [];
+      const lower = ext.name.toLowerCase();
+      if (lower.includes('iso-lateral')) a.push(lower.replace('iso-lateral', 'leverage'), lower.replace('iso-lateral', 'plate loaded'));
+      if (lower.includes('leverage')) a.push(lower.replace('leverage', 'iso-lateral'));
+      if (lower.includes('prone')) a.push(lower.replace('prone', 'lying'));
+      if (lower.includes('lying')) a.push(lower.replace('lying', 'prone'));
+      if (lower.includes('overhead press')) a.push(lower.replace('overhead press', 'shoulder press'));
+      if (lower.includes('leverage incline row') || lower.includes('t-bar row')) a.push('chest supported row');
+      if (lower.includes('chest-supported') || lower.includes('chest supported')) a.push('leverage incline row', 't-bar row');
+      if (lower.includes('chin-up') || lower.includes('chin up')) a.push('underhand pull-up');
+      if (lower.includes('romanian deadlift')) a.push('rdl');
+      return a;
+    })(),
     youtubeQuery: \`\${ext.name} proper form\`,
     trackingType,
     images: ext.images && ext.images.length > 0 
@@ -73,25 +87,6 @@ const mapExternalToExercise = (ext: any): Exercise => {
 };
 
 export const MOCK_EXERCISES: Exercise[] = (externalData as any[]).map(mapExternalToExercise);
-
-export const getAlternativeExercises = (exerciseId: string): Exercise[] => {
-  const current = getExerciseById(exerciseId);
-  if (!current) return [];
-
-  const directAlts = (current.alternatives || [])
-    .map(altId => getExerciseById(altId))
-    .filter((ex): ex is Exercise => ex !== undefined);
-
-  if (directAlts.length >= 3) return directAlts;
-
-  const fallback = MOCK_EXERCISES.filter(ex =>
-    ex.id !== exerciseId &&
-    (ex.muscleGroup === current.muscleGroup || ex.movementPattern === current.movementPattern) &&
-    !(current.alternatives || []).includes(ex.id)
-  );
-
-  return [...directAlts, ...fallback].slice(0, 5);
-};
 `;
 
 // Extract findOrCreateExercise, getExerciseById, getAllExercises from tail and insert before mapper

@@ -73,18 +73,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode.trim() === 'azmk2026' || passcode.trim() === 'admin') {
+    const adminPass = import.meta.env.VITE_ADMIN_PASSCODE || '';
+    if (adminPass && passcode.trim() === adminPass) {
       setIsAuthenticated(true);
       sessionStorage.setItem('azmk_admin_auth', 'true');
       setPasscodeError(false);
     } else {
       setPasscodeError(true);
     }
-  };
-
-  const handleQuickUnlock = () => {
-    setIsAuthenticated(true);
-    sessionStorage.setItem('azmk_admin_auth', 'true');
   };
 
   const handleRefresh = () => {
@@ -185,16 +181,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             </button>
           </form>
 
-          {/* Quick unlock for convenience */}
-          <div className="mt-6 pt-4 border-t border-border">
-            <button
-              onClick={handleQuickUnlock}
-              className="text-xs text-slate-400 hover:text-accent-emerald underline font-semibold flex items-center justify-center gap-1.5 mx-auto"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{language === 'ar' ? 'دخول سريع كـ صاحب التطبيق (1-Click)' : 'Quick 1-Click Owner Access'}</span>
-            </button>
-          </div>
+
 
         </div>
       </div>
