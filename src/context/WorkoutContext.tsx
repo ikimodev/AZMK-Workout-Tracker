@@ -461,7 +461,7 @@ I have direct access to your **${histCount}** logged workout sessions, strength 
     const defaultExs: WorkoutExercise[] = templateExercises || [
       {
         id: `we_${Date.now()}_0`,
-        exerciseId: 'barbell_bench_press',
+        exerciseId: 'Barbell_Bench_Press_-_Medium_Grip',
         order: 1,
         restTimerSeconds: 90,
         sets: [
