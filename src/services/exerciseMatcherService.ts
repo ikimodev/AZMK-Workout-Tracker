@@ -9,6 +9,18 @@ export interface MatcherCandidate {
   matchReasons: string[];
 }
 
+// Strict biomechanical dictionary to prevent mixing up chest and core/legs
+const MOVEMENT_GATES: Record<string, { primaryMuscle: string; pattern: string }> = {
+  'bench press': { primaryMuscle: 'chest', pattern: 'horizontal_push' },
+  'leg raise': { primaryMuscle: 'core', pattern: 'core_flexion' },
+  'lat pulldown': { primaryMuscle: 'back', pattern: 'vertical_pull' },
+  'pull up': { primaryMuscle: 'back', pattern: 'vertical_pull' },
+  'lateral raise': { primaryMuscle: 'shoulders', pattern: 'shoulder_abduction' },
+  'squat': { primaryMuscle: 'quads', pattern: 'knee_flexion' },
+  'leg curl': { primaryMuscle: 'hamstrings', pattern: 'knee_curl' },
+  'calf raise': { primaryMuscle: 'calves', pattern: 'ankle_extension' },
+};
+
 export interface MatchResult {
   matchedExerciseId: string | null;
   candidates: MatcherCandidate[];
@@ -161,6 +173,16 @@ const scoreCandidate = (normalizedInput: string, exercise: Exercise, attributes:
     matchReasons.push("Contradiction: Decline not requested");
   }
 
+  // Extreme strict penalty checks for contradictory words
+  if (normalizedInput.includes('bench press') && normalizedName.includes('leg raise')) {
+    score = 0; // Hard block
+    matchReasons.push("P0 Guard: Bench Press vs Leg Raise collision");
+  }
+  if (normalizedInput.includes('lateral raise') && normalizedName.includes('rear')) {
+    score -= 40;
+    matchReasons.push("Contradiction: Rear delt not requested");
+  }
+
   return {
     exercise,
     score,
@@ -188,6 +210,17 @@ export const matchExerciseForImport = (
   
   // Phase 3: Deterministic Pre-Filtering
   let filteredExercises = allExercises;
+  
+  // P0 Hard Guard: Filter by strict biomechanical gates
+  for (const [key, rule] of Object.entries(MOVEMENT_GATES)) {
+    if (normalizedInput.includes(key)) {
+      filteredExercises = filteredExercises.filter(ex => 
+        ex.muscleGroup.toLowerCase() === rule.primaryMuscle.toLowerCase() ||
+        (ex.secondaryMuscles && ex.secondaryMuscles.some(m => m.toLowerCase() === rule.primaryMuscle.toLowerCase()))
+      );
+      break;
+    }
+  }
   
   let eqLowerCase = inferredEquipment?.toLowerCase() || '';
   
@@ -288,3 +321,28 @@ export const matchExerciseForImport = (
     ambiguous: true
   };
 };
+
+export const runP0SanityTests = () => {
+  const testCases = [
+    { input: "Barbell Bench Press 4x8", expectedMuscle: "Chest" },
+    { input: "Lateral Raises 3x12", expectedMuscle: "Shoulders" },
+    { input: "Lat Pulldown 4x10", expectedMuscle: "Back" },
+    { input: "Leg Extensions 3x12", expectedMuscle: "Quads" },
+  ];
+
+  console.log("🏃 Running P0 Sanity Tests for Exercise Matcher...");
+  let allPassed = true;
+  testCases.forEach(({ input, expectedMuscle }) => {
+    const res = matchExerciseForImport(input);
+    const candidate = res.candidates[0]?.exercise;
+    if (!candidate || candidate.muscleGroup.toLowerCase() !== expectedMuscle.toLowerCase()) {
+      console.error(`🚨 P0 FAILED FOR: "${input}"! Matched with: "${candidate?.name}" (${candidate?.muscleGroup})`);
+      allPassed = false;
+    } else {
+      console.log(`✅ P0 PASSED: "${input}" -> "${candidate?.name}"`);
+    }
+  });
+  
+  if (allPassed) console.log("✨ All P0 Tests Passed.");
+};
+

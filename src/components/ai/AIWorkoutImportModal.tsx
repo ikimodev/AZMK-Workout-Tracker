@@ -443,7 +443,7 @@ export const AIWorkoutImportModal: React.FC<AIWorkoutImportModalProps> = ({ isOp
                                <div className="font-bold text-sm text-white">{language === 'ar' ? (ex as any).nameAr || ex.name : ex.name}</div>
                                <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
                                  <span>{[ex.muscleGroup, ...(ex.secondaryMuscles || [])].join(', ')} • {ex.equipment}</span>
-                                 <span className="text-accent-cyan">{(c.score).toFixed(0)}% Match</span>
+                                 <span className="text-accent-cyan">{language === 'ar' ? 'مطابقة ذكية مع المراجعة' : 'Smart Match (Review)'}</span>
                                </div>
                              </button>
                            )
