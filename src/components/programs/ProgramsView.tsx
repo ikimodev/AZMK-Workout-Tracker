@@ -283,14 +283,34 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ onNavigate, onOpenAI
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-mono font-bold text-accent-emerald bg-accent-emerald/10 px-2.5 py-0.5 rounded-lg">
-                    {workout.dayOfWeek || (language === 'ar' ? `اليوم ${wIdx + 1}` : `Day ${wIdx + 1}`)}
+                    {workout.dayOfWeek 
+                      ? (language === 'ar' ? workout.dayOfWeek.replace('Monday', 'الإثنين').replace('Tuesday', 'الثلاثاء').replace('Wednesday', 'الأربعاء').replace('Thursday', 'الخميس').replace('Friday', 'الجمعة').replace('Saturday', 'السبت').replace('Sunday', 'الأحد') : workout.dayOfWeek)
+                      : (language === 'ar' ? `اليوم ${wIdx + 1}` : `Day ${wIdx + 1}`)}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
                     {workout.exercises.length} {language === 'ar' ? 'تمارين' : 'exercises'}
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-white mb-3">{workout.name}</h3>
+                <h3 className="text-base font-bold text-white mb-3">
+                  {language === 'ar' 
+                    ? workout.name
+                        .replace(/Day (\d+):?/gi, 'اليوم $1:')
+                        .replace(/Day (\d+) -?/gi, 'اليوم $1 -')
+                        .replace(/Upper Body/gi, 'الجزء العلوي')
+                        .replace(/Lower Body/gi, 'الجزء السفلي')
+                        .replace(/Upper/gi, 'علوي')
+                        .replace(/Lower/gi, 'سفلي')
+                        .replace(/Push/gi, 'دفع')
+                        .replace(/Pull/gi, 'سحب')
+                        .replace(/Legs/gi, 'أرجل')
+                        .replace(/Full Body/gi, 'شامل')
+                        .replace(/Power/gi, 'قوة')
+                        .replace(/Hypertrophy/gi, 'تضخيم')
+                        .replace(/Quad/gi, 'أمامي')
+                        .replace(/Hamstrings/gi, 'خلفي')
+                    : workout.name}
+                </h3>
 
                 {/* Exercises list in workout */}
                 <div className="space-y-2">

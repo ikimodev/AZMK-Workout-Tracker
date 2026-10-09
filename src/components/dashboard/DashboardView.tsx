@@ -83,7 +83,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               
               <h2 className="text-2xl font-black text-white mb-4 line-clamp-2">
-                {todaysWorkoutTemplate.name}
+                {language === 'ar' 
+                  ? todaysWorkoutTemplate.name
+                      .replace(/Day (\d+):?/gi, 'اليوم $1:')
+                      .replace(/Day (\d+) -?/gi, 'اليوم $1 -')
+                      .replace(/Upper Body/gi, 'الجزء العلوي')
+                      .replace(/Lower Body/gi, 'الجزء السفلي')
+                      .replace(/Upper/gi, 'علوي')
+                      .replace(/Lower/gi, 'سفلي')
+                      .replace(/Push/gi, 'دفع')
+                      .replace(/Pull/gi, 'سحب')
+                      .replace(/Legs/gi, 'أرجل')
+                      .replace(/Full Body/gi, 'شامل')
+                      .replace(/Power/gi, 'قوة')
+                      .replace(/Hypertrophy/gi, 'تضخيم')
+                      .replace(/Quad/gi, 'أمامي')
+                      .replace(/Hamstrings/gi, 'خلفي')
+                  : todaysWorkoutTemplate.name}
               </h2>
 
               {/* Horizontal Exercise Chips with Fade Mask */}
@@ -166,7 +182,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             
             // Very simplified logic for visual purposes
             let statusClass = "bg-background-elevated text-slate-500 border-border";
-            let content = language === 'ar' ? allDaysAr[idx].charAt(0) : day.charAt(0);
+            const weekDaysAR = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+            let content = language === 'ar' ? weekDaysAR[idx] : day.charAt(0);
 
             if (isToday) {
                statusClass = "bg-accent-cyan text-black border-accent-cyan ring-4 ring-accent-cyan/20";
@@ -242,7 +259,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-xs text-white">{session.name}</div>
+                    <div className="font-bold text-xs text-white">
+                      {language === 'ar' 
+                        ? session.name
+                            .replace(/Day (\d+):?/gi, 'اليوم $1:')
+                            .replace(/Day (\d+) -?/gi, 'اليوم $1 -')
+                            .replace(/Upper Body/gi, 'الجزء العلوي')
+                            .replace(/Lower Body/gi, 'الجزء السفلي')
+                            .replace(/Upper/gi, 'علوي')
+                            .replace(/Lower/gi, 'سفلي')
+                            .replace(/Push/gi, 'دفع')
+                            .replace(/Pull/gi, 'سحب')
+                            .replace(/Legs/gi, 'أرجل')
+                            .replace(/Full Body/gi, 'شامل')
+                            .replace(/Power/gi, 'قوة')
+                            .replace(/Hypertrophy/gi, 'تضخيم')
+                            .replace(/Quad/gi, 'أمامي')
+                            .replace(/Hamstrings/gi, 'خلفي')
+                        : session.name}
+                    </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">{session.date.split('T')[0]}</div>
                   </div>
                 </div>

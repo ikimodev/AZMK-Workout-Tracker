@@ -80,7 +80,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
                   className="flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform w-full py-2" 
                   onClick={() => setActiveWeightEditor({ exIdx, setIdx: activeSetIdx, initialWeight: activeSet.weight || 0 })}
                 >
-                  <span className="text-5xl sm:text-6xl font-black font-mono text-white tracking-tighter" style={{ textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>{activeSet.weight || 0}</span>
+                  <span className="text-4xl sm:text-5xl font-black font-mono text-white tracking-tighter shrink-0" style={{ textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>{activeSet.weight || 0}</span>
                   <span className="text-xs sm:text-sm text-slate-500 font-bold mt-1">kg</span>
                 </div>
               </div>
@@ -91,13 +91,13 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = ({
               {/* Right Column: Reps */}
               <div className="flex flex-col items-center justify-center">
                 <span className="text-[11px] text-slate-400 font-bold uppercase mb-2 tracking-widest">Reps</span>
-                <div className="flex items-center justify-center gap-3 w-full">
-                  <button onClick={() => handleRepChange(activeSetIdx, activeSet.reps || 0, -1)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-background-card border border-border flex items-center justify-center text-slate-300 hover:text-white hover:border-slate-500 active:scale-95 transition-all shadow-md shrink-0">
-                    <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
+                <div className="flex items-center justify-center gap-1 sm:gap-2 w-full">
+                  <button onClick={() => handleRepChange(activeSetIdx, activeSet.reps || 0, -1)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background-card border border-border flex items-center justify-center text-slate-300 hover:text-white hover:border-slate-500 active:scale-95 transition-all shadow-md shrink-0">
+                    <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                   
                   <div className="flex flex-col items-center justify-center min-w-[50px] sm:min-w-[60px]">
-                    <span className="text-5xl sm:text-6xl font-black font-mono text-white tracking-tighter shrink-0" style={{ textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>{activeSet.reps || 0}</span>
+                    <span className="text-4xl sm:text-5xl font-black font-mono text-white tracking-tighter shrink-0" style={{ textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>{activeSet.reps || 0}</span>
                   </div>
 
                   <button onClick={() => handleRepChange(activeSetIdx, activeSet.reps || 0, 1)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-background-card border border-border flex items-center justify-center text-slate-300 hover:text-white hover:border-slate-500 active:scale-95 transition-all shadow-md shrink-0">

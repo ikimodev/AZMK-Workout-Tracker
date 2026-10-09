@@ -5,11 +5,12 @@ import { useWorkout } from "../../context/WorkoutContext";
 interface AIWelcomeTeaserModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onStartFreestyle: () => void;
   onOpenAIImport: () => void;
   onNavigateToPrograms: () => void;
 }
 
-export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOpen, onClose, onOpenAIImport, onNavigateToPrograms }) => {
+export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOpen, onClose, onStartFreestyle, onOpenAIImport, onNavigateToPrograms }) => {
   const { language } = useWorkout();
 
   if (!isOpen) return null;
@@ -65,7 +66,7 @@ export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOp
             </button>
             
             <button
-              onClick={onClose}
+              onClick={onStartFreestyle}
               className="w-full pt-3 text-slate-500 hover:text-slate-400 text-xs font-bold transition-all underline decoration-slate-500/30 underline-offset-4"
             >
               {language === "ar" ? "تخطي والبدء بتمرين حر" : "Skip & Start Freestyle"}

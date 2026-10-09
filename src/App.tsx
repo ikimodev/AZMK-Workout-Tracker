@@ -61,7 +61,7 @@ const getPathFromTab = (tab: string): string => {
 };
 
 const AppContent: React.FC = () => {
-  const { user, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout, startWorkout } = useWorkout();
+  const { user, language, activeWorkout, lastCompletedSession, clearLastCompletedSession, showWelcomeTeaser, setShowWelcomeTeaser, startTodaysAutocompleteWorkout, startWorkout } = useWorkout();
   
   const [activeTab, setActiveTab] = useState<string>(() => {
     return getTabFromPath(window.location.pathname);
@@ -71,6 +71,11 @@ const AppContent: React.FC = () => {
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [isInstallPromptOpen, setIsInstallPromptOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  React.useEffect(() => {
+    document.documentElement.lang = language === 'ar' ? 'ar' : 'en';
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [language]);
 
   React.useEffect(() => {
     trackUserSession(user.name);
@@ -213,6 +218,9 @@ const AppContent: React.FC = () => {
       <AIWelcomeTeaserModal
         isOpen={showWelcomeTeaser}
         onClose={() => {
+          setShowWelcomeTeaser(false);
+        }}
+        onStartFreestyle={() => {
           setShowWelcomeTeaser(false);
           startWorkout("Freestyle Workout");
           handleNavigate('active_workout');
