@@ -44,9 +44,11 @@ export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOp
 
           <div className="w-full space-y-3">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 onClose();
-                setTimeout(() => onOpenAIImport(), 300);
+                setTimeout(() => onOpenAIImport(), 100);
               }}
               className="w-full py-4 rounded-xl bg-accent-indigo hover:bg-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-glow-indigo transition-all active:scale-95"
             >
@@ -55,9 +57,11 @@ export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOp
             </button>
 
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 onClose();
-                setTimeout(() => onNavigateToPrograms(), 300);
+                setTimeout(() => onNavigateToPrograms(), 100);
               }}
               className="w-full py-4 rounded-xl bg-background-elevated border border-border hover:border-slate-500 text-slate-300 hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
             >
@@ -66,7 +70,11 @@ export const AIWelcomeTeaserModal: React.FC<AIWelcomeTeaserModalProps> = ({ isOp
             </button>
             
             <button
-              onClick={onStartFreestyle}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onStartFreestyle();
+              }}
               className="w-full pt-3 text-slate-500 hover:text-slate-400 text-xs font-bold transition-all underline decoration-slate-500/30 underline-offset-4"
             >
               {language === "ar" ? "تخطي والبدء بتمرين حر" : "Skip & Start Freestyle"}
